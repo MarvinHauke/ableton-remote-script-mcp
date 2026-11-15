@@ -46,9 +46,8 @@ _Last updated: 2026-11-15 (0001 step 5a built; step 7, the validator, on the fro
 
 ## Small items
 
-- [ready-for-human] Enable GitHub Pages: Settings → Pages → Build and deployment → Source: GitHub
-  Actions (0001 decision 36). The `docs` workflow deploys on `main`.
-
+- [ready-for-human] Merge the step branches into `main` and push, so the `docs` workflow publishes
+  the site. GitHub Pages is set to deploy from GitHub Actions (the user, checked 2026-11-15).
 - [ready-for-human] Ask the people responsible at Ableton whether extracted API facts and Live 13
   beta findings may be published (0001 decisions 15 and 36); until then they stay local.
 - [ready-for-human] Set the GitHub repo description and topics (0001 decision 27).
