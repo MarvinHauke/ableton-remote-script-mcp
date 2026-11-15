@@ -1,0 +1,5 @@
+# Third-party decompiled Ableton sources (no licence, Ableton copyright): local reference only
+/reference/
+.scratch/
+.DS_Store
+__pycache__/
