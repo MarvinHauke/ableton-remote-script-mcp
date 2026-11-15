@@ -19,6 +19,9 @@
   checked, and whether a C module of Python's standard library is built into Live can't be seen.
   Whether a standard library module counts as built in or as such a C module depends on the
   Python you run the tool with; that only changes what is listed as not checked.
+- **`log` finds a script's messages by its class name.** The framework starts each message with
+  the name of the script's control surface class (as read in the decompiled 12.0 framework), so `--script` finds them only when that class is
+  named like the folder. Tracebacks are found by the folder in their file paths.
 - **The `Live` module is seen through a model.** Live's C++ objects are not in the compiled
   files; the index uses the Push 3 helper's pure-Python model of them, which mirrors the Live
   Object Model but is not Live itself.

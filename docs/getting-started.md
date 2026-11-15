@@ -76,6 +76,27 @@ My_Script  [Live 12.4.16, observed]  1 finding in 2 files
 The command exits with 0 when there are no findings and 1 when there are. [How it
 works](how-it-works.md#checking-a-script) lists the rules.
 
+## Install it and read the log
+
+`install` checks the folder first and copies it into your User Library only when there are no
+findings:
+
+```sh
+uv run ableton-remote-script-mcp install path/to/My_Script --build 12.4.16   # --replace for a new version
+```
+
+Then, in Live: restart it, and choose `My_Script` as a Control Surface under Settings → Link,
+Tempo & MIDI, with your controller's input and output ports. Live shows no error when a script
+fails to load; it writes it to its log. `log` finds that script's errors and messages since Live
+last started:
+
+```sh
+uv run ableton-remote-script-mcp log --script My_Script
+```
+
+It exits with 0 when there is no traceback and 1 when there is one. [How it
+works](how-it-works.md#loading-a-script) says how it reads the log.
+
 ## Where the index lives
 
 By default in `~/.local/share/ableton-remote-script-mcp/index/` (or under `$XDG_DATA_HOME` when

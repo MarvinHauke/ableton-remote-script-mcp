@@ -41,7 +41,16 @@ The Python inside Live's bundle that Push 3 standalone runs (`Helpers/Push3.app`
 (`live_model.Live.Song.Song` for `Live.Song.Song`) but are not Live itself.
 
 **User Library**:
-`~/Music/Ableton/User Library/Remote Scripts/`, where user scripts are installed.
+The user's Live library folder (`~/Music/Ableton/User Library/` unless moved in Live's settings);
+user scripts are installed in its `Remote Scripts/` folder.
+
+**Device facts**:
+What a script needs to know about one controller's device controls: MIDI type, channel, number,
+momentary or toggle, and the LED values it accepts, with the source they come from.
+
+**Behaviour checklist**:
+The short list of what a script does, in the user's words, that the user checks in Live after it
+loaded.
 
 ### The framework
 

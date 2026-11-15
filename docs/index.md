@@ -9,14 +9,17 @@ drive a hardware controller (a *control surface*).
 
 ## What it is
 
-The project has three parts. Today the first one works:
+The project has three parts. The first two work today:
 
 - **API index.** One command reads the Remote Script framework from your installed Live and
   records its modules, classes, members and signatures, separately for each Live build. You look
   classes up, search them, outline how one of Live's own scripts is put together, and check your
-  own script folder against a build before you load it in Live.
-- **Skill.** Guidance that walks a coding agent through writing a script from those facts. Not
-  built yet.
+  own script folder against a build before you load it in Live. Two more commands copy a script
+  into your User Library and read Live's log for its errors.
+- **Skill.** Guidance that walks a coding agent through writing a script from those facts:
+  collect the controller's MIDI numbers, look up every framework name, check the script, install
+  it, and read Live's log once you have loaded it. Its first version covers `_Framework`
+  scripts; the `ableton.v3` guidance comes next.
 - **MCP server.** The same lookups as tools an agent can call. Not built yet.
 
 Every answer names the Live build it comes from and how sure it is (its *fact confidence*), so

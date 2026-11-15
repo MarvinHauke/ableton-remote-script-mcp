@@ -104,3 +104,34 @@ ableton-remote-script-mcp validate [--build BUILD] [--json] folder
 | `folder` | The Remote Script's folder (its __init__.py defines create_instance). |
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
 | `--json` | Print the query core's answer as JSON. |
+
+## `install`
+
+Validate a Remote Script folder, then copy it into the User Library.
+
+```text
+ableton-remote-script-mcp install [--build BUILD] [--user-library USER_LIBRARY] [--replace] [--no-validate] folder
+```
+
+| Argument | What it does |
+| --- | --- |
+| `folder` | The Remote Script's folder. |
+| `--build BUILD` | Live build to validate against (default: newest indexed). |
+| `--user-library USER_LIBRARY` | The User Library folder (default: $ABLETON_USER_LIBRARY, else ~/Music/Ableton/User Library). |
+| `--replace` | Overwrite an installed copy of the same script. |
+| `--no-validate` | Copy without validating first. |
+
+## `log`
+
+Tracebacks and messages of Remote Scripts in Live's Log.txt (last session).
+
+```text
+ableton-remote-script-mcp log [--script SCRIPT] [--build BUILD] [--log LOG] [--json]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--script SCRIPT` | Only this script's tracebacks and messages (its folder name). |
+| `--build BUILD` | Read the log of this Live build (default: the most recently written log). |
+| `--log LOG` | Path to a Log.txt (default: found under $ABLETON_PREFERENCES, else ~/Library/Preferences/Ableton). |
+| `--json` | Print the answer as JSON. |

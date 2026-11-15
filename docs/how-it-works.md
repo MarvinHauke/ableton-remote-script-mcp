@@ -8,8 +8,8 @@
 2. **The query core answers.** `lookup`, `search`, `outline` and `validate` read that file. They follow
    imports and re-exports, so a class can be asked for by the short name a script imports it
    under, and they walk each class's bases to show every member it inherits.
-3. **The command line prints the answer.** Later, the skill and the MCP server will ask the same
-   query core, so every way in gives the same answer.
+3. **The command line prints the answer.** The skill's scripts call the same commands, and the
+   MCP server will ask the same query core, so every way in gives the same answer.
 
 ## What the index holds
 
@@ -46,7 +46,7 @@ them against one build's index:
 
 | Rule | Finds |
 | --- | --- |
-| `folder-name` | A folder name with spaces: Live doesn't list the script. |
+| `folder-name` | A folder name with spaces, which Live doesn't list, or one that isn't a Python name (`my-script`): Live imports the script by its folder name, and the import fails. |
 | `syntax-error` | A file that doesn't parse as Python 3.11, the Python Live runs. A broken file is a finding, never a crash. |
 | `create-instance` | An `__init__.py` without `create_instance`, or one that can't be called with the `c_instance` argument Live passes. |
 | `unresolved-import` | An import that doesn't resolve in that build: not one of the script's own modules, not in Live's Remote Scripts folder, not in the Python Live ships. Also a name the imported module doesn't have. |
@@ -58,6 +58,21 @@ standard library, which are part of Live's program and not files the index can s
 
 Checks of how the script uses the framework (signatures of overridden methods, Specification
 fields) are not built yet.
+
+## Loading a script
+
+Only you operate Live: the tools copy files and read the log, they never start, stop or control
+Live.
+
+- **`install`** runs `validate` first and stops at any finding (`--no-validate` skips the check).
+  It copies the script's source into `Remote Scripts` in your User Library
+  (`~/Music/Ableton/User Library`, or `--user-library`), leaving compiled files and hidden files
+  behind. An existing copy is replaced only with `--replace`, and only if it is a script folder
+  (it has an `__init__.py`) and not a symbolic link.
+- **`log`** reads `Log.txt` in Live's preferences folder, of the Live build you name or the one
+  that ran last, from the point where Live last started. Live writes a traceback in many small
+  pieces; `log` puts each one back together. With `--script`, it shows the tracebacks that pass
+  through that script's folder and the messages the script logged, and counts the others.
 
 ## Fact confidence
 

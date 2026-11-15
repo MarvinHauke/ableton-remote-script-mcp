@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-15 (0001 step 7 built; step 9, skill v1 and the APC mini mk1 script, on the frontier)._
+_Last updated: 2026-11-15 (0001 step 9 in work: skill v1 drafted, the APC mini mk1 script waits for the load test)._
 
 ## Now
 
@@ -41,8 +41,14 @@ _Last updated: 2026-11-15 (0001 step 7 built; step 9, skill v1 and the APC mini 
   rules `folder-name`, `syntax-error`, `create-instance` and `unresolved-import`; imports are
   checked against the Python Live ships, which the index now lists (0001 decision 37, index
   schema 5; rebuild older indexes). `uv run pytest` green (87 tests, 11 local-only).
-- [ready-for-agent] **0001 step 9** — skill v1 and the APC mini mk1 script (Milestone 1, part 1).
-  Next in this session, after a `/compact`.
+- 0001 step 9 in work on `feat/0001-step-9-skill-v1` (2026-11-15): the skill
+  `skills/ableton-remote-scripts/` v1 (workflow, `_Framework` reference and template, loading and
+  logs, four scripts), the commands `install` and `log`, and `folder-name` for names that are
+  not Python names (0001 decision 38). A fresh agent wrote `examples/APC_mini_mk1/` with the
+  skill; it validates clean against 12.4.16 and is installed in the User Library. Its feedback
+  was folded into the skill. `uv run pytest` green (102 tests, 13 local-only).
+- [ready-for-human] **Load `APC_mini_mk1` in Live 12.4.16** and walk the checklist in
+  [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md); the agent reads `Log.txt`.
 
 ## After grilling
 

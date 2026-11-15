@@ -482,6 +482,51 @@ meant to do, and uses only API names that exist in the Live build they target.
       `warning`). `validate` exits 0 with no findings, 1 with findings, 2 when the folder is
       missing and 3 when the index is.
 
+38. **The skill `ableton-remote-scripts`; `install` and `log` are commands** (agent, 2026-11-15,
+    step 9):
+    - **Drafted with `/skill-creator`** (Decision 28), following its writing guide (description
+      that triggers, progressive disclosure into references, bundled scripts); its eval loop is
+      step 9a. The draft was then run once: a fresh agent wrote the APC mini script with only the
+      skill, and its feedback went into the skill (sharing a button between a Shift combo and a
+      plain binding, full dotted names for lookups, a help-text bug).
+    - **Name:** `skills/ableton-remote-scripts/` (Decision 21's layout). The repo's name
+      `ableton-remote-script-mcp` names the tools; the skill is named for what it writes.
+    - **Contents of v1:** `SKILL.md` (trigger, fact confidence, a nine-step workflow, what done
+      means), `references/framework-script.md` (a `_Framework` script: elements, components, LED
+      feedback, the rules that keep it loading, every name looked up in 12.4.16),
+      `references/loading-and-logs.md` (what to tell the user, how to read the log, common
+      tracebacks), `assets/framework_template/` and four scripts. The v3 pages come with step 10.
+    - **The scripts are thin:** `lookup.sh`, `validate.sh`, `install.sh` and `log.sh` call the
+      `ableton-remote-script-mcp` command (or `$ABLETON_REMOTE_SCRIPT_MCP`) and say how to install
+      it when it is missing. The work is in the command, so the MCP server (step 11) can reuse it
+      and the tests run it at a seam.
+    - **`install <folder>`** validates first and copies only on no findings (`--no-validate`
+      skips it); it copies the source without `__pycache__`, `.pyc` and hidden files into
+      `<User Library>/Remote Scripts/<folder>`, and replaces a copy only with `--replace` and only
+      when that copy is a script folder (`__init__.py`) and not a symbolic link; the folder is
+      resolved first (`install .`), its name must be a Python name, and the new copy is written
+      beside the old one and swapped in. Exit 0 installed, 1 findings, 2 refused or missing,
+      3 no index. Live stays the user's to operate.
+    - **`log`** reads the `Log.txt` of a named build or the one written last, from the last
+      `Started: Live` record. Live writes a traceback in fragments (`RemoteScriptError:` records,
+      an empty line after a fragment that ended a line, `Last message repeated N time(s)`);
+      `log` joins them, splits back-to-back tracebacks at their header (not inside one chained
+      exception), and with `--script` keeps the tracebacks through that folder (or, for a bad
+      folder name, Live's `import <folder>`) and the messages that script logged. Exit 0 no
+      traceback, 1 tracebacks, 2 no log. Found in the user's
+      own logs (12.2.1): a hyphenated folder (`import ableton-live-midi-remote-scripts`, a
+      SyntaxError) and a `SessionComponent` built outside `component_guard`
+      (`DependencyError … register_component`).
+    - **The framework names a message by the control surface class** (`(%s)` of
+      `self.__class__.__name__` in `_Framework`'s `log_message`, `documented` from the
+      decompiled 12.0 scripts): so the skill names the class like the folder, and `log --script`
+      matches the folder name.
+    - **`folder-name` also rejects a folder that is not a Python name** (Live imports the script
+      by it), with a suggested name; the user's log above shows the failure.
+    - **Milestone 1 pages:** `docs/feature-plans/milestone-1/` holds each test device's facts,
+      its behaviour checklist and the results; the scripts written in the demos live in
+      `examples/` (our own code).
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).

@@ -141,6 +141,13 @@ def test_folder_name_with_spaces(tmp_path, index_dir):
     assert "'My_Script'" in answer["findings"][0]["fix"]
 
 
+@pytest.mark.parametrize("name, suggested", [("my-script", "my_script"), ("2nd_Script", "_2nd_Script")])
+def test_folder_name_that_is_not_a_python_name(tmp_path, index_dir, name, suggested):
+    answer = validate(write(tmp_path, CLEAN_V3, name=name), index_dir)
+    assert rules(answer) == [("folder-name", ".", None)]
+    assert "SyntaxError" in answer["findings"][0]["message"] and repr(suggested) in answer["findings"][0]["fix"]
+
+
 def test_syntax_error_is_a_finding(tmp_path, index_dir):
     files = {**CLEAN_V3, "elements.py": "class Elements(\n    pass\n", "broken.py": b"x = 1\x00\n"}
     answer = validate(write(tmp_path, files), index_dir)

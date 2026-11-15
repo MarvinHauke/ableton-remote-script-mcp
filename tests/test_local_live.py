@@ -4,6 +4,7 @@ Each asserts a fact seen in 12.4.16 (plan 0001, Testing Decisions).
 """
 
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -110,6 +111,7 @@ def test_search_in_12_4_16(index_dir):
     assert first["qualified_name"] == "ableton.v3.control_surface.components.session_ring.SessionRingComponent"
 
 
+@pytest.mark.local_live
 def test_outline_of_apc_mini_mk2_in_12_4_16(index_dir):
     """A v3 Remote Script: Specification, framework component map, mappings, Elements."""
     o = outline_script("APC_mini_mk2", index_dir)
@@ -134,6 +136,7 @@ def test_outline_of_apc_mini_mk2_in_12_4_16(index_dir):
     assert elements["Master_Fader"]["arguments"]["identifier"] == "56"
 
 
+@pytest.mark.local_live
 def test_outline_of_apc_mini_in_12_4_16(index_dir, capsys):
     """A _Framework Remote Script built on APC_Key_25 and _APC: elements, components, layers."""
     o = outline_script("APC_mini", index_dir)
@@ -175,3 +178,19 @@ def test_live_python_and_a_clean_script_in_12_4_16(index_dir, index, tmp_path):
     (folder / "__init__.py").write_text("from ableton.v3.control_surface import NoSuchName\n")
     rules = [f["rule"] for f in validate_script(folder, index_dir, "12.4.16")["findings"]]
     assert rules == ["create-instance", "unresolved-import"]
+
+
+@pytest.mark.local_live
+def test_skill_template_is_clean_in_12_4_16(index_dir, tmp_path):
+    template = Path(__file__).parent.parent / "skills/ableton-remote-scripts/assets/framework_template"
+    folder = tmp_path / "Template_Check"
+    shutil.copytree(template, folder)
+    answer = validate_script(folder, index_dir, "12.4.16")
+    assert answer["status"] == "ok" and answer["findings"] == [], answer["findings"]
+
+
+@pytest.mark.local_live
+def test_apc_mini_mk1_example_is_clean_in_12_4_16(index_dir):
+    folder = Path(__file__).parent.parent / "examples/APC_mini_mk1"
+    answer = validate_script(folder, index_dir, "12.4.16")
+    assert answer["status"] == "ok" and answer["findings"] == [], answer["findings"]

@@ -5,7 +5,8 @@ has a file (relative to the folder), a line, a rule, a severity, a message and a
 file becomes a finding, never a crash.
 
 Basic checks (plan 0001 step 7):
-- `folder-name`: the script folder's name has no spaces.
+- `folder-name`: the script folder's name has no spaces and is a Python name, since Live
+  imports the script by it.
 - `syntax-error`: every source parses as Python 3.11 (Live's Python).
 - `create-instance`: `__init__.py` defines `create_instance`, and it takes the `c_instance`
   argument Live passes.
@@ -25,6 +26,7 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -292,6 +294,14 @@ def validate_folder(folder: Path, index: dict) -> dict:
         findings.append(_finding(
             "folder-name", ".", None,
             f"the folder name {script!r} has spaces: Live does not list it as a control surface",
+            f"rename the folder to {suggested!r}"))
+    elif not script.isidentifier():
+        suggested = re.sub(r"\W", "_", script)
+        suggested = suggested if suggested.isidentifier() else f"_{suggested}"
+        findings.append(_finding(
+            "folder-name", ".", None,
+            f"the folder name {script!r} is not a Python name: Live imports the script by its folder name, "
+            "and the import fails with a SyntaxError",
             f"rename the folder to {suggested!r}"))
     sources: dict[str, Source] = {}
     paths = sorted(p for p in folder.rglob("*.py")

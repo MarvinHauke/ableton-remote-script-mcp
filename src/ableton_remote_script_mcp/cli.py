@@ -1,4 +1,5 @@
-"""Command line: `build-index`, `list builds`, `lookup class`, `search`, `outline` and `validate`."""
+"""Command line: `build-index`, `list builds`, `lookup class`, `search`, `outline`, `validate`, `install` and
+`log`."""
 
 from __future__ import annotations
 
@@ -8,7 +9,9 @@ import sys
 from pathlib import Path
 
 from .index_store import build_index, default_index_dir, write_index
+from .install import default_user_library, install_script
 from .live_install import default_install, find_installs, read_install
+from .live_log import find_log, read_log
 from .query import (
     SEARCH_KINDS,
     get_class,
@@ -301,6 +304,75 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return {"not_found": 2, "index_missing": 3}[answer["status"]]
 
 
+def _cmd_install(args: argparse.Namespace) -> int:
+    folder = Path(args.folder).resolve()  # `install .` names the folder, not ''
+    if not args.no_validate:
+        answer = validate_script(folder, Path(args.index_dir), args.build)
+        if answer["status"] != "ok":
+            print(answer["message"] + ("" if answer["status"] == "not_found" else
+                                       "\n(or install unchecked with --no-validate)"))
+            return {"not_found": 2, "index_missing": 3}[answer["status"]]
+        if answer["findings"]:
+            print(format_findings(answer))
+            print("not installed: fix the findings first (or install unchecked with --no-validate)")
+            return 1
+    library = Path(args.user_library) if args.user_library else default_user_library()
+    result = install_script(folder, library, args.replace)
+    if result["status"] != "ok":
+        print(result["message"])
+        return 2
+    if result.get("message"):
+        print(result["message"])
+    else:
+        verb = "replaced" if result["replaced"] else "installed"
+        print(f"{verb} {result['destination']} ({len(result['files'])} files)")
+    print(f"next, in Live (the user's step): restart Live, then pick '{folder.name}' as a Control Surface "
+          "under Settings → Link, Tempo & MIDI, with the controller's input and output ports")
+    return 0
+
+
+def format_log(answer: dict) -> str:
+    who = f" for {answer['script']}" if answer["script"] else ""
+    lines = [(f"Live {answer['live_build'] or '(build not named)'} log{who}: {answer['log']}  "
+              f"(the session that starts at line {answer['session_line']})")]
+    tbs = answer["tracebacks"]
+    lines.append(f"tracebacks ({len(tbs)}):" if tbs else "no tracebacks")
+    for t in tbs:
+        lines.append(f"  line {t['line']}:")
+        lines += [f"    {text}" for text in t["text"].splitlines()]
+    if answer["others"]:
+        lines.append(f"({answer['others']} traceback{'s' * (answer['others'] != 1)} from other scripts or Live "
+                     "not shown; run without --script to see them)")
+    msgs = answer["messages"]
+    if msgs:
+        shown = msgs[-20:]
+        lines.append(f"messages ({len(msgs)}" + (f", last {len(shown)}" if len(shown) < len(msgs) else "") + "):")
+        lines += [f"  line {m['line']}: ({m['script']}) {m['text']}" for m in shown]
+    elif answer["script"]:
+        lines.append(f"no messages from {answer['script']} (is it selected as a Control Surface, and is its "
+                     "ControlSurface class named like the folder?)")
+    return "\n".join(lines)
+
+
+def _cmd_log(args: argparse.Namespace) -> int:
+    path = Path(args.log) if args.log else find_log(args.build)
+    if path is None:
+        where = f"Live {args.build}" if args.build else "any Live build"
+        message = f"no Log.txt found for {where}; pass --log <path to Log.txt>"
+        print(json.dumps({"status": "not_found", "message": message}) if args.json else message)
+        return 2
+    answer = read_log(path, args.script)
+    if args.json:
+        print(json.dumps(answer, indent=1, ensure_ascii=False))
+    elif answer["status"] == "ok":
+        print(format_log(answer))
+    else:
+        print(answer["message"])
+    if answer["status"] != "ok":
+        return 2
+    return 1 if answer["tracebacks"] else 0
+
+
 def _cmd_list_builds(args: argparse.Namespace) -> int:
     answer = list_builds(Path(args.index_dir), find_installs())
     if args.json:
@@ -378,6 +450,23 @@ def make_parser() -> argparse.ArgumentParser:
     va.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
     va.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     va.set_defaults(func=_cmd_validate)
+
+    ins = sub.add_parser("install", help="validate a Remote Script folder, then copy it into the User Library")
+    ins.add_argument("folder", help="the Remote Script's folder")
+    ins.add_argument("--build", help="Live build to validate against (default: newest indexed)")
+    ins.add_argument("--user-library",
+                     help="the User Library folder (default: $ABLETON_USER_LIBRARY, else ~/Music/Ableton/User Library)")
+    ins.add_argument("--replace", action="store_true", help="overwrite an installed copy of the same script")
+    ins.add_argument("--no-validate", action="store_true", help="copy without validating first")
+    ins.set_defaults(func=_cmd_install)
+
+    lg = sub.add_parser("log", help="tracebacks and messages of Remote Scripts in Live's Log.txt (last session)")
+    lg.add_argument("--script", help="only this script's tracebacks and messages (its folder name)")
+    lg.add_argument("--build", help="read the log of this Live build (default: the most recently written log)")
+    lg.add_argument("--log", help="path to a Log.txt (default: found under $ABLETON_PREFERENCES, else "
+                    "~/Library/Preferences/Ableton)")
+    lg.add_argument("--json", action="store_true", help="print the answer as JSON")
+    lg.set_defaults(func=_cmd_log)
     return p
 
 
