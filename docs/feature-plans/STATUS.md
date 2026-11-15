@@ -43,7 +43,6 @@ _Last updated: 2026-11-15 (0001 step 5 committed; step 5a, the docs site skeleto
 
 - [ready-for-human] Ask the people responsible at Ableton whether extracted API facts and Live 13
   beta findings may be published (0001 decisions 15 and 36); until then they stay local.
-- [ready-for-human] Delete the stray empty `decisions.md` in the repo root if it is not yours.
 - [ready-for-human] Set the GitHub repo description and topics (0001 decision 27).
 - [ready-for-human] Archive `ableton-remote-script-skill` on GitHub; its README already points here (commit 3100c40 by the skill-repo session, 2026-11-15) (0001 decision 21).
 
