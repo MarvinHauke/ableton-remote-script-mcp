@@ -62,6 +62,9 @@ _Last updated: 2026-11-15 (0001 step 9 built: skill v1, the APC mini mk1 script 
   modes (stop, solo, arm, mute, select), as on Ableton's script. Not in a step yet.
 - [needs-triage] Whether `OptimizedControlSurface` matters for scripts with combos; the APC mini
   test controller could not tell (0001 decision 40). Needs other hardware.
+- [ready-for-human] The user plans to get a second grid controller (2026-11-15). On it, retest
+  the unconfirmed APC mini glitches (late relights, doubled or lost Shift messages) and the
+  `OptimizedControlSurface` question (0001 decision 40).
 
 - [ready-for-agent] Before the first push (the repo is public): take the Live 13 beta findings out of
   the research doc's section 3 (12.4.16 → 13.0b25 differences; it also lists the User Library's
