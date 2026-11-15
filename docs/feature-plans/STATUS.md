@@ -29,8 +29,9 @@ _Last updated: 2026-11-15 (0001 step 5 committed; step 5a, the docs site skeleto
   rebuild older indexes), with the conditions each statement runs under, kept in a separate
   `live-<build>.statements.json` so the API index stays names and signatures (user story 14
   amended). `uv run pytest` green (60 tests, 10 local-only).
-- 0001 decision 36 (2026-11-15): a MkDocs documentation site on GitHub Pages, a docs agent and a
-  reviewer agent; skeleton as the new step 5a, user guides with step 12.
+- 0001 decision 36 (2026-11-15): a documentation site on GitHub Pages, built with Zensical
+  (pinned; plugin-free `mkdocs.yml`, MkDocs-compatible), a docs agent and a reviewer agent;
+  skeleton as the new step 5a, user guides with step 12.
 - [ready-for-agent] **0001 step 5a** — documentation site skeleton. Next in this session, after a `/compact`.
 
 ## After grilling

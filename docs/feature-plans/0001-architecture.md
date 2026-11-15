@@ -445,6 +445,14 @@ meant to do, and uses only API names that exist in the Live build they target.
       `.claude/` stays untracked.
     - **When:** the skeleton now, as step 5a; the user guides with step 12, once the skill and
       the MCP server exist, so they don't churn.
+    - **Changed 2026-11-15 (user): build with Zensical instead of MkDocs.** Material for MkDocs
+      is in critical maintenance only (until 2027-05-05), MkDocs 2.0 is incompatible with it, and
+      its team develops Zensical as the successor. Zensical reads `mkdocs.yml` and Material's
+      settings; its gap is plugins, which this site does not use. Zensical is young (0.1.1,
+      Beta, 2026-11-10), so it is pinned to an exact version as a uv dev dependency, and the
+      `mkdocs.yml` stays plugin-free so `mkdocs-material` 9.7 builds it unchanged. If step 5a
+      finds no Zensical equivalent of `mkdocs build --strict` (fail on broken links), the site
+      builds with `mkdocs-material` 9.7 for now and switches later.
 
 ## Open questions
 
@@ -545,7 +553,7 @@ Every step's checks include `uv run pytest` passing.
 5a. **Documentation site skeleton** (Decision 36)
    - **Blocked by:** 5
    - **Delivers:**
-     - `mkdocs.yml` (Material) and the first pages: Home (what it is, unofficial, credits),
+     - a plugin-free `mkdocs.yml` built with Zensical (pinned) and the first pages: Home (what it is, unofficial, credits),
        Getting started (install with uv, `build-index`), How it works (index → query core →
        CLI, skill and MCP server; fact confidence; what stays local and why; the statement
        summaries and `--no-statements`), the generated CLI reference, Known limits
@@ -553,8 +561,8 @@ Every step's checks include `uv run pytest` passing.
      - `scripts/docs-check.sh` and a GitHub Pages workflow (the user enables Pages in the repo
        settings)
      - `.claude/agents/docs.md` and `.claude/agents/reviewer.md`, adapted from cmdAbl
-   - **Checks:** `scripts/docs-check.sh` passes (`mkdocs build --strict`, the reference is
-     current); a test that the reference generator's `--check` fails on a stale page; the
+   - **Checks:** `scripts/docs-check.sh` passes (the Zensical build fails on broken links, the
+     reference is current); the same `mkdocs.yml` also builds with `mkdocs-material` 9.7; a test that the reference generator's `--check` fails on a stale page; the
      reviewer agent passes the pages, including the rule that no example comes from a real
      index.
 6. **Structure Void as a cross-check**
