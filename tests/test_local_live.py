@@ -10,7 +10,12 @@ import pytest
 
 from ableton_remote_script_mcp.cli import main
 from ableton_remote_script_mcp.live_install import read_install
-from ableton_remote_script_mcp.query import get_class, outline_script, search
+from ableton_remote_script_mcp.query import (
+    get_class,
+    outline_script,
+    search,
+    validate_script,
+)
 
 LIVE_12_4_16 = Path("/Applications/Ableton Live 12 Suite.app")
 SPEC = "ableton.v3.control_surface.control_surface_specification.ControlSurfaceSpecification"
@@ -149,3 +154,24 @@ def test_outline_of_apc_mini_in_12_4_16(index_dir, capsys):
     assert any(layer["controls"].get("volume_control") == "self._master_volume_control" for layer in o["layers"])
     assert main(["--index-dir", str(index_dir), "outline", "APC_mini"]) == 0
     assert "Shift_Button: make_button -> ButtonElement(" in capsys.readouterr().out
+
+
+@pytest.mark.local_live
+def test_live_python_and_a_clean_script_in_12_4_16(index_dir, index, tmp_path):
+    modules = index["python"]["modules"]
+    assert modules["json"] == "lib" and modules["future"].startswith("site-packages/future-")
+    assert "ctypes" not in modules
+    folder = tmp_path / "My_Script"
+    folder.mkdir()
+    (folder / "__init__.py").write_text(
+        "from future.moves.itertools import zip_longest\n"
+        "from ableton.v3.control_surface import ControlSurface, ControlSurfaceSpecification\n"
+        "from _Framework.ButtonElement import ButtonElement\n"
+        "import Live\n\n\n"
+        "class Specification(ControlSurfaceSpecification):\n    pass\n\n\n"
+        "def create_instance(c_instance):\n    return ControlSurface(specification=Specification, c_instance=c_instance)\n")
+    answer = validate_script(folder, index_dir, "12.4.16")
+    assert answer["findings"] == [] and [n["import"] for n in answer["not_checked"]] == ["import Live"]
+    (folder / "__init__.py").write_text("from ableton.v3.control_surface import NoSuchName\n")
+    rules = [f["rule"] for f in validate_script(folder, index_dir, "12.4.16")["findings"]]
+    assert rules == ["create-instance", "unresolved-import"]

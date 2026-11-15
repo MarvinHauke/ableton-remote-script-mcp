@@ -7,8 +7,7 @@ What a script is made of, without its function bodies:
 - its component map and mappings (v3): component names, the component each name builds, and
   which elements the mappings connect to which controls
 - its elements, components and layers, found in the statement summaries of its methods and
-  functions (index schema 4), the ones it inherits from other Remote Scripts and libraries
-  included
+  functions, the ones it inherits from other Remote Scripts and libraries included
 
 Roles come from a class's MRO: the first framework class along it that is one of `ROLE_ROOTS`.
 Names in statements are resolved where they are written, as `get_class` resolves bases.

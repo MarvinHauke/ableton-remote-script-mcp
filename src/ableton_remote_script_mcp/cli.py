@@ -1,4 +1,4 @@
-"""Command line: `build-index`, `list builds`, `lookup class`, `search` and `outline`."""
+"""Command line: `build-index`, `list builds`, `lookup class`, `search`, `outline` and `validate`."""
 
 from __future__ import annotations
 
@@ -9,7 +9,14 @@ from pathlib import Path
 
 from .index_store import build_index, default_index_dir, write_index
 from .live_install import default_install, find_installs, read_install
-from .query import SEARCH_KINDS, get_class, list_builds, outline_script, search
+from .query import (
+    SEARCH_KINDS,
+    get_class,
+    list_builds,
+    outline_script,
+    search,
+    validate_script,
+)
 
 
 def _cmd_build_index(args: argparse.Namespace) -> int:
@@ -268,6 +275,32 @@ def _cmd_outline(args: argparse.Namespace) -> int:
     return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
 
 
+def format_findings(answer: dict) -> str:
+    findings = answer["findings"]
+    count = f"{len(findings)} finding{'s' * (len(findings) != 1)} in {answer['files']} file{'s' * (answer['files'] != 1)}"
+    lines = [f"{answer['script']}  [Live {answer['live_build']}, {answer['confidence']}]  {count}"]
+    for f in findings:
+        where = f["file"] + (f":{f['line']}" if f["line"] else "")
+        lines += [f"  {where}: {f['severity']} [{f['rule']}] {f['message']}", f"      fix: {f['fix']}"]
+    if answer["not_checked"]:
+        lines.append(f"not checked ({len(answer['not_checked'])}):")
+        lines += [f"  {n['file']}:{n['line']}: `{n['import']}`: {n['reason']}" for n in answer["not_checked"]]
+    return "\n".join(lines)
+
+
+def _cmd_validate(args: argparse.Namespace) -> int:
+    answer = validate_script(Path(args.folder), Path(args.index_dir), args.build)
+    if args.json:
+        print(json.dumps(answer, indent=1, ensure_ascii=False))
+    elif answer["status"] == "ok":
+        print(format_findings(answer))
+    else:
+        print(answer["message"])
+    if answer["status"] == "ok":
+        return 1 if answer["findings"] else 0
+    return {"not_found": 2, "index_missing": 3}[answer["status"]]
+
+
 def _cmd_list_builds(args: argparse.Namespace) -> int:
     answer = list_builds(Path(args.index_dir), find_installs())
     if args.json:
@@ -339,6 +372,12 @@ def make_parser() -> argparse.ArgumentParser:
                     help="list every name in the v3 component map, not only those the mappings use")
     ol.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     ol.set_defaults(func=_cmd_outline)
+
+    va = sub.add_parser("validate", help="check a Remote Script folder against a Live build's API index")
+    va.add_argument("folder", help="the Remote Script's folder (its __init__.py defines create_instance)")
+    va.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
+    va.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
+    va.set_defaults(func=_cmd_validate)
     return p
 
 

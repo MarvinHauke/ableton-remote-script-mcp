@@ -90,3 +90,17 @@ ableton-remote-script-mcp outline [--build BUILD] [--all-components] [--json] sc
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
 | `--all-components` | List every name in the v3 component map, not only those the mappings use. |
 | `--json` | Print the query core's answer as JSON. |
+
+## `validate`
+
+Check a Remote Script folder against a Live build's API index.
+
+```text
+ableton-remote-script-mcp validate [--build BUILD] [--json] folder
+```
+
+| Argument | What it does |
+| --- | --- |
+| `folder` | The Remote Script's folder (its __init__.py defines create_instance). |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--json` | Print the query core's answer as JSON. |

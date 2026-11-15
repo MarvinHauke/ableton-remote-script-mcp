@@ -30,11 +30,17 @@ def statements(index, tmp_path):
 
 
 def test_index_records_build_and_source(index, fake_live_app):
-    assert index["schema"] == 4
+    assert index["schema"] == 5
     assert index["live_build"] == FAKE_BUILD
     assert index["source"]["app"] == str(fake_live_app)
     assert index["source"]["bundle_version"].startswith(FAKE_BUILD)
     assert set(index["roots"]) == {"scripts", "push3-helper"}
+
+
+def test_index_lists_the_python_modules_live_ships(index):
+    assert index["python"] == {"path": "Contents/App-Resources/Python", "modules": {
+        "functools": "lib", "json": "lib",
+        "future": "site-packages/future-0.18.3", "past": "site-packages/future-0.18.3"}}
 
 
 def test_index_covers_framework_scripts_and_push3_helper(index):

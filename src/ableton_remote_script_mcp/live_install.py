@@ -12,6 +12,9 @@ SCRIPTS_SUBPATH = Path("Contents/App-Resources/MIDI Remote Scripts")
 # Push 3 standalone's Python, inside Live's bundle: its own copies of `ableton`, `Push2` and
 # `_Generic`, plus `live_model`, a pure-Python model of the `Live` module.
 PUSH3_HELPER_SUBPATH = Path("Contents/Helpers/Push3.app/Contents/Resources/python")
+# Live's own Python: its standard library under `lib`, and the packages it ships under
+# `site-packages/<distribution>/` (e.g. `future`, `decorator`).
+PYTHON_SUBPATH = Path("Contents/App-Resources/Python")
 
 
 @dataclass(frozen=True)
@@ -27,6 +30,11 @@ class LiveInstall:
     @property
     def push3_helper_root(self) -> Path | None:
         root = self.app / PUSH3_HELPER_SUBPATH
+        return root if root.is_dir() else None
+
+    @property
+    def python_root(self) -> Path | None:
+        root = self.app / PYTHON_SUBPATH
         return root if root.is_dir() else None
 
     @property

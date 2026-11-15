@@ -27,6 +27,7 @@ from .index_store import (
 from .live_install import LiveInstall
 from .outline import find_script, outline_package
 from .resolve import Resolver, lineage
+from .validator import validate_folder
 
 BUILD_INDEX_HINT = "run `uv run ableton-remote-script-mcp build-index` (or `--app <Live.app>` for a specific build)"
 
@@ -272,3 +273,16 @@ def outline_script(name: str, index_dir: Path, live_build: str | None = None) ->
         answer["message"] = f"{name} is a framework package in Live {live_build}, not a Remote Script; look up its classes instead"
         return answer
     return {"status": "ok", "live_build": live_build, "confidence": "observed", **outline_package(index, key)}
+
+
+def validate_script(folder: Path, index_dir: Path, live_build: str | None = None) -> dict:
+    """Static findings for one Remote Script folder against one build's API index: each with a
+    file, a line, a rule, a severity, a message and a fix. See `validator.py` for the rules."""
+    folder = Path(folder).expanduser()
+    if not folder.is_dir():
+        return {"status": "not_found", "live_build": live_build, "message": f"no script folder at {folder}"}
+    index, missing = _open(index_dir, live_build)
+    if missing:
+        return missing
+    return {"status": "ok", "live_build": index["live_build"], "confidence": "observed",
+            **validate_folder(folder.resolve(), index)}

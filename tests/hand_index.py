@@ -116,6 +116,9 @@ class Index:
             "summary": {"packages": len(self.packages),
                         "scripts": sum(x["kind"] == "script" for x in self.packages.values()),
                         "modules": len(self.modules), "classes": len(self.classes), "errors": 0},
+            "python": {"path": "Contents/App-Resources/Python", "modules": {
+                "__future__": "lib", "functools": "lib", "json": "lib", "logging": "lib",
+                "future": "site-packages/future-0.18.3"}},
             "packages": self.packages, "modules": self.modules, "classes": self.classes, "errors": [],
         }
         write_index(index, index_dir)  # the statements go to their own file, as build-index writes them

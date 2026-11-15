@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5 and 5a built 2026-11-15. Frontier: step 7._
+_Stage: in work — steps 1–3, 5, 5a and 7 built 2026-11-15. Frontier: step 9._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -459,6 +459,29 @@ meant to do, and uses only API names that exist in the Live build they target.
       is resolved when the command runs, not in the parser, so `--help` and the generated
       reference show no home path.
 
+37. **Imports are checked against the Python Live ships; index schema 5** (agent, 2026-11-15,
+    step 7):
+    - **Why:** Live 12.4.16 ships its own Python (`Contents/App-Resources/Python`): a standard
+      library in `lib`, with some modules left out (`ctypes`), and extra packages under
+      `site-packages/<distribution>/` (`future`, `past`, `decorator`, `raven`). Checking
+      imports against the standard library of the Python the tool runs with would accept
+      modules Live lacks and reject `future`, which older scripts import. A trial run over the
+      decompiled 12.0-era scripts in `reference/` (local only) showed both.
+    - **Schema 5** adds `python`: the top-level module names of Live's Python, each with the
+      folder it is in (`observed`). Nothing else changes; older indexes answer "rebuild".
+    - **An import resolves** to the script's own modules, the Remote Scripts folder, or Live's
+      Python. Python's standard library modules with no file in Live are split by the Python the
+      tool runs with: compiled into it (`sys`, `itertools`) is accepted; a C extension module
+      (`math` in some builds) is listed as *not checked*; a pure-Python module (`ctypes`) is a
+      finding, since Live would need its file. `Live` and `MidiRemoteScript` come from Live's
+      C++ code and are listed as not checked. An import inside a `try` that handles `ImportError`
+      is optional. Below a top-level module of Live's Python, names are not checked. An index of a
+      bundle with no Python folder records `python.modules` as null; then the whole standard
+      library is listed as not checked rather than reported.
+    - **Findings** carry a `severity` (`error` for every basic check; step 8's warnings use
+      `warning`). `validate` exits 0 with no findings, 1 with findings, 2 when the folder is
+      missing and 3 when the index is.
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -593,6 +616,14 @@ Every step's checks include `uv run pytest` passing.
      - syntax errors (as findings, never a crash)
    - **Checks:** our own good and bad sample scripts, one per rule; a clean `_Framework` sample
      gives no findings.
+   - **Built 2026-11-15.** `validate <folder>` (`--build`, `--json`), with the rules
+     `folder-name`, `syntax-error` (parsed as Python 3.11), `create-instance` (exists and takes
+     `c_instance`) and `unresolved-import` (also names missing from the imported module, and the
+     relative form for a Python 2 implicit relative import), plus a `not_checked` list
+     (Decision 37, index schema 5). Seam B: clean v3 and `_Framework` samples and a bad sample
+     per rule over the hand-written index; Seam A: the fake bundle's Python. Local-only: a clean
+     sample against 12.4.16 has no findings. Docs: How it works, Getting started and Known
+     limits describe it.
 8. **Validator: framework checks**
    - **Blocked by:** 7
    - **Delivers:** checks for:

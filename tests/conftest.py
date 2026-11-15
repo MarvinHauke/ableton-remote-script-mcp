@@ -7,6 +7,7 @@ import pytest
 FIXTURES = Path(__file__).parent / "fixtures"
 FAKE_SCRIPTS = FIXTURES / "fake_scripts"
 FAKE_PUSH3_HELPER = FIXTURES / "fake_push3_helper"
+FAKE_PYTHON = FIXTURES / "fake_python"
 FAKE_BUILD = "12.4.99"
 
 
@@ -21,13 +22,20 @@ def fake_live_app(tmp_path: Path) -> Path:
     """A fake Live bundle: our own sources compiled to .pyc, laid out like Live's.
 
     The Remote Scripts folder gets a fake framework, Remote Scripts, a library and one corrupt file; the
-    Push 3 helper gets its own `ableton` copy and a fake `live_model`.
+    Push 3 helper gets its own `ableton` copy and a fake `live_model`; Live's Python gets a small
+    standard library and one distribution in `site-packages`.
     """
     app = tmp_path / "Ableton Live 12 Fake.app"
     contents = app / "Contents"
     scripts = contents / "App-Resources" / "MIDI Remote Scripts"
     _compile_tree(FAKE_SCRIPTS, scripts)
     _compile_tree(FAKE_PUSH3_HELPER, contents / "Helpers" / "Push3.app" / "Contents" / "Resources" / "python")
+    python = contents / "App-Resources" / "Python"
+    _compile_tree(FAKE_PYTHON, python)
+    (python / "lib" / "__pycache__").mkdir()
+    (python / "lib" / "site-packages").mkdir()
+    (python / "lib" / "site-packages" / "README.txt").write_text("fixture")
+    (python / "site-packages" / "future-0.18.3" / "future-0.18.3.dist-info").mkdir()
     (scripts / "_Framework" / "Broken.pyc").write_bytes(b"\x00\x01not a pyc")
     (scripts / "Fake_Mk2" / "__pycache__").mkdir()
     (scripts / "Fake_Mk2" / "__pycache__" / "stale.cpython-311.pyc").write_bytes(b"skipped")

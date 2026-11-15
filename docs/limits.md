@@ -14,6 +14,11 @@
     - Elements made by helper functions are followed three calls deep.
     - Scripts that build their controls from tables of data, that send raw MIDI themselves, or
       that build their Specification in a function show few or no elements.
+- **The validator checks the basics only.** It checks folder names, syntax, `create_instance` and
+  imports. Below the top level of one of Live's Python modules (`xml.etree`), names aren't
+  checked, and whether a C module of Python's standard library is built into Live can't be seen.
+  Whether a standard library module counts as built in or as such a C module depends on the
+  Python you run the tool with; that only changes what is listed as not checked.
 - **The `Live` module is seen through a model.** Live's C++ objects are not in the compiled
   files; the index uses the Push 3 helper's pure-Python model of them, which mirrors the Live
   Object Model but is not Live itself.

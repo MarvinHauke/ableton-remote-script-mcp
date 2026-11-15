@@ -13,7 +13,8 @@ The project has three parts. Today the first one works:
 
 - **API index.** One command reads the Remote Script framework from your installed Live and
   records its modules, classes, members and signatures, separately for each Live build. You look
-  classes up, search them, and outline how one of Live's own scripts is put together.
+  classes up, search them, outline how one of Live's own scripts is put together, and check your
+  own script folder against a build before you load it in Live.
 - **Skill.** Guidance that walks a coding agent through writing a script from those facts. Not
   built yet.
 - **MCP server.** The same lookups as tools an agent can call. Not built yet.

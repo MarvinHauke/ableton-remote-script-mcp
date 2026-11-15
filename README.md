@@ -15,10 +15,13 @@ uv run ableton-remote-script-mcp lookup class ControlSurfaceSpecification   # MR
 uv run ableton-remote-script-mcp lookup class ableton.v3.control_surface.Component  # re-exported names work too
 uv run ableton-remote-script-mcp search session ring                          # by name or words; --kind, --build
 uv run ableton-remote-script-mcp outline APC_mini_mk2   # a script's classes, Specification, component map, mappings, elements
+uv run ableton-remote-script-mcp validate path/to/My_Script --build 12.4.16   # findings: file, line, rule, message, fix
 ```
 
 `build-index` writes two files: the API index (names and signatures) and the statement summaries
 of function bodies that only `outline` reads. `--no-statements` leaves the second one out.
+`validate` checks a script folder's syntax, `create_instance` and imports against that build,
+including the Python modules Live ships.
 
 Every answer names the Live build and the fact's confidence (`observed` = present in that build's
 index).

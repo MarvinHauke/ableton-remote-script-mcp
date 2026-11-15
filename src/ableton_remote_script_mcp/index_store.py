@@ -1,12 +1,13 @@
 """The API index on disk: one JSON document per Live build (plan 0001, Decision 22).
 
-Schema 4 (plan 0001 step 5; schema 3 had no `statements`, schema 2 no `star_imports`). Keys of `packages`, `modules` and
+Schema 5 (plan 0001 step 7; schema 4 had no `python`, schema 3 no `statements`, schema 2 no
+`star_imports`). Keys of `packages`, `modules` and
 `classes` are qualified names; facts from the Push 3 helper's own Python carry the prefix
 `push3-helper:`, because it ships its own, different copies of packages such as `ableton` and
 `Push2`. Names are resolved to the class that defines them at query time (query core).
 
     {
-      "schema": 4,
+      "schema": 5,
       "live_build": "12.4.16",
       "source": {"kind": "installed-app", "app": "...", "bundle_version": "..."},
       "extractor": {"tool_version": "...", "python": "3.11.12"},
@@ -14,6 +15,8 @@ Schema 4 (plan 0001 step 5; schema 3 had no `statements`, schema 2 no `star_impo
       "roots": {"scripts": {"path": "Contents/App-Resources/MIDI Remote Scripts"},
                 "push3-helper": {"path": "Contents/Helpers/Push3.app/Contents/Resources/python"}},
       "summary": {"packages": n, "scripts": n, "modules": n, "classes": n, "errors": n},
+      "python": {"path": "Contents/App-Resources/Python",
+                 "modules": {"json": "lib", "future": "site-packages/future-0.18.3", ...}},
       "packages": {"APC_mini": {"name", "root", "kind": "framework" | "script" | "library",
                    "framework": "_Framework" | "ableton.v2" | "ableton.v3" | null,
                    "framework_imports": {"_Framework": 12}, "uses": ["_APC"],
@@ -40,7 +43,7 @@ of function bodies (Decision 35), which only the outline reads, are a second doc
 `live-<build>.statements.json`, so they can be left out (`build-index --no-statements`) or deleted
 without touching anything else:
 
-    {"schema": 4, "live_build": "12.4.16", "index_created": "<the index's created>",
+    {"schema": 5, "live_build": "12.4.16", "index_created": "<the index's created>",
      "classes": {"<class key>": {"<member>": [<statement>, ...]}},
      "modules": {"<module key>": {"<function>": [<statement>, ...]}}}
 
@@ -51,6 +54,11 @@ or "return"; "inside": the comprehension or nested function it is made in), and 
 "store", "value", "inside"?, "under"?} for a value stored into an attribute or a subscript.
 "under" lists what the statement runs under, outermost first: "if <test>", "for … in <iterable>",
 "on an exception", "except <type>".
+
+`python` lists the top-level modules of the Python that Live ships, each with the folder it is
+in: what a Remote Script can import besides the Remote Scripts folder; `null` when the bundle has
+no Python folder. Python's C modules that
+are built into Live's binary have no file, so they are not listed.
 
 Everything under `live_model` (Push 3 helper) is a pure-Python proxy of the `Live` module,
 not Live itself: it carries "proxy_model": true, and its classes under `live_model.Live` name
@@ -78,12 +86,13 @@ from .extractor import (
 )
 from .live_install import (
     PUSH3_HELPER_SUBPATH,
+    PYTHON_SUBPATH,
     SCRIPTS_SUBPATH,
     LiveInstall,
     build_sort_key,
 )
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 INDEX_DIR_ENV = "ABLETON_REMOTE_SCRIPT_INDEX"
 SCRIPTS_ROOT = "scripts"
 PUSH3_HELPER_ROOT = "push3-helper"
@@ -187,6 +196,28 @@ def _packages(mods: list[ModuleFacts], root: str, build: str, source_prefix: str
     return out
 
 
+def python_modules(python_root: Path) -> dict[str, str]:
+    """Top-level module names of Live's Python, each with the folder it is in (relative to the root)."""
+    folders = [python_root / "lib", python_root / "lib" / "site-packages"]
+    site = python_root / "site-packages"
+    if site.is_dir():
+        folders += sorted(p for p in site.iterdir() if p.is_dir())
+    out: dict[str, str] = {}
+    for folder in folders:
+        if not folder.is_dir():
+            continue
+        for entry in sorted(folder.iterdir()):
+            if entry.name.startswith(".") or entry.name == "__pycache__" or entry.name.endswith(".dist-info"):
+                continue
+            if entry.is_dir():
+                name = entry.name if entry.name.isidentifier() and entry.name != "site-packages" else None
+            else:
+                name = entry.name.split(".")[0] if entry.suffix in (".pyc", ".py", ".so") else None
+            if name and name.isidentifier():
+                out.setdefault(name, folder.relative_to(python_root).as_posix())
+    return dict(sorted(out.items()))
+
+
 def _members(members: dict) -> dict:
     return {name: m.as_dict() for name, m in members.items()}
 
@@ -254,6 +285,7 @@ def build_index(install: LiveInstall) -> dict:
                     if mod.name.startswith(PROXY_PACKAGE + ".Live."):
                         fact["proxy_of"] = f"{mod.name[len(PROXY_PACKAGE) + 1 :]}.{c.qualname}"
                 classes[fact_key(root, f"{mod.name}.{c.qualname}")] = fact
+    python = install.python_root
     return {
         "schema": SCHEMA_VERSION,
         "live_build": build,
@@ -268,6 +300,7 @@ def build_index(install: LiveInstall) -> dict:
             "classes": len(classes),
             "errors": len(errors),
         },
+        "python": {"path": str(PYTHON_SUBPATH), "modules": python_modules(python) if python else None},
         "packages": packages,
         "modules": dict(sorted(modules.items())),
         "classes": dict(sorted(classes.items())),

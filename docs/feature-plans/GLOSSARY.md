@@ -108,6 +108,10 @@ and the values it stores into attributes and subscripts, each with the condition
 exception handlers it runs under. It does not execute anything, so whether a conditional call runs
 is decided only where a script's own class attributes settle it.
 
+**Finding**:
+A problem the validator reports in a script: the file and line, the rule it breaks, what is
+wrong and how to fix it.
+
 **Origin**:
 For a member a class has, the class along its MRO that defines it: the class itself or the base
 it inherits the member from. A member that hides one of the same name further along the MRO

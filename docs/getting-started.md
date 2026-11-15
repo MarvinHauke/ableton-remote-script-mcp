@@ -37,7 +37,8 @@ uv run ableton-remote-script-mcp list builds
 ```
 
 It lists every indexed build and every installed Live that has no index yet. When you update
-Live, run `build-index` again: each build gets its own index, and an old one is kept.
+Live, run `build-index` again: each build gets its own index, and an old one is kept. When a new
+version of this tool changes what the index holds, it asks you to rebuild.
 
 ## Look things up
 
@@ -54,6 +55,26 @@ uv run ableton-remote-script-mcp outline APC_mini_mk2
 
 Add `--build 12.4.16` to ask a particular build, and `--json` to get the answer as JSON. The
 [CLI reference](reference/cli.md) lists every option.
+
+## Check your script
+
+Before you load a script in Live, check its folder against the build you target:
+
+```sh
+uv run ableton-remote-script-mcp validate ~/"Music/Ableton/User Library/Remote Scripts/My_Script" --build 12.4.16
+```
+
+Each finding names the file and line, the rule, what is wrong and how to fix it. For a script
+whose `surface.py` imports `numpy`:
+
+```text
+My_Script  [Live 12.4.16, observed]  1 finding in 2 files
+  surface.py:1: error [unresolved-import] `import numpy`: numpy is neither in Live 12.4.16's Remote Scripts folder nor in the Python that Live ships
+      fix: use a module Live ships, or put the code inside the script's folder
+```
+
+The command exits with 0 when there are no findings and 1 when there are. [How it
+works](how-it-works.md#checking-a-script) lists the rules.
 
 ## Where the index lives
 
