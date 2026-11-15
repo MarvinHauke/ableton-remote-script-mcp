@@ -1,12 +1,12 @@
 """The API index on disk: one JSON document per Live build (plan 0001, Decision 22).
 
-Schema 3 (plan 0001 step 3; schema 2 had no `star_imports`). Keys of `packages`, `modules` and
+Schema 4 (plan 0001 step 5; schema 3 had no `statements`, schema 2 no `star_imports`). Keys of `packages`, `modules` and
 `classes` are qualified names; facts from the Push 3 helper's own Python carry the prefix
 `push3-helper:`, because it ships its own, different copies of packages such as `ableton` and
 `Push2`. Names are resolved to the class that defines them at query time (query core).
 
     {
-      "schema": 3,
+      "schema": 4,
       "live_build": "12.4.16",
       "source": {"kind": "installed-app", "app": "...", "bundle_version": "..."},
       "extractor": {"tool_version": "...", "python": "3.11.12"},
@@ -35,6 +35,23 @@ A member is {"kind": "method" | "property" | "classmethod" | "staticmethod" | "f
 "setter" (properties), "value" and "value_literal" (attributes), "docstring"}. Defaults and
 values are source-like text; "…" marks an expression the extractor does not model.
 
+The API index holds names and signatures only (plan 0001 user story 14). The statement summaries
+of function bodies (Decision 35), which only the outline reads, are a second document next to it,
+`live-<build>.statements.json`, so they can be left out (`build-index --no-statements`) or deleted
+without touching anything else:
+
+    {"schema": 4, "live_build": "12.4.16", "index_created": "<the index's created>",
+     "classes": {"<class key>": {"<member>": [<statement>, ...]}},
+     "modules": {"<module key>": {"<function>": [<statement>, ...]}}}
+
+A function's statements summarise its body, in bytecode order:
+{"line", "call", "args", "kwargs", "target"?, "inside"?, "under"?} for a call whose result is
+not used inside another expression ("target": the name, attribute or subscript it is stored in,
+or "return"; "inside": the comprehension or nested function it is made in), and {"line",
+"store", "value", "inside"?, "under"?} for a value stored into an attribute or a subscript.
+"under" lists what the statement runs under, outermost first: "if <test>", "for … in <iterable>",
+"on an exception", "except <type>".
+
 Everything under `live_model` (Push 3 helper) is a pure-Python proxy of the `Live` module,
 not Live itself: it carries "proxy_model": true, and its classes under `live_model.Live` name
 the class they model in "proxy_of" (e.g. "Live.Song.Song").
@@ -51,10 +68,22 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import __version__
-from .extractor import FRAMEWORK_PACKAGES, ModuleFacts, UnreadablePyc, iter_pyc, read_module, resolve_base
-from .live_install import PUSH3_HELPER_SUBPATH, SCRIPTS_SUBPATH, LiveInstall, build_sort_key
+from .extractor import (
+    FRAMEWORK_PACKAGES,
+    ModuleFacts,
+    UnreadablePyc,
+    iter_pyc,
+    read_module,
+    resolve_base,
+)
+from .live_install import (
+    PUSH3_HELPER_SUBPATH,
+    SCRIPTS_SUBPATH,
+    LiveInstall,
+    build_sort_key,
+)
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 INDEX_DIR_ENV = "ABLETON_REMOTE_SCRIPT_INDEX"
 SCRIPTS_ROOT = "scripts"
 PUSH3_HELPER_ROOT = "push3-helper"
@@ -71,6 +100,13 @@ def default_index_dir() -> Path:
 
 def index_path(index_dir: Path, live_build: str) -> Path:
     return index_dir / f"live-{live_build}.json"
+
+
+STATEMENTS_SUFFIX = ".statements.json"
+
+
+def statements_path(index_dir: Path, live_build: str) -> Path:
+    return index_dir / f"live-{live_build}{STATEMENTS_SUFFIX}"
 
 
 def fact_key(root: str, name: str) -> str:
@@ -239,22 +275,70 @@ def build_index(install: LiveInstall) -> dict:
     }
 
 
-def write_index(index: dict, index_dir: Path) -> Path:
-    index_dir.mkdir(parents=True, exist_ok=True)
-    path = index_path(index_dir, index["live_build"])
-    tmp = path.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(index, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+def split_statements(index: dict) -> dict:
+    """Move every member's "statements" out of the index into the statements document."""
+    doc: dict = {"schema": index["schema"], "live_build": index["live_build"], "index_created": index["created"],
+                 "classes": {}, "modules": {}}
+    for part in ("classes", "modules"):
+        for key, fact in index[part].items():
+            for name, member in fact["members"].items():
+                statements = member.pop("statements", None)
+                if statements:
+                    doc[part].setdefault(key, {})[name] = statements
+    return doc
+
+
+def _write_json(doc: dict, path: Path) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(doc, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     tmp.replace(path)
-    return path
+
+
+def write_index(index: dict, index_dir: Path, with_statements: bool = True) -> tuple[Path, Path | None]:
+    """Write the API index and, unless left out, its statement summaries. A rebuild replaces
+    both; without statements, an older statements file of that build is removed."""
+    index_dir.mkdir(parents=True, exist_ok=True)
+    statements = split_statements(index)
+    path = index_path(index_dir, index["live_build"])
+    spath = statements_path(index_dir, index["live_build"])
+    _write_json(index, path)
+    if with_statements:
+        _write_json(statements, spath)
+        return path, spath
+    spath.unlink(missing_ok=True)
+    return path, None
 
 
 def indexed_builds(index_dir: Path) -> list[str]:
     """Builds with an index on disk, newest first."""
     if not index_dir.is_dir():
         return []
-    builds = [p.name[len("live-") : -len(".json")] for p in index_dir.glob("live-*.json")]
+    builds = [p.name[len("live-") : -len(".json")] for p in index_dir.glob("live-*.json")
+              if not p.name.endswith(STATEMENTS_SUFFIX)]
     return sorted(builds, key=build_sort_key, reverse=True)
 
 
 def load_index(index_dir: Path, live_build: str) -> dict:
     return json.loads(index_path(index_dir, live_build).read_text(encoding="utf-8"))
+
+
+def load_statements(index_dir: Path, index: dict) -> dict | None:
+    """The statement summaries written with this index, or None (missing, unreadable, or from
+    another build run)."""
+    try:
+        doc = json.loads(statements_path(index_dir, index["live_build"]).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if doc.get("schema") != index.get("schema") or doc.get("index_created") != index.get("created"):
+        return None
+    return doc
+
+
+def attach_statements(index: dict, doc: dict) -> None:
+    """Put the statement summaries back on the members of a loaded index (in memory only)."""
+    for part in ("classes", "modules"):
+        for key, members in doc[part].items():
+            fact = index[part].get(key)
+            for name, statements in members.items():
+                if fact and name in fact["members"]:
+                    fact["members"][name]["statements"] = statements

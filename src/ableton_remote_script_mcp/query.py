@@ -15,13 +15,17 @@ from .index_store import (
     PUSH3_HELPER_ROOT,
     SCHEMA_VERSION,
     SCRIPTS_ROOT,
+    attach_statements,
     fact_key,
     generation,
     index_path,
     indexed_builds,
     load_index,
+    load_statements,
+    statements_path,
 )
 from .live_install import LiveInstall
+from .outline import find_script, outline_package
 from .resolve import Resolver, lineage
 
 BUILD_INDEX_HINT = "run `uv run ableton-remote-script-mcp build-index` (or `--app <Live.app>` for a specific build)"
@@ -221,6 +225,7 @@ def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> d
             builds.append(entry)
             continue
         entry.update(
+            statements=load_statements(index_dir, index) is not None,
             created=index.get("created"),
             app=index.get("source", {}).get("app"),
             bundle_version=index.get("source", {}).get("bundle_version"),
@@ -242,3 +247,28 @@ def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> d
         answer["installed_not_indexed"] = not_indexed
         return answer
     return {"status": "ok", "builds": builds, "installed_not_indexed": not_indexed}
+
+
+def outline_script(name: str, index_dir: Path, live_build: str | None = None) -> dict:
+    """The outline of one Remote Script (or library): its classes with their roles and own
+    members, the Specification fields it sets, its component map and mappings (v3), and the
+    elements, components and layers its code creates, without function bodies.
+    See `outline.py` for how each part is found."""
+    index, missing = _open(index_dir, live_build)
+    if missing:
+        return missing
+    live_build = index["live_build"]
+    statements = load_statements(index_dir, index)
+    if statements is None:
+        return _index_missing(index_dir, live_build,
+                              f"no statement summaries for Live {live_build} at {statements_path(index_dir, live_build)}"
+                              " (an outline needs them; build-index writes them unless --no-statements)")
+    attach_statements(index, statements)
+    key = find_script(index, name)
+    if key is None:
+        return _not_found(live_build, f"Remote Script {name!r}")
+    if index["packages"][key]["kind"] == "framework":
+        answer = _not_found(live_build, f"Remote Script {name!r}")
+        answer["message"] = f"{name} is a framework package in Live {live_build}, not a Remote Script; look up its classes instead"
+        return answer
+    return {"status": "ok", "live_build": live_build, "confidence": "observed", **outline_package(index, key)}

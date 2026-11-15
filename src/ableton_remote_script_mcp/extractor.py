@@ -3,8 +3,12 @@
 Code objects are loaded with marshal under CPython 3.11, never decompiled or executed.
 Module and class bodies are read by simulating their stack symbolically: each STORE_NAME
 becomes a binding (a class, a function, or an attribute with its value as source-like text).
-Function bodies are not run; a function's parameters come from its code object and its
-defaults from the MAKE_FUNCTION that created it.
+A function's parameters come from its code object and its defaults from the MAKE_FUNCTION
+that created it. Its body is simulated the same way, once, for a summary of its statements
+(plan 0001 step 5): the calls whose results are not used inside another expression, with the
+name or attribute their result is stored in, and the values stored into attributes and
+subscripts. Control flow is not followed: the summary is in bytecode order and says nothing
+about branches or loops.
 """
 
 from __future__ import annotations
@@ -159,6 +163,14 @@ class _Expr(_Value):
 UNKNOWN = _Expr("…")  # an expression the simulator doesn't model
 
 
+class _Op(_Expr):
+    """A binary operation; parenthesised when it is an operand of another one."""
+
+
+def _operand(v) -> str:
+    return f"({v.text()})" if isinstance(v, _Op) else _text(v)
+
+
 @dataclass
 class _Seq(_Value):
     kind: str  # "tuple", "list", "set"
@@ -193,11 +205,21 @@ class _Map(_Value):
 class _Call(_Value):
     callee: str
     args: list
-    kwargs: list  # [(name, value)]
+    kwargs: list  # [(name, value)]; name "**" for a `**mapping` argument
+    line: int = 0
+    target: str | None = None  # where the result is stored: a name, `self.x`, `m['k']`, "return"
+    inside: str | None = None  # the nested function or comprehension the call is made in
+    under: list = field(default_factory=list)  # the branches, loops and handlers it is made in
+    nested: bool = False  # the result is used inside another expression
 
     def text(self) -> str:
-        parts = [_text(a) for a in self.args] + [f"{k}={_text(v)}" for k, v in self.kwargs]
+        parts = [_text(a) for a in self.args]
+        parts += [f"**{_text(v)}" if k == "**" else f"{k}={_text(v)}" for k, v in self.kwargs]
         return f"{self.callee}({', '.join(parts)})"
+
+
+_COMPREHENSIONS = {"<listcomp>": ("[", "]"), "<setcomp>": ("{", "}"), "<dictcomp>": ("{", "}"),
+                   "<genexpr>": ("(", ")")}
 
 
 @dataclass
@@ -287,6 +309,7 @@ class Member:
     value: str | None = None  # attributes only: source-like text of the value
     value_literal: bool = False
     setter: bool = False  # properties: a `@<name>.setter` follows
+    statements: list[dict] | None = None  # functions only: see `_statement`
 
     def as_dict(self) -> dict:
         d: dict = {"kind": self.kind, "line": self.line}
@@ -301,6 +324,8 @@ class Member:
             d["value_literal"] = self.value_literal
         if self.docstring:
             d["docstring"] = self.docstring
+        if self.statements:
+            d["statements"] = self.statements
         return d
 
 
@@ -329,6 +354,27 @@ class _Binding:
 class _Body:
     bindings: list[_Binding]
     classes: list[ClassFact]  # every class built in this body, in order
+    statements: list = field(default_factory=list)  # function bodies: _Call or _Store, in order
+
+
+@dataclass
+class _Store:
+    target: str
+    value: object
+    line: int
+    inside: str | None = None
+    under: list = field(default_factory=list)
+
+
+def _mark_nested(*values) -> None:
+    for v in values:
+        if isinstance(v, _Call):
+            v.nested = True
+        elif isinstance(v, _Seq):
+            _mark_nested(*v.items)
+        elif isinstance(v, _Map):
+            for k, x in v.pairs:
+                _mark_nested(k, x)
 
 
 def _function_params(f: _Func) -> list[Param]:
@@ -360,6 +406,57 @@ def _function_params(f: _Func) -> list[Param]:
     return params
 
 
+def _statement(st) -> dict:
+    """A call: {"line", "call", "args", "kwargs", "target"?, "inside"?, "under"?}; a store into an
+    attribute or a subscript: {"line", "store", "value", "inside"?, "under"?}. Texts are
+    source-like. "under" lists, outermost first, what the statement runs under: "if <test>",
+    "for … in <iterable>", "on an exception", "except <type>"."""
+    if isinstance(st, _Call):
+        d: dict = {"line": st.line, "call": st.callee, "args": [_cut(_text(a)) for a in st.args],
+                   "kwargs": {k: _cut(_text(v)) for k, v in st.kwargs}}
+        if st.target:
+            d["target"] = st.target
+    else:
+        d = {"line": st.line, "store": st.target, "value": _cut(_text(st.value))}
+    if st.inside:
+        d["inside"] = st.inside
+    if st.under:
+        d["under"] = list(st.under)
+    return d
+
+
+def _negate(test: str) -> str:
+    if test.startswith("not ") and " or " not in test and " and " not in test:
+        return test[len("not "):]
+    if test.endswith(" is None"):
+        return test[: -len(" is None")] + " is not None"
+    if test.endswith(" is not None"):
+        return test[: -len(" is not None")] + " is None"
+    return f"not {test}" if test.replace(".", "").replace("_", "").isalnum() else f"not ({test})"
+
+
+def _handler_regions(code: types.CodeType, instructions: list) -> list[list]:
+    """Exception handlers: [start, end, "on an exception"]. A `with` block's cleanup is not one."""
+    at = {ins.offset: i for i, ins in enumerate(instructions)}
+    regions = []
+    for entry in dis.Bytecode(code).exception_entries:
+        i = at.get(entry.target)
+        if i is None or instructions[i].opname != "PUSH_EXC_INFO":
+            continue
+        if i + 1 < len(instructions) and instructions[i + 1].opname == "WITH_EXCEPT_START":
+            continue
+        before = instructions[i - 1] if i else None
+        end = before.argval if before is not None and before.opname == "JUMP_FORWARD" else instructions[-1].offset + 2
+        if not any(r[0] == entry.target for r in regions):
+            regions.append([entry.target, end, "on an exception"])
+    return regions
+
+
+def function_statements(code: types.CodeType) -> list[dict]:
+    """The summary of a function body: its calls and its stores into attributes and subscripts."""
+    return [_statement(st) for st in _run_body(code, function=True).statements]
+
+
 def _function_docstring(code: types.CodeType) -> str | None:
     # 3.11 puts a function's docstring (or None) first in co_consts; lambdas get None.
     first = code.co_consts[0] if code.co_consts else None
@@ -376,24 +473,74 @@ _JUMPS = {
 }
 
 
-def _run_body(code: types.CodeType) -> _Body:
-    """Simulate a module or class body. Unmodelled instructions turn values into UNKNOWN."""
+def _run_body(code: types.CodeType, function: bool = False) -> _Body:
+    """Simulate a module, class or function body. Unmodelled instructions turn values into UNKNOWN.
+
+    For a function body (`function=True`) the result's `statements` hold its calls and stores,
+    including those of the functions and comprehensions defined inside it.
+    """
     stack: list = []
     bindings: list[_Binding] = []
     classes: list[ClassFact] = []
+    statements: list = []
     kw_names: tuple = ()
     line = code.co_firstlineno
 
     def pop():
         return stack.pop() if stack else UNKNOWN
 
+    instructions = list(dis.get_instructions(code))
+    # Regions of the body that run only sometimes: [start offset, end offset, label]
+    regions: list[list] = _handler_regions(code, instructions) if function else []
+    offset = 0
+    pending_or: list = []  # `a or b`: a POP_JUMP_IF_TRUE into the body that follows: [target, test]
+
+    def under() -> list:
+        return [label for start, end, label in regions if start <= offset < end]
+
+    def store(target: str, value) -> None:
+        if not function:
+            return
+        if isinstance(value, _Call) and not value.nested and value.target is None:
+            value.target = target
+        elif not isinstance(value, _Call):
+            statements.append(_Store(target, value, line, under=under()))
+
+    def call(callee, positional: list, keywords: list) -> _Call:
+        _mark_nested(callee, *positional, *(v for _, v in keywords))
+        c = _Call(_text(callee), positional, keywords, line, under=under())
+        if function and isinstance(callee, (_Expr, _Call)) and callee is not UNKNOWN:
+            statements.append(c)
+        return c
+
+    def branch(ins, test) -> None:
+        """A forward conditional jump: what follows, up to the target, runs only if the test holds."""
+        if not function or ins.argval <= ins.offset:
+            return
+        text = _text(test)
+        if ins.opname.endswith("IF_TRUE") or ins.opname.endswith("TRUE_OR_POP"):
+            text = _negate(text)
+        elif ins.opname.endswith("IF_NONE"):
+            text = f"{text} is not None"
+        elif ins.opname.endswith("IF_NOT_NONE"):
+            text = f"{text} is None"
+        for p in list(pending_or):  # `if a or b:` jumps into the body on a, then tests b
+            if ins.offset < p[0] <= ins.argval:
+                text = f"{_negate(p[1])} or {text}"
+                pending_or.remove(p)
+        if ins.opname.endswith("IF_TRUE"):
+            pending_or.append([ins.argval, text])
+        label = text if text.startswith("except ") else f"if {text}"
+        regions.append([ins.offset + 2, ins.argval, label])
+
     def pop_n(n: int) -> list:
         items = [pop() for _ in range(n)]
         items.reverse()
         return items
 
-    for ins in dis.get_instructions(code):
+    for ins in instructions:
         op = ins.opname
+        offset = ins.offset
         if ins.positions and ins.positions.lineno:
             line = ins.positions.lineno
         if op in _NOOPS:
@@ -401,7 +548,9 @@ def _run_body(code: types.CodeType) -> _Body:
         if op in ("LOAD_NAME", "LOAD_GLOBAL", "LOAD_DEREF", "LOAD_FAST", "LOAD_CLASSDEREF"):
             stack.append(_Expr(ins.argval))
         elif op in ("LOAD_ATTR", "LOAD_METHOD"):
-            stack.append(_Expr(f"{_text(pop())}.{ins.argval}"))
+            owner = pop()
+            _mark_nested(owner)
+            stack.append(_Expr(f"{_text(owner)}.{ins.argval}"))
         elif op == "LOAD_CONST":
             stack.append(ins.argval if isinstance(ins.argval, types.CodeType) else _Lit(ins.argval))
         elif op == "LOAD_CLOSURE":
@@ -409,31 +558,46 @@ def _run_body(code: types.CodeType) -> _Body:
         elif op == "LOAD_BUILD_CLASS":
             stack.append(_BUILD_CLASS)
         elif op in ("BUILD_TUPLE", "BUILD_LIST", "BUILD_SET"):
-            stack.append(_Seq(op[len("BUILD_") :].lower(), pop_n(ins.arg)))
+            items = pop_n(ins.arg)
+            _mark_nested(*items)
+            stack.append(_Seq(op[len("BUILD_") :].lower(), items))
         elif op == "BUILD_MAP":
             flat = pop_n(2 * ins.arg)
+            _mark_nested(*flat)
             stack.append(_Map(list(zip(flat[::2], flat[1::2]))))
         elif op == "BUILD_CONST_KEY_MAP":
             keys = _items(pop())
             values = pop_n(ins.arg)
+            _mark_nested(*values)
             stack.append(_Map(list(zip(keys, values))))
         elif op in ("LIST_EXTEND", "SET_UPDATE"):
             extra = pop()
+            _mark_nested(extra)
             target = stack[-1] if stack else None
             if isinstance(target, _Seq):
                 if isinstance(extra, _Lit) and isinstance(extra.value, (tuple, list, frozenset, set)):
                     target.items.extend(_Lit(x) for x in extra.value)
                 else:
                     target.items.append(_Expr(f"*{_text(extra)}"))
+        elif op in ("DICT_MERGE", "DICT_UPDATE"):  # f(**k) builds {} then merges k into it
+            extra = pop()
+            _mark_nested(extra)
+            if stack:
+                top = stack[-1]
+                stack[-1] = extra if isinstance(top, _Map) and not top.pairs else UNKNOWN
         elif op == "LIST_TO_TUPLE":
             top = pop()
             stack.append(_Seq("tuple", top.items) if isinstance(top, _Seq) else UNKNOWN)
         elif op == "BINARY_OP":  # a | b, X + 1
-            right = pop()
-            stack.append(_Expr(f"{_text(pop())} {ins.argrepr.rstrip('=')} {_text(right)}"))
+            right, left = pop(), pop()
+            _mark_nested(left, right)
+            stack.append(_Op(f"{_operand(left)} {ins.argrepr.rstrip('=')} {_operand(right)}"))
         elif op == "BINARY_SUBSCR":  # Generic[T]
-            index = pop()
-            stack.append(_Expr(f"{_text(pop())}[{_text(index)}]"))
+            index, owner = pop(), pop()
+            _mark_nested(owner, index)
+            stack.append(_Expr(f"{_text(owner)}[{_text(index)}]"))
+        elif op == "GET_ITER":  # `for x in v`, a comprehension's iterable: keep the iterable's text
+            pass
         elif op == "MAKE_FUNCTION":
             body = pop()
             flags = ins.arg or 0
@@ -449,11 +613,25 @@ def _run_body(code: types.CodeType) -> _Body:
                         kwdefaults={_text(k).strip("'\""): v for k, v in _pairs(kwdefaults)},
                     )
                 )
+                if function:  # what a nested function or comprehension does is part of this body
+                    outer = under()
+                    for st in _run_body(body, function=True).statements:
+                        st.inside = st.inside or body.co_name
+                        st.under = outer + st.under
+                        statements.append(st)
             else:
                 stack.append(UNKNOWN)
         elif op == "KW_NAMES":
             kw = ins.argval if isinstance(ins.argval, tuple) else code.co_consts[ins.arg]
             kw_names = kw if isinstance(kw, tuple) else ()
+        elif op == "CALL" and ins.arg == 0 and len(stack) >= 2 and isinstance(stack[-2], _Func) and (
+            stack[-2].code.co_name in _COMPREHENSIONS
+        ):  # a comprehension: its function, called on the iterable
+            iterable, func = pop(), pop()
+            _mark_nested(iterable)
+            kw_names = ()
+            opening, closing = _COMPREHENSIONS[func.code.co_name]
+            stack.append(_Expr(f"{opening}… for … in {_text(iterable)}{closing}"))
         elif op == "CALL":
             args = pop_n(ins.arg)
             callee = pop()
@@ -475,7 +653,7 @@ def _run_body(code: types.CodeType) -> _Body:
                 target.insert(0, _text(decorator))
                 stack.append(callee)
             else:
-                stack.append(_Call(_text(callee), positional, keywords))
+                stack.append(call(callee, positional, keywords))
         elif op == "CALL_FUNCTION_EX":
             kwargs = pop() if (ins.arg or 0) & 1 else None
             args = pop()
@@ -486,8 +664,8 @@ def _run_body(code: types.CodeType) -> _Body:
                     classes.append(fact)
                     stack.append(_ClassVal(fact))
                     continue
-            extra = f", **{_text(kwargs)}" if kwargs is not None else ""
-            stack.append(_Expr(f"{_text(callee)}(*{_text(args)}{extra})"))
+            _mark_nested(args, kwargs)
+            stack.append(call(callee, [_Expr(f"*{_text(args)}")], [("**", kwargs)] if kwargs is not None else []))
         elif op == "COPY":
             stack.append(stack[-ins.arg] if len(stack) >= ins.arg else UNKNOWN)
         elif op == "SWAP":
@@ -499,10 +677,46 @@ def _run_body(code: types.CodeType) -> _Body:
         elif op == "IMPORT_FROM":
             stack.append(_IMPORTED)
         elif op in ("STORE_NAME", "STORE_GLOBAL"):
-            bindings.append(_Binding(ins.argval, pop(), line))
+            value = pop()
+            bindings.append(_Binding(ins.argval, value, line))
+            store(ins.argval, value)
+        elif op in ("STORE_FAST", "STORE_DEREF"):
+            value = pop()
+            if isinstance(value, _Call) and not value.nested and value.target is None:
+                value.target = ins.argval
+        elif op == "STORE_ATTR":
+            owner, value = pop(), pop()
+            _mark_nested(owner)
+            store(f"{_text(owner)}.{ins.argval}", value)
+        elif op == "STORE_SUBSCR":
+            index, owner, value = pop(), pop(), pop()
+            _mark_nested(owner, index)
+            store(f"{_text(owner)}[{_text(index)}]", value)
+        elif op == "RETURN_VALUE":
+            value = pop()
+            if isinstance(value, _Call) and not value.nested and value.target is None:
+                value.target = "return"
+        elif op == "CHECK_EXC_MATCH":  # `except KeyError:`
+            kind = pop()
+            stack.append(_Expr(f"except {_text(kind)}"))
+        elif op == "FOR_ITER":
+            iterable = _text(stack[-1] if stack else UNKNOWN)
+            if function and ins.argval > ins.offset and iterable != ".0":  # .0: a comprehension's own loop
+                regions.append([ins.offset + 2, ins.argval, f"for … in {iterable}"])
+            stack.append(UNKNOWN)
+        elif op in ("JUMP_IF_FALSE_OR_POP", "JUMP_IF_TRUE_OR_POP"):  # `x = a and b`
+            branch(ins, stack[-1] if stack else UNKNOWN)
+            pop()
         elif op in _JUMPS:
-            if op.startswith("POP_"):
-                pop()
+            test = pop() if op.startswith("POP_") else None
+            if test is not None and "FORWARD" in op:
+                branch(ins, test)
+            elif op == "JUMP_FORWARD" and function:  # the end of an `if` body: what it jumps over is the else
+                nxt = ins.offset + 2
+                for start, end, label in list(regions):
+                    if end == nxt and label.startswith("if ") and ins.argval > nxt:
+                        regions.append([nxt, ins.argval, f"if {_negate(label[3:])}"])
+                        break
         else:
             try:
                 effect = dis.stack_effect(ins.opcode, ins.arg if ins.opcode >= dis.HAVE_ARGUMENT else None, jump=False)
@@ -513,7 +727,8 @@ def _run_body(code: types.CodeType) -> _Body:
             if stack and effect <= 0:
                 stack[-1] = UNKNOWN
             stack.extend([UNKNOWN] * max(effect, 0))
-    return _Body(bindings, classes)
+    calls_and_stores = [st for st in statements if not (isinstance(st, _Call) and st.nested)]
+    return _Body(bindings, classes, calls_and_stores)
 
 
 def _class_from_call(positional: list, keywords: list) -> ClassFact | None:
@@ -558,6 +773,7 @@ def _members(body: _Body, in_class: bool, skip: set[str]) -> tuple[dict[str, Mem
                 params=_function_params(v),
                 decorators=list(v.decorators),
                 docstring=_function_docstring(v.code),
+                statements=function_statements(v.code),
             )
         else:
             members[b.name] = Member(

@@ -10,7 +10,7 @@ import pytest
 
 from ableton_remote_script_mcp.cli import main
 from ableton_remote_script_mcp.live_install import read_install
-from ableton_remote_script_mcp.query import get_class, search
+from ableton_remote_script_mcp.query import get_class, outline_script, search
 
 LIVE_12_4_16 = Path("/Applications/Ableton Live 12 Suite.app")
 SPEC = "ableton.v3.control_surface.control_surface_specification.ControlSurfaceSpecification"
@@ -103,3 +103,49 @@ def test_inherited_members_in_12_4_16(index_dir):
 def test_search_in_12_4_16(index_dir):
     first = search("SessionRingComponent", index_dir)["results"][0]
     assert first["qualified_name"] == "ableton.v3.control_surface.components.session_ring.SessionRingComponent"
+
+
+def test_outline_of_apc_mini_mk2_in_12_4_16(index_dir):
+    """A v3 Remote Script: Specification, framework component map, mappings, Elements."""
+    o = outline_script("APC_mini_mk2", index_dir)
+    assert (o["status"], o["framework"]) == ("ok", "ableton.v3")
+    roles = {c["qualified_name"]: c["role"] for c in o["classes"]}
+    assert roles["APC_mini_mk2.Specification"] == "specification"
+    assert roles["APC_mini_mk2.APC_mini_mk2"] == "control surface"
+    assert roles["APC_mini_mk2.elements.Elements"] == "elements"
+    fields = {f["name"]: f for f in o["specification"]["fields"]}
+    assert (fields["num_scenes"]["value"], fields["num_scenes"]["default"]) == ("8", "1")
+    assert all(f["known"] for f in fields.values())
+    cmap = {e["name"]: e for e in o["component_map"]}
+    assert cmap["Session"]["defined_in"] == "ableton.v3.control_surface.components.session.SessionComponent"
+    assert {n for n, e in cmap.items() if e["used_by_mappings"]} >= {"Mixer", "Session", "Drum_Group"}
+    assert o["unknown_components"] == []
+    mappings = {m["name"]: m for m in o["mappings"]["mappings"]}
+    assert mappings["Mixer"]["controls"] == {"master_track_volume_control": "master_fader"}
+    assert mappings["Pad_Modes"]["kind"] == "modes"
+    assert mappings["Pad_Modes"]["modes"]["drum"] == {"component": "Drum_Group", "matrix": "drum_pads"}
+    elements = {e["name"]: e for e in o["elements"]}
+    assert set(elements) >= {"Shift_Button", "Clip_Launch_Buttons", "Drum_Pads", "Faders", "Master_Fader"}
+    assert elements["Master_Fader"]["arguments"]["identifier"] == "56"
+
+
+def test_outline_of_apc_mini_in_12_4_16(index_dir, capsys):
+    """A _Framework Remote Script built on APC_Key_25 and _APC: elements, components, layers."""
+    o = outline_script("APC_mini", index_dir)
+    assert (o["status"], o["framework"], o["uses"]) == ("ok", "_Framework", ["APC_Key_25", "_APC"])
+    assert o["specification"] is None
+    assert [c["role"] for c in o["classes"]] == ["control surface"]
+    elements = {e["name"]: e for e in o["elements"] if e["name"]}
+    assert elements["Shift_Button"]["class"] == "_Framework.ButtonElement.ButtonElement"
+    assert elements["Shift_Button"]["in"] == "APC_Key_25.APC_Key_25.APC_Key_25._create_controls"
+    assert elements["Master_Volume"]["class"] == "_Framework.SliderElement.SliderElement"
+    assert elements["Button_Matrix"]["class"] == "_Framework.ButtonMatrixElement.ButtonMatrixElement"
+    # APC_Key_25 builds its transport only `if self.HAS_TRANSPORT:`; APC_mini sets it False
+    assert elements["Play_Button"]["runs"] is False
+    assert elements["Play_Button"]["decided_by"] == "HAS_TRANSPORT = False in APC_mini.APC_mini.APC_mini"
+    assert "runs" not in elements["Shift_Button"]
+    components = {e["class"].rsplit(".", 1)[-1] for e in o["components"]}
+    assert {"SessionComponent", "MixerComponent", "TransportComponent"} <= components
+    assert any(layer["controls"].get("volume_control") == "self._master_volume_control" for layer in o["layers"])
+    assert main(["--index-dir", str(index_dir), "outline", "APC_mini"]) == 0
+    assert "Shift_Button: make_button -> ButtonElement(" in capsys.readouterr().out

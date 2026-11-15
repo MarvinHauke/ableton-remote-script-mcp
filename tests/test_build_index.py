@@ -24,8 +24,13 @@ def index(fake_live_app, tmp_path):
     return build(fake_live_app, tmp_path / "index")
 
 
+@pytest.fixture
+def statements(index, tmp_path):
+    return json.loads((tmp_path / "index" / f"live-{FAKE_BUILD}.statements.json").read_text())
+
+
 def test_index_records_build_and_source(index, fake_live_app):
-    assert index["schema"] == 3
+    assert index["schema"] == 4
     assert index["live_build"] == FAKE_BUILD
     assert index["source"]["app"] == str(fake_live_app)
     assert index["source"]["bundle_version"].startswith(FAKE_BUILD)
@@ -293,3 +298,68 @@ def test_star_imports_are_recorded_and_resolve_a_base(fake_live_app, tmp_path):
     assert c["bases"][0]["resolved"] is None  # bound only through `import *`
     assert c["bases"][0]["defined_in"] == "_Framework.ControlSurface.ControlSurface"
     assert c["all_members"]["disconnect"]["overrides"] == ["_Framework.ControlSurface.ControlSurface"]
+
+
+def test_function_bodies_are_summarised_as_calls_and_stores(statements):
+    """Schema 4: each function's top-level calls, with where their result goes, and its stores into
+    attributes and subscripts; calls inside comprehensions say so."""
+    assert statements["live_build"] == FAKE_BUILD
+    statements = statements["classes"]["Fake_Mk1.Fake_Mk1.FakeMk1"]["_create_controls"]
+    assert statements == [
+        {"line": 8, "call": "partial", "args": ["make_button"], "kwargs": {"skin": "self._skin"},
+         "target": "make_color_button"},
+        {"line": 9, "call": "make_button", "args": ["0", "98"], "kwargs": {"name": "'Shift_Button'"},
+         "target": "self._shift_button"},
+        {"line": 10, "call": "make_color_button", "args": ["0", "36 + i"], "kwargs": {"name": "'Pad_%d' % (i + 1)"},
+         "inside": "<listcomp>"},
+        {"line": 10, "store": "self._pads", "value": "[… for … in range(8)]"},
+        {"line": 12, "call": "dict", "args": [], "kwargs": {"volume_controls": "'faders'"}, "target": "mappings['Mixer']"},
+        {"line": 13, "call": "self.component_guard", "args": [], "kwargs": {}},
+        {"line": 14, "call": "SessionComponent", "args": ["8", "1"],
+         "kwargs": {"layer": "Layer(clip_launch_buttons=self._pads)"}, "target": "self._session"},
+        {"line": 16, "store": "self._mode", "value": "None", "under": ["if self._shift_button"]},
+        {"line": 17, "call": "Layer", "args": [], "kwargs": {"volume_controls": "self._faders"},
+         "target": "self.mixer().layer"},
+        {"line": 18, "call": "super().__init__", "args": ["*a"], "kwargs": {"**": "k"}},
+        {"line": 19, "call": "ButtonMatrixElement", "args": [], "kwargs": {"rows": "[self._pads]"}, "target": "return"},
+    ]
+
+
+def test_statements_live_in_their_own_file_and_the_api_index_has_none(index, statements):
+    """The API index holds names and signatures only (user story 14); outlines read the second file."""
+    assert not any("statements" in m for part in ("classes", "modules")
+                   for fact in index[part].values() for m in fact["members"].values())
+    assert statements["index_created"] == index["created"]
+    assert "disconnect" not in statements["classes"].get(f"{COMP}.Component", {})  # `pass` has none
+    assert statements["modules"]["Fake_Mk1"]["create_instance"]  # module functions too
+
+
+def test_without_statements_outline_is_unavailable_and_says_why(fake_live_app, tmp_path, capsys):
+    index_dir = tmp_path / "index"
+    build(fake_live_app, index_dir)
+    assert (index_dir / f"live-{FAKE_BUILD}.statements.json").exists()
+    assert main(["--index-dir", str(index_dir), "build-index", "--app", str(fake_live_app), "--no-statements"]) == 0
+    assert not (index_dir / f"live-{FAKE_BUILD}.statements.json").exists()  # a rebuild replaces both
+    capsys.readouterr()
+    assert main(["--index-dir", str(index_dir), "list", "builds"]) == 0
+    assert "no statement summaries" in capsys.readouterr().out
+    assert main(["--index-dir", str(index_dir), "lookup", "class", "FakeMk1"]) == 0  # lookups still work
+    capsys.readouterr()
+    assert main(["--index-dir", str(index_dir), "outline", "Fake_Mk1"]) == 3
+    assert "no statement summaries for Live 12.4.99" in capsys.readouterr().out
+
+
+def test_statements_say_what_they_run_under(statements):
+    """Branches, loops and exception handlers, outermost first; the else of an `if` is its negation."""
+    statements = statements["classes"]["Fake_Mk1.Fake_Mk1.FakeMk1"]["_create_transport"]
+    under = [(st.get("call") or st.get("store"), st.get("under", [])) for st in statements]
+    assert under == [
+        ("make_button", ["if self.HAS_TRANSPORT"]),
+        ("self._play", ["if not self.HAS_TRANSPORT"]),
+        ("ping", ["if self.A or self.B"]),
+        ("range", []),
+        ("tick", ["for … in range(2)"]),
+        ("risky", []),
+        ("recover", ["on an exception", "except KeyError"]),
+        ("done", []),
+    ]

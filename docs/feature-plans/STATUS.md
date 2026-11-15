@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-15 (0001 step 3 built; step 5 on the frontier)._
+_Last updated: 2026-11-15 (0001 step 5 built; step 7 on the frontier)._
 
 ## Now
 
@@ -23,7 +23,13 @@ _Last updated: 2026-11-15 (0001 step 3 built; step 5 on the frontier)._
   origin, `search`, names resolved through re-exports and star imports at query time (0001
   decision 34, index schema 3). 12.4.16: every base resolves. `uv run pytest` green (44 tests,
   8 local-only).
-- [ready-for-agent] **0001 step 5** — reference script outline. Next in this session, after a `/compact`.
+- 0001 step 5 built on `feat/0001-step-5-outline` (2026-11-15): `outline <script>` (classes and
+  roles, Specification fields, component map, mappings, elements, components, layers); the
+  extractor records a statement summary of each function (0001 decision 35, index schema 4;
+  rebuild older indexes), with the conditions each statement runs under, kept in a separate
+  `live-<build>.statements.json` so the API index stays names and signatures (user story 14
+  amended). `uv run pytest` green (60 tests, 10 local-only).
+- [ready-for-agent] **0001 step 7** — validator: basic checks. Next in this session, after a `/compact`.
 
 ## After grilling
 

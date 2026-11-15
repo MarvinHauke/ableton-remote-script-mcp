@@ -1,4 +1,4 @@
-"""Command line: `build-index`, `list builds`, `lookup class` and `search`."""
+"""Command line: `build-index`, `list builds`, `lookup class`, `search` and `outline`."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .index_store import build_index, default_index_dir, write_index
 from .live_install import default_install, find_installs, read_install
-from .query import SEARCH_KINDS, get_class, list_builds, search
+from .query import SEARCH_KINDS, get_class, list_builds, outline_script, search
 
 
 def _cmd_build_index(args: argparse.Namespace) -> int:
@@ -30,12 +30,14 @@ def _cmd_build_index(args: argparse.Namespace) -> int:
             print(f"also installed: {', '.join(others)} (use --app to index one of them)")
     print(f"indexing Live {install.live_build} from {install.scripts_root}")
     index = build_index(install)
-    path = write_index(index, Path(args.index_dir))
+    path, spath = write_index(index, Path(args.index_dir), with_statements=not args.no_statements)
     n = index["summary"]
     print(
         f"wrote {path}: {n['packages']} packages ({n['scripts']} Remote Scripts), "
         f"{n['modules']} modules, {n['classes']} classes, {n['errors']} unreadable files"
     )
+    print(f"wrote {spath}: statement summaries for outlines" if spath
+          else "no statement summaries (--no-statements): `outline` is not available for this build")
     for err in index["errors"]:
         print(f"  unreadable: {err['source']}: {err['error']}")
     return 0
@@ -143,6 +145,129 @@ def _cmd_search(args: argparse.Namespace) -> int:
     return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
 
 
+def _short(text: str | None, width: int = 110) -> str:
+    text = "" if text is None else " ".join(str(text).split())
+    return text if len(text) <= width else text[: width - 1] + "…"
+
+
+def _arguments(arguments: dict) -> str:
+    return ", ".join(v if k.startswith("#") else f"{k}={v}" for k, v in arguments.items())
+
+
+def _condition(e: dict) -> str:
+    """What an entry is made under: not made for this script, or only under a condition."""
+    if e.get("runs") is False:
+        return f"  NOT BUILT for this script ({e['decided_by']})"
+    if e.get("runs") is None and e.get("under"):
+        return "  only " + "; ".join(u for u in e["under"] if not u.startswith("for "))
+    return ""
+
+
+def _where(e: dict) -> str:
+    where = f"{e['in'].rsplit('.', 2)[-2]}.{e['in'].rsplit('.', 1)[-1]}:{e['line']}"
+    if e.get("inside"):
+        where += f" {e['inside']}"
+    if e.get("within"):
+        where += f", in {e['within']}(…)"
+    if e.get("returned_by"):
+        where += f", returned by {e['returned_by']}()"
+    return where
+
+
+def _format_mode(value) -> str:
+    if value is None:
+        return "(no mappings)"
+    if isinstance(value, dict):
+        return ", ".join(f"{k}={_format_mode(v) if isinstance(v, dict) else v}" for k, v in value.items())
+    return str(value)
+
+
+def format_outline(o: dict, all_components: bool = False) -> str:
+    what = "Remote Script" if o["kind"] == "script" else o["kind"]
+    lines = [f"{o['script']}: {what} on {o['framework'] or 'no framework'}  [Live {o['live_build']}, {o['confidence']}]",
+             f"  source:  {o['source']}",
+             f"  modules: {', '.join(o['modules'])}",
+             f"  uses:    {', '.join(o['uses']) or '-'}"]
+    for text in o["create_instance"]:
+        lines.append(f"  create_instance: {_short(text)}")
+    lines.append(f"\nclasses ({len(o['classes'])}):")
+    for c in o["classes"]:
+        bases = ", ".join(b["expr"] if b["defined_in"] == b["expr"] else f"{b['expr']} = {b['defined_in']}"
+                          for b in c["bases"]) or "-"
+        lines.append(f"  [{c['role'] or 'other'}] {c['qualified_name']}({bases})  line {c['line']}")
+        for m in c["members"]:
+            if m["kind"] == "attribute":
+                text = f"{m['name']} = {_short(m['value'], 90)}"
+            else:
+                kind = "" if m["kind"] in ("method", "function") else f"[{m['kind']}] "
+                text = f"{kind}{m['name']}{format_signature(m.get('params', []))}"
+            lines.append(f"      {text}" + (f"  (overrides {m['overrides']})" if m.get("overrides") else ""))
+    spec = o["specification"]
+    if spec:
+        lines.append(f"\nspecification: {spec['class']} (fields it sets; framework default after #)")
+        for f in spec["fields"]:
+            note = f"  # {_short(f.get('default'), 50)}" if f["known"] else "  # not a framework field"
+            origin = "" if f["set_in"] == spec["class"] else f"  (set in {f['set_in']})"
+            lines.append(f"  {f['name']} = {_short(f['value'], 70)}{note}{origin}")
+        shown = [e for e in o["component_map"] if all_components or e["used_by_mappings"] or e["from"] == "script"]
+        hidden = len(o["component_map"]) - len(shown)
+        lines.append(f"\ncomponent map ({len(shown)} of {len(o['component_map'])}"
+                     + (": the names the mappings use and the script's own; --all-components for every name)" if hidden else ")"))
+        for e in shown:
+            src = "framework default" if e["from"] == "framework" else "set by the script"
+            if e.get("replaces_default"):
+                src += f", replaces {e['replaces_default']}"
+            lines.append(f"  {e['name']}: {_short(e['component'], 60)}  -> {e['defined_in'] or '(not resolved)'}  ({src})")
+        if o["unknown_components"]:
+            lines.append("  not in the component map, but named by the mappings: " + ", ".join(o["unknown_components"]))
+        m = o["mappings"]
+        if m:
+            lines.append(f"\nmappings ({m['function']}):")
+            for entry in m["mappings"]:
+                head = f"  {entry['name']}" + (" [modes]" if entry["kind"] == "modes" else "")
+                if entry["kind"] == "component" and not entry.get("in_component_map"):
+                    head += "  (not in the component map)"
+                lines.append(head + ":")
+                for control, element in entry["controls"].items():
+                    lines.append(f"      {control} <- {element}")
+                for mode, value in entry["modes"].items():
+                    lines.append(f"      mode {mode}: {_short(_format_mode(value), 100)}")
+                for k, v in entry["options"].items():
+                    lines.append(f"      {k} = {_short(v, 100)}")
+    lines.append(f"\nelements ({len(o['elements'])}):")
+    for e in o["elements"]:
+        made = e["defined_by"].rsplit(".", 1)[-1] if e.get("defined_by") else (
+            f"{e['via']} -> {e['class'].rsplit('.', 1)[-1]}" if e.get("via") else e["class"].rsplit(".", 1)[-1])
+        name = e.get("name") or e.get("target") or "(unnamed)"
+        target = f"  -> {e['target']}" if e.get("target") and e.get("name") else ""
+        lines.append(f"  {_short(name, 40)}: {made}({_short(_arguments(e['arguments']), 70)}){target}  [{_where(e)}]"
+                     + _condition(e))
+    lines.append(f"\ncomponents ({len(o['components'])}):")
+    for e in o["components"]:
+        name = e.get("name") or e.get("target") or "(unnamed)"
+        args = {k: v for k, v in e["arguments"].items() if k != "layer"}
+        target = f"  -> {e['target']}" if e.get("target") and e.get("name") else ""
+        lines.append(f"  {_short(name, 40)}: {e['class']}({_short(_arguments(args), 60)}){target}  [{_where(e)}]"
+                     + _condition(e))
+    lines.append(f"\nlayers ({len(o['layers'])}):")
+    for e in o["layers"]:
+        owner = e.get("target") or (f"{e['within']}(…)" if e.get("within") else "(not stored)")
+        prio = f", priority={e['priority']}" if e.get("priority") else ""
+        lines.append(f"  {owner}: {_short(_arguments(e['controls']) + prio, 100)}  [{_where(e)}]" + _condition(e))
+    return "\n".join(lines)
+
+
+def _cmd_outline(args: argparse.Namespace) -> int:
+    answer = outline_script(args.script, Path(args.index_dir), args.build)
+    if args.json:
+        print(json.dumps(answer, indent=1, ensure_ascii=False))
+    elif answer["status"] == "ok":
+        print(format_outline(answer, args.all_components))
+    else:
+        print(answer["message"])
+    return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
+
+
 def _cmd_list_builds(args: argparse.Namespace) -> int:
     answer = list_builds(Path(args.index_dir), find_installs())
     if args.json:
@@ -154,7 +279,8 @@ def _cmd_list_builds(args: argparse.Namespace) -> int:
                 n = b["summary"]
                 print(
                     f"Live {b['live_build']}  {n['scripts']} Remote Scripts, {n['modules']} modules, "
-                    f"{n['classes']} classes, {n['errors']} unreadable  (indexed {b['created']})"
+                    f"{n['classes']} classes, {n['errors']} unreadable  (indexed {b['created']}"
+                    + ("" if b["statements"] else "; no statement summaries") + ")"
                 )
             else:
                 print(f"Live {b['live_build']}  not usable: {b['problem']}")
@@ -179,6 +305,8 @@ def make_parser() -> argparse.ArgumentParser:
 
     b = sub.add_parser("build-index", help="index an installed Live build (default: newest release)")
     b.add_argument("--app", help="path to an Ableton Live .app bundle")
+    b.add_argument("--no-statements", action="store_true",
+                   help="leave out the statement summaries of function bodies (then `outline` is unavailable)")
     b.set_defaults(func=_cmd_build_index)
 
     ls = sub.add_parser("list", help="list what the index holds")
@@ -203,6 +331,14 @@ def make_parser() -> argparse.ArgumentParser:
     se.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
     se.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     se.set_defaults(func=_cmd_search)
+
+    ol = sub.add_parser("outline", help="a Remote Script's classes, Specification, component map, mappings and elements")
+    ol.add_argument("script", help="the Remote Script's folder name, e.g. APC_mini_mk2")
+    ol.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
+    ol.add_argument("--all-components", action="store_true",
+                    help="list every name in the v3 component map, not only those the mappings use")
+    ol.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
+    ol.set_defaults(func=_cmd_outline)
     return p
 
 

@@ -75,8 +75,22 @@ A named arrangement of layers and components, switched by `ModesComponent`.
 **Specification**:
 A `ControlSurfaceSpecification` subclass: the declarative description of a v3 script.
 
+**Component map**:
+In a v3 script, the names (`Session`, `Mixer`, …) under which the framework builds components.
+The framework brings default names; a Specification and the script's own setup can add or replace
+names.
+
+**Mappings**:
+In a v3 script, what the Specification's mappings function returns: for each component-map name,
+which element goes to which of the component's controls, or which modes a modes component has.
+
 **Reference script**:
 One of Ableton's own Remote Scripts (e.g. `Launchkey_MK4`), read for its structure.
+
+**Outline**:
+A reference script's structure without its function bodies: its classes and their roles, the
+Specification fields it sets, its component map and mappings, and the elements, components and
+layers it creates, including those it inherits from other Remote Scripts and libraries.
 
 ### This project
 
@@ -87,6 +101,12 @@ the installed bundle and a runtime dump.
 **Fact confidence**:
 `observed` (in the API index of a Live build), `tested` (used by a script that loaded in that
 build) or `documented` (secondary source only).
+
+**Statement summary**:
+What the API index records of a function body: the calls it makes, where each result is stored,
+and the values it stores into attributes and subscripts, each with the conditions, loops and
+exception handlers it runs under. It does not execute anything, so whether a conditional call runs
+is decided only where a script's own class attributes settle it.
 
 **Origin**:
 For a member a class has, the class along its MRO that defines it: the class itself or the base

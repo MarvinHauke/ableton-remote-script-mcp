@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3 built 2026-11-15. Frontier: step 5._
+_Stage: in work — steps 1–3 and 5 built 2026-11-15. Frontier: step 7._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -56,7 +56,7 @@ meant to do, and uses only API names that exist in the Live build they target.
 11. As a script author, I want class attributes recorded (e.g. every `ControlSurfaceSpecification` field), so that generated Specifications use only fields that exist.
 12. As a script author, I want docstrings recorded where they exist, so that the skill can explain what a member does.
 13. As a script author, I want each fact to name its source (framework `.pyc`, `live_model`, Structure Void), so that I can judge how far to trust it.
-14. As a script author, I want the index to contain names and signatures only, never function bodies, so that it never holds Ableton's implementation code.
+14. As a script author, I want the index to contain names and signatures only, never function bodies, so that it never holds Ableton's implementation code. _Amended 2026-11-15 (Decision 35): the statement summaries the outline needs are a separate file per build, which can be left out or deleted; the API index itself stays names and signatures._
 15. As a script author, I want a clear message when a `.pyc` can't be read, naming the file, so that one broken file doesn't silently hide part of the framework.
 16. As a script author, I want rebuilding a build's index to replace it completely, so that stale facts never remain.
 17. As a script author, I want the index stored outside the repo or in a git-ignored folder, so that Ableton material never ends up in a commit.
@@ -366,6 +366,60 @@ meant to do, and uses only API names that exist in the Live build they target.
       modules before members, the framework (newest generation first) before libraries before
       Remote Scripts, and the Remote Scripts folder before the Push 3 helper.
 
+35. **Statement summaries of function bodies; index schema 4** (agent, 2026-11-15, step 5):
+    - **Why:** a script's elements (`Elements.__init__` calling `self.add_button(…)`), its v3
+      mappings (`create_mappings`) and a `_Framework` script's components and layers are all
+      made inside functions, which the index did not record. The outline needs them.
+    - **What the extractor records:** each function's statement summary (GLOSSARY): its calls
+      whose result is not used inside another expression, with where the result is stored (a
+      name, `self.x`, `m['k']` or `return`), the calls made inside its comprehensions and
+      nested functions (marked `inside`), and the values it stores into attributes and
+      subscripts. Arguments are source-like text. It is a summary read from the bytecode, not a
+      decompilation; the outline shows no function bodies. 12.4.16: 61967 statements; the
+      build takes about 5 s instead of 3 s (once per Live build).
+    - **A separate file, so the API index stays names and signatures** (user, 2026-11-15,
+      amends user story 14): `build-index` writes the statement summaries to
+      `live-<build>.statements.json` next to the API index (12.4.16: 12 MB index, 11 MB
+      statements). Only `outline` reads them; `lookup class`, `search` and everything after
+      never see them. `build-index --no-statements` leaves them out (a rebuild then deletes the
+      old file), and deleting the file is enough to drop them: `outline` then answers "no
+      statement summaries … rebuild", and every other command keeps working. The statements
+      file names the index it belongs to (`index_created`), so a stale one is never used.
+      Schema 4 for both files.
+    - **Conditions** (user, 2026-11-15: keep the summary, but mark conditions before building on
+      it): each statement lists what it runs under (`under`, outermost first): `if <test>` (an
+      `else` is the negated test, `a or b` stays one test), `for … in <iterable>`, `on an
+      exception` and `except <type>`, read from the bytecode's jumps and exception table.
+      The outline decides a test of the form `if self.X` / `if not self.X` from a literal class
+      attribute along the outlined class's MRO, including the call site's conditions for a
+      method such as `self._transport = self._create_transport()`: `runs` is false ("not built
+      for this script", with the attribute that decides it), true, or null when it can't tell
+      ("only if …"). APC_mini: `APC_Key_25` builds its Play and Record buttons and its
+      Transport only `if self.HAS_TRANSPORT:`, and APC_mini sets it to False. 12.4.16: 20064
+      statements run under a condition; over all outlines, 7 entries are not built, 90 are
+      decided as built, 210 stay conditional.
+    - **Roles from the MRO:** a class is a control surface, Specification, elements, component,
+      element or layer when that framework class (`ControlSurface`, `ControlSurfaceSpecification`,
+      `ElementsBase`, `ControlSurfaceComponent` / `Component`, `ControlElement`, `Layer`) is on
+      its MRO. Names in statements resolve where they are written, as bases do (Decision 34),
+      plus module-level functions and `x = partial(f, …)` aliases.
+    - **What the outline counts:** the code of the script's package and of every non-framework
+      class along its classes' MROs, overridden methods included (an override usually calls
+      `super()`); APC_mini's elements are built in `APC_Key_25`. An element is a call to an
+      element class, a v3 `self.add_*` call in an Elements class (arguments named by the
+      framework method's parameters), or a call to a factory (a function or method that returns
+      an element, up to three levels deep). A factory's own `return ButtonElement(…)` is not
+      listed. The v3 component map joins the framework's defaults (`ComponentMap`), the
+      Specification's `component_map` and the names a control surface adds while it sets up
+      (`self.component_map['Background'] = …`); names the mappings use that are in none of them
+      are listed as unknown.
+    - **Known limits:** scripts configured by constant tables (`_Generic`'s `GenericScript`,
+      e.g. Axiom and the MPK family) or that send raw MIDI (RemoteSL, MackieControl) show no
+      elements; a Specification built by a function (MiniLab_37's
+      `create_minilab_specification`) is not found, so outline the library (`MiniLab_3`).
+      12.4.16: 2324 elements, 1067 components and 1001 layers over all 151 non-framework
+      packages, in 0.7 s; 60 Remote Scripts show no elements.
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -449,6 +503,18 @@ Every step's checks include `uv run pytest` passing.
      its component map and its elements, without function bodies.
    - **Checks:** Seam B tests; local-only: outlines of `APC_mini` (`_Framework`) and `APC_mini_mk2`
      (v3).
+   - **Built 2026-11-15.** `outline <script>` (`--all-components`, `--build`, `--json`) shows a
+     script's classes with their roles, own members and what they override, its Specification
+     fields with the framework's defaults, its component map, mappings and modes (v3), and its
+     elements, components and layers with where each is made. The extractor now records a
+     statement summary of each function, in a separate file per build (Decision 35, index
+     schema 4; `build-index --no-statements` leaves it out). Seam A: a fixture method
+     with each kind of statement and each kind of condition. Seam B: a hand-written v3 script and a `_Framework` script on
+     a library, with a factory, a `partial` alias, a comprehension, an override that calls
+     `super()`, a component returned by a method and runtime component-map names. Local-only:
+     APC_mini_mk2 (8 elements, 6 mappings, `Drum_Group` from the framework's map) and APC_mini
+     (its shift button and session from `APC_Key_25`, its master volume from its own
+     `_create_controls`, its transport not built because `HAS_TRANSPORT = False`).
 6. **Structure Void as a cross-check**
    - **Blocked by:** 3
    - **Delivers:** imports a locally downloaded copy of the site's search index for Live 9–12 as

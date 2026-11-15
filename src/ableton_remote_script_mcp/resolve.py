@@ -24,8 +24,10 @@ OBJECT = "external:builtins.object"
 class Resolved:
     """What a name points at.
 
-    status: "class" or "module" (`key` is the index key), "external" (outside the index: builtins,
-    `typing`, the C++ `Live` module…; `name` is the qualified name) or "unresolved".
+    status: "class" or "module" (`key` is the index key), "function" (a module-level function;
+    `key` is its module's key, `name` the function's qualified name), "external" (outside the
+    index: builtins, `typing`, the C++ `Live` module…; `name` is the qualified name) or
+    "unresolved".
     """
 
     status: str
@@ -107,15 +109,17 @@ class Resolver:
         if head in mod.get("imports", {}):
             return self._resolve(mod["imports"][head] + suffix, root, via, depth)
         member = mod.get("members", {}).get(head)
-        if member:  # an alias (Foo = Bar), or a function or value that is not a class
+        if member:  # an alias (Foo = Bar), a function, or a value that is not a class
             value = member.get("value") or ""
             if member["kind"] == "attribute" and _DOTTED.match(value) and value != head:
                 return self._alias(value, module, suffix, root, via, depth)
+            if member["kind"] == "function" and not suffix:
+                return Resolved("function", f"{module}.{head}", key, via)
             return unresolved
         if not head.startswith("_"):
             for star in reversed(mod.get("star_imports", [])):  # the last star import wins
                 found = self._resolve(f"{star}.{head}{suffix}", root, via, depth)
-                if found.status in ("class", "module"):
+                if found.status in ("class", "module", "function"):
                     return found
         return unresolved
 
@@ -213,8 +217,8 @@ def lineage(resolver: Resolver, class_key: str, proxies: dict[str, str] | None =
         else:
             nid = f"unresolved:{cls['module']}.{base['expr']}"
             desc = {"name": base["expr"], "status": "unresolved", "in_module": cls["module"]}
-            if found.status == "module":
-                desc["note"] = f"names the module {found.name}, not a class"
+            if found.status in ("module", "function"):
+                desc["note"] = f"names the {found.status} {found.name}, not a class"
         nodes.setdefault(nid, desc)
         bases_of.setdefault(nid, [])
         return nid
