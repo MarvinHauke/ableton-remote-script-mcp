@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — step 1 built 2026-11-15. Frontier: step 2._
+_Stage: in work — steps 1–2 built 2026-11-15. Frontier: step 3._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -324,6 +324,25 @@ meant to do, and uses only API names that exist in the Live build they target.
     any repo; `/index/` is git-ignored as well. `build-index` without `--app` takes the newest
     installed release build. The project requires Python 3.11 exactly (`marshal` needs it).
 
+33. **Index schema 2** (agent, 2026-11-15, step 2):
+    - **Two roots:** the Remote Scripts folder and the Push 3 helper's Python. The helper ships
+      its own, different copies of `ableton`, `Push2` and `_Generic`, so its facts are keyed
+      `push3-helper:<name>` and never overwrite the Remote Scripts' facts.
+    - **Package kinds:** `framework` (`_Framework`, `ableton`), a Remote Script (its `__init__`
+      defines `create_instance`), or a library (`_Generic`, `pushbase`, `novation`, …).
+    - **A package's framework generation** is the one its own module-level imports bind most
+      often (newest wins a tie); with none, it is the generation of the libraries it imports.
+      The counts are kept, so mixed packages stay visible (MackieControl imports `ableton.v2`
+      twice and `ableton.v3` once). Taking the newest generation anywhere in the dependencies was
+      rejected: it made `APC_mini` an `ableton.v2` script through one import inside a function of
+      `_APC`.
+    - **Members** are recorded for modules as well as classes, so `create_instance` and module
+      constants are queryable. Values and defaults are source-like text with a `literal` flag;
+      `…` marks an expression the extractor does not model.
+    - **Proxy model:** everything under the helper's `live_model` carries `proxy_model: true`;
+      classes under `live_model.Live` name the `Live` class they model (`proxy_of`).
+    - An index with another schema answers "index missing … rebuild"; it is never read half-way.
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -368,6 +387,17 @@ Every step's checks include `uv run pytest` passing.
        one corrupt file.
      - **Local-only:** `ControlSurfaceSpecification` has `session_ring_selection_linking_type`;
        `APC_mini` is found as a `_Framework` script and `APC_mini_mk2` as a v3 script.
+   - **Built 2026-11-15.** 12.4.16: 154 packages, 139 Remote Scripts (in the Remote Scripts
+     folder 75 `_Framework`, 38 `ableton.v2`, 25 `ableton.v3`; plus the helper's `Push2`), 1797 modules (1376 Remote Scripts
+     + 421 Push 3 helper), 4055 classes, 0 unreadable files; members: 18244 methods, 1704
+     properties, 179 static and class methods, 10169 attributes; 3435 defaults, none
+     unmodelled. About 12 MB, built in about 3 s. Module and class bodies are read by one symbolic
+     stack simulation (Decision 33). Docstrings: Live's `.pyc` files carry almost none (11 class
+     docstrings in 12.4.16), so the index has what exists. Known limits:
+     - 34 attribute values are `…` (comprehensions and similar), and 5 classes have unparsed bases
+       (e.g. `Push2.push2_model.Root`).
+     - 31 classes have a base that can't be resolved, mostly names that come from a star import
+       (`MackieControlComponent`). Following star imports and re-exports is step 3's job.
 3. **Inherited members and search**
    - **Blocked by:** 2
    - **Delivers:**

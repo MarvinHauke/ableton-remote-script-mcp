@@ -9,6 +9,9 @@ from pathlib import Path
 
 APPLICATIONS = Path("/Applications")
 SCRIPTS_SUBPATH = Path("Contents/App-Resources/MIDI Remote Scripts")
+# Push 3 standalone's Python, inside Live's bundle: its own copies of `ableton`, `Push2` and
+# `_Generic`, plus `live_model`, a pure-Python model of the `Live` module.
+PUSH3_HELPER_SUBPATH = Path("Contents/Helpers/Push3.app/Contents/Resources/python")
 
 
 @dataclass(frozen=True)
@@ -20,6 +23,11 @@ class LiveInstall:
     @property
     def scripts_root(self) -> Path:
         return self.app / SCRIPTS_SUBPATH
+
+    @property
+    def push3_helper_root(self) -> Path | None:
+        root = self.app / PUSH3_HELPER_SUBPATH
+        return root if root.is_dir() else None
 
     @property
     def is_beta(self) -> bool:

@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-15 (0001 step 1 built; step 2 on the frontier)._
+_Last updated: 2026-11-15 (0001 step 2 built; step 3 on the frontier)._
 
 ## Now
 
@@ -15,7 +15,11 @@ _Last updated: 2026-11-15 (0001 step 1 built; step 2 on the frontier)._
 - 0001 decided: spec and steps (2026-11-15).
 - 0001 step 1 built on `feat/0001-step-1-tracer` (2026-11-15): `ableton-remote-script-mcp build-index` and
   `lookup class`; 12.4.16 indexed (283 modules, 731 classes). `uv run pytest` green (9 tests, 2 local-only).
-- [ready-for-agent] **0001 step 2** — full extraction. Next in this session, after a `/compact`.
+- 0001 step 2 built on `feat/0001-step-2-extraction` (2026-11-15): full extraction (members,
+  defaults, attributes, docstrings), every Remote Script and the Push 3 helper with `live_model` as a
+  proxy model, index schema 2 (0001 decision 33), `list builds`. 12.4.16: 139 Remote Scripts, 1797
+  modules, 4055 classes. `uv run pytest` green (22 tests, 5 local-only).
+- [ready-for-agent] **0001 step 3** — inherited members and search. Next in this session, after a `/compact`.
 
 ## After grilling
 

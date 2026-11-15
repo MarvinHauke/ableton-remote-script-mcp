@@ -24,6 +24,18 @@ _Avoid_: Live version (when the exact build matters)
 **LOM** (Live Object Model):
 The object tree of the open Set exposed by the C++ `Live` module (`Song`, `Track`, `Clip`, `Device`, …).
 
+**Library package**:
+A shared package in the Remote Scripts folder that is neither a Remote Script nor the framework,
+used by several scripts (`_Generic`, `pushbase`, `novation`).
+
+**Push 3 helper**:
+The Python inside Live's bundle that Push 3 standalone runs (`Helpers/Push3.app`): its own copies of
+`ableton`, `Push2` and `_Generic`, plus `live_model`.
+
+**Proxy model**:
+`live_model`, the Push 3 helper's pure-Python model of the `Live` module. Its classes mirror the LOM
+(`live_model.Live.Song.Song` for `Live.Song.Song`) but are not Live itself.
+
 **User Library**:
 `~/Music/Ableton/User Library/Remote Scripts/`, where user scripts are installed.
 

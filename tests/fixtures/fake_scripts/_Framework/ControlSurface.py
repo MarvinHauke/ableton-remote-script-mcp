@@ -2,3 +2,6 @@
 class ControlSurface(object):
     def __init__(self, c_instance):
         self._c_instance = c_instance
+
+    def disconnect(self):
+        pass

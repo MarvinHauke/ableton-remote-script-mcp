@@ -10,7 +10,8 @@ your machine from your Live install and never leaves it.
 
 ```sh
 uv run ableton-remote-script-mcp build-index            # newest installed release, or --app <Live.app>
-uv run ableton-remote-script-mcp lookup class ControlSurfaceSpecification
+uv run ableton-remote-script-mcp list builds             # indexed builds, and installed ones with no index
+uv run ableton-remote-script-mcp lookup class ControlSurfaceSpecification   # bases, own members, signatures
 ```
 
 Every answer names the Live build and the fact's confidence (`observed` = present in that build's
