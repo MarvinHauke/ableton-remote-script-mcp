@@ -51,6 +51,10 @@ _Last updated: 2026-11-15 (0001 step 7 built; step 9, skill v1 and the APC mini 
 
 ## Small items
 
+- [ready-for-agent] Before the first push (the repo is public): take the Live 13 beta findings out of
+  the research doc's section 3 (12.4.16 → 13.0b25 differences; it also lists the User Library's
+  scripts) and out of plan step 4's check, and rewrite the unpushed history so no commit carries
+  them. Only with the user's go (found 2026-11-15; the user deferred it).
 - [ready-for-human] Merge the step branches into `main` and push, so the `docs` workflow publishes
   the site. GitHub Pages is set to deploy from GitHub Actions (the user, checked 2026-11-15).
 - [ready-for-human] Ask the people responsible at Ableton whether extracted API facts and Live 13
