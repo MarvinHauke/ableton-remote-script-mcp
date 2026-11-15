@@ -100,6 +100,17 @@ def collect_imports(code: types.CodeType, module: str, is_package: bool) -> dict
     return aliases
 
 
+def star_imports(code: types.CodeType, module: str, is_package: bool) -> list[str]:
+    """The modules this code object's own body star-imports (`from m import *`), in order."""
+    found: list[str] = []
+    instrs = list(dis.get_instructions(code))
+    for i, ins in enumerate(instrs):
+        if ins.opname == "IMPORT_STAR" and i >= 3 and instrs[i - 1].opname == "IMPORT_NAME":
+            level = instrs[i - 3].argval if instrs[i - 3].opname == "LOAD_CONST" else 0
+            found.append(_resolve_relative(module, is_package, level or 0, instrs[i - 1].argval))
+    return found
+
+
 def imported_modules(code: types.CodeType, module: str, is_package: bool) -> set[str]:
     """Every module this code object imports from (absolute names), at any depth of the body."""
     found: set[str] = set()
@@ -593,6 +604,7 @@ class ModuleFacts:
     source: str  # e.g. "MIDI Remote Scripts/ableton/v3/…pyc"
     classes: list[ClassFact]
     imports: dict[str, str]  # bound name -> qualified name
+    star_imports: list[str]  # modules star-imported at module level, in order
     imported_modules: set[str]
     members: dict[str, Member]  # module-level functions and attributes
     docstring: str | None
@@ -619,6 +631,7 @@ def read_module(path: Path, root: Path, source_prefix: str | None = None) -> Mod
         source=str(Path(source_prefix or root.name) / rel),
         classes=_flatten(body.classes),
         imports=imports,
+        star_imports=star_imports(code, name, is_package),
         imported_modules=imported_modules(code, name, is_package),
         members=members,
         docstring=docstring,
@@ -637,7 +650,7 @@ def iter_pyc(root: Path, packages: tuple[str, ...] | None = None):
             yield path
 
 
-_BUILTINS = {"object", "Exception", "dict", "list", "tuple", "str", "int", "float", "type", "property",
+BUILTINS = {"object", "Exception", "dict", "list", "tuple", "str", "int", "float", "type", "property",
              "BaseException", "RuntimeError", "ValueError", "KeyError", "IndexError", "TypeError",
              "AttributeError", "NotImplementedError", "set", "frozenset", "bool", "bytes"}
 
@@ -653,6 +666,6 @@ def resolve_base(base: str, imports: dict[str, str], module: str, local_classes:
         return f"{module}.{base}"
     if head in imports:
         return imports[head] + (f".{rest}" if rest else "")
-    if head in _BUILTINS:
+    if head in BUILTINS:
         return f"builtins.{base}"
     return None

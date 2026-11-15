@@ -3,11 +3,11 @@
 import json
 
 import pytest
+from conftest import FAKE_BUILD
 
 from ableton_remote_script_mcp.cli import main
 from ableton_remote_script_mcp.live_install import LiveInstall
-from ableton_remote_script_mcp.query import list_builds, lookup_class
-from conftest import FAKE_BUILD
+from ableton_remote_script_mcp.query import get_class, list_builds
 
 SPEC = "ableton.v3.control_surface.specification"
 COMP = "ableton.v3.control_surface.component"
@@ -25,7 +25,7 @@ def index(fake_live_app, tmp_path):
 
 
 def test_index_records_build_and_source(index, fake_live_app):
-    assert index["schema"] == 2
+    assert index["schema"] == 3
     assert index["live_build"] == FAKE_BUILD
     assert index["source"]["app"] == str(fake_live_app)
     assert index["source"]["bundle_version"].startswith(FAKE_BUILD)
@@ -255,7 +255,7 @@ def test_an_index_with_an_older_schema_asks_for_a_rebuild(fake_live_app, tmp_pat
     index = build(fake_live_app, index_dir)
     index["schema"] = 1
     (index_dir / f"live-{FAKE_BUILD}.json").write_text(json.dumps(index))
-    answer = lookup_class("Component", index_dir)
+    answer = get_class("Component", index_dir)
     assert answer["status"] == "index_missing"
     assert "schema 1" in answer["message"] and "build-index" in answer["message"]
     listed = list_builds(index_dir)["builds"][0]
@@ -283,3 +283,13 @@ def test_list_builds(fake_live_app, tmp_path, capsys):
 def test_list_builds_with_no_index(tmp_path, capsys):
     assert main(["--index-dir", str(tmp_path / "empty"), "list", "builds"]) == 3
     assert "no API index" in capsys.readouterr().out
+
+
+def test_star_imports_are_recorded_and_resolve_a_base(fake_live_app, tmp_path):
+    index_dir = tmp_path / "index"
+    index = build(fake_live_app, index_dir)
+    assert index["modules"]["Fake_Mk1.Shim"]["star_imports"] == ["_Framework.ControlSurface"]
+    [c] = get_class("ShimmedSurface", index_dir)["classes"]
+    assert c["bases"][0]["resolved"] is None  # bound only through `import *`
+    assert c["bases"][0]["defined_in"] == "_Framework.ControlSurface.ControlSurface"
+    assert c["all_members"]["disconnect"]["overrides"] == ["_Framework.ControlSurface.ControlSurface"]

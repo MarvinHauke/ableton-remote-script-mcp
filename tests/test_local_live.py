@@ -10,6 +10,7 @@ import pytest
 
 from ableton_remote_script_mcp.cli import main
 from ableton_remote_script_mcp.live_install import read_install
+from ableton_remote_script_mcp.query import get_class, search
 
 LIVE_12_4_16 = Path("/Applications/Ableton Live 12 Suite.app")
 SPEC = "ableton.v3.control_surface.control_surface_specification.ControlSurfaceSpecification"
@@ -59,7 +60,7 @@ def test_generic_base_in_12_4_16(index_dir, capsys):
     # Seen in 12.4.16: DisplayLineElement(NotifyingControlElement, Generic[DisplayDataType])
     capsys.readouterr()
     assert main(["--index-dir", str(index_dir), "lookup", "class", "DisplayLineElement"]) == 0
-    assert "typing.Generic[DisplayDataType]" in capsys.readouterr().out
+    assert "Generic[DisplayDataType] = typing.Generic" in capsys.readouterr().out
 
 
 @pytest.mark.local_live
@@ -75,3 +76,30 @@ def test_push3_helper_and_live_model_in_12_4_16(index):
     song = index["classes"]["push3-helper:live_model.Live.Song.Song"]
     assert song["proxy_model"] is True and song["proxy_of"] == "Live.Song.Song"
     assert "tempo" in song["members"]
+
+
+@pytest.mark.local_live
+def test_every_base_resolves_in_12_4_16(index_dir):
+    # 12.4.16: through re-exports, star imports and nested classes inherited along the MRO
+    # (MackieControlComponent, DefaultNotifications.Device), every base resolves
+    for name in ("MackieControl.ChannelStrip.ChannelStrip", "Move.display.Notifications.Device",
+                 "pushbase.drum_group_component.DrumGroupComponent"):
+        [c] = get_class(name, index_dir)["classes"]
+        assert c["complete"] is True and c["mro_method"] == "c3", name
+        assert all(b["status"] != "unresolved" for b in c["bases"]), name
+
+
+@pytest.mark.local_live
+def test_inherited_members_in_12_4_16(index_dir):
+    # seen in 12.4.16: the v3 SessionRingComponent, re-exported by v3.control_surface.components
+    [c] = get_class("ableton.v3.control_surface.components.SessionRingComponent", index_dir)["classes"]
+    members = c["all_members"]
+    assert members["set_enabled"]["origin"] == "ableton.v3.control_surface.component.Component"
+    assert members["register_disconnectable"]["origin"] == "ableton.v2.base.disconnectable.CompoundDisconnectable"
+    assert members["disconnect"]["overrides"][-1] == "ableton.v2.base.disconnectable.Disconnectable"
+
+
+@pytest.mark.local_live
+def test_search_in_12_4_16(index_dir):
+    first = search("SessionRingComponent", index_dir)["results"][0]
+    assert first["qualified_name"] == "ableton.v3.control_surface.components.session_ring.SessionRingComponent"

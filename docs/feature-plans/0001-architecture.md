@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–2 built 2026-11-15. Frontier: step 3._
+_Stage: in work — steps 1–3 built 2026-11-15. Frontier: step 5._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -343,6 +343,29 @@ meant to do, and uses only API names that exist in the Live build they target.
       classes under `live_model.Live` name the `Live` class they model (`proxy_of`).
     - An index with another schema answers "index missing … rebuild"; it is never read half-way.
 
+34. **Names resolve at query time; index schema 3** (agent, 2026-11-15, step 3):
+    - **The index stays a record of what each module says;** the query core resolves names to
+      the class that defines them when it answers. Resolution follows imports (re-exports),
+      module-level aliases (`Foo = Bar`), star imports (the last one wins, `_names` excluded)
+      and, for `Class.Name`, the class body and then its MRO, as Python looks up a class
+      attribute. It stays inside one root. Resolving at build time was rejected: Seam B tests
+      could then not exercise it over a hand-written index, and the whole 12.4.16 index
+      resolves in about 0.1 s anyway.
+    - **Schema 3** adds each module's `star_imports`, in order; nothing else changes.
+    - **Two rules from Live's own code:** a base named like the class it defines
+      (`class DrumGroupComponent(…, DrumGroupComponent, …)` in `pushbase`) is the imported
+      binding, since the class body runs before the name is rebound; a base in a nested class
+      is looked up in the enclosing class body first (`Push2.skin_default.Colors`).
+    - **MRO:** C3, with `builtins.object` for a class written with no bases. A class whose bases
+      admit no C3 order falls back to depth-first and says so. Names outside the index
+      (builtins, `typing`, `enum`, the C++ `Live` module) are `external`; a `Live` class names
+      its proxy model when there is one. An unresolved or unparsed base along the MRO marks the
+      class `complete: false`: inherited members may be missing.
+    - **Search** ranks exact name, qualified-name suffix, name prefix, name substring, all words
+      in the name, then all words in name, module and docstring; ties go to classes before
+      modules before members, the framework (newest generation first) before libraries before
+      Remote Scripts, and the Remote Scripts folder before the Push 3 helper.
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -405,6 +428,15 @@ Every step's checks include `uv run pytest` passing.
        from
      - search by name or words, and "not found in build X"
    - **Checks:** Seam B tests against a hand-written index with three levels of inheritance.
+   - **Built 2026-11-15.** `lookup class` shows a class's MRO and every member with its origin
+     and what it overrides (`--own` for own members only) and finds re-exported names;
+     `search` takes a name or words (`--kind`, `--limit`, `--build`). Names resolve at query
+     time (Decision 34; index schema 3 records star imports). 12.4.16: every base of all 4055
+     classes resolves (step 2 left 31 classes with an unresolved base), all MROs are C3, and
+     6 classes are incomplete because of the 5 unparsed base expressions. Seam B: a
+     hand-written index in two builds (`tests/hand_index.py`) with a diamond, a star import,
+     an alias, a self-named base, an inherited nested class, an unresolved base and a `Live`
+     base with its proxy model.
 4. **Second build and diff**
    - **Blocked by:** 2
    - **Delivers:** the 13.0b25 index (local only, Decision 15) and `diff` between two builds:

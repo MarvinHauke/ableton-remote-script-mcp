@@ -28,6 +28,10 @@ The object tree of the open Set exposed by the C++ `Live` module (`Song`, `Track
 A shared package in the Remote Scripts folder that is neither a Remote Script nor the framework,
 used by several scripts (`_Generic`, `pushbase`, `novation`).
 
+**Re-export**:
+A name a module binds by importing it from where it is defined, so scripts can import it from a
+shorter path (`ableton.v3.control_surface.Component` for `….component.Component`).
+
 **Push 3 helper**:
 The Python inside Live's bundle that Push 3 standalone runs (`Helpers/Push3.app`): its own copies of
 `ableton`, `Push2` and `_Generic`, plus `live_model`.
@@ -83,3 +87,8 @@ the installed bundle and a runtime dump.
 **Fact confidence**:
 `observed` (in the API index of a Live build), `tested` (used by a script that loaded in that
 build) or `documented` (secondary source only).
+
+**Origin**:
+For a member a class has, the class along its MRO that defines it: the class itself or the base
+it inherits the member from. A member that hides one of the same name further along the MRO
+overrides it.

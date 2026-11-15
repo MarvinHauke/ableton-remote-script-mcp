@@ -1,11 +1,12 @@
 """The API index on disk: one JSON document per Live build (plan 0001, Decision 22).
 
-Schema 2 (plan 0001 step 2). Keys of `packages`, `modules` and `classes` are qualified names;
-facts from the Push 3 helper's own Python carry the prefix `push3-helper:`, because it ships
-its own, different copies of packages such as `ableton` and `Push2`.
+Schema 3 (plan 0001 step 3; schema 2 had no `star_imports`). Keys of `packages`, `modules` and
+`classes` are qualified names; facts from the Push 3 helper's own Python carry the prefix
+`push3-helper:`, because it ships its own, different copies of packages such as `ableton` and
+`Push2`. Names are resolved to the class that defines them at query time (query core).
 
     {
-      "schema": 2,
+      "schema": 3,
       "live_build": "12.4.16",
       "source": {"kind": "installed-app", "app": "...", "bundle_version": "..."},
       "extractor": {"tool_version": "...", "python": "3.11.12"},
@@ -19,6 +20,7 @@ its own, different copies of packages such as `ableton` and `Push2`.
                    "source", "live_build", "confidence"}},
       "modules": {"<key>": {"name", "root", "source", "package": bool, "docstring",
                   "imports": {"<bound name>": "<qualified name>"},
+                  "star_imports": ["<qualified module name>", ...],
                   "members": {"<name>": <member>}, "live_build", "confidence"}},
       "classes": {"<key>": {"name", "qualname", "module", "root", "line",
                   "bases": [{"expr": "Component", "resolved": "ableton.v3….Component" | null}],
@@ -52,7 +54,7 @@ from . import __version__
 from .extractor import FRAMEWORK_PACKAGES, ModuleFacts, UnreadablePyc, iter_pyc, read_module, resolve_base
 from .live_install import PUSH3_HELPER_SUBPATH, SCRIPTS_SUBPATH, LiveInstall, build_sort_key
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 INDEX_DIR_ENV = "ABLETON_REMOTE_SCRIPT_INDEX"
 SCRIPTS_ROOT = "scripts"
 PUSH3_HELPER_ROOT = "push3-helper"
@@ -75,7 +77,7 @@ def fact_key(root: str, name: str) -> str:
     return name if root == SCRIPTS_ROOT else f"{root}:{name}"
 
 
-def _generation(module: str) -> str | None:
+def generation(module: str) -> str | None:
     for gen in reversed(GENERATIONS):
         if module == gen or module.startswith(gen + "."):
             return gen
@@ -99,7 +101,7 @@ def _packages(mods: list[ModuleFacts], root: str, build: str, source_prefix: str
         dep: set[str] = set()
         for m in pkg_mods:
             for target in m.imports.values():
-                gen = _generation(target)
+                gen = generation(target)
                 if gen:
                     c[gen] += 1
                 elif target.split(".")[0] in by_pkg and target.split(".")[0] != pkg:
@@ -179,6 +181,7 @@ def build_index(install: LiveInstall) -> dict:
                 "source": mod.source,
                 "package": mod.is_package,
                 "imports": mod.imports,
+                "star_imports": mod.star_imports,
                 "members": _members(mod.members),
                 "live_build": build,
                 "confidence": "observed",
