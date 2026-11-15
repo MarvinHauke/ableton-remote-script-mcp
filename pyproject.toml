@@ -12,7 +12,10 @@ dependencies = []
 ableton-remote-script-mcp = "ableton_remote_script_mcp.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "pytest>=8",
+    "zensical==0.1.1",
+]
 
 [build-system]
 requires = ["hatchling"]

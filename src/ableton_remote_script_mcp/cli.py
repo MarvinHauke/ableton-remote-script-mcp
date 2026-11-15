@@ -298,8 +298,8 @@ def make_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--index-dir",
-        default=str(default_index_dir()),
-        help="where the per-build JSON index lives (default: %(default)s; env ABLETON_REMOTE_SCRIPT_INDEX)",
+        help="where the per-build JSON index lives (default: $ABLETON_REMOTE_SCRIPT_INDEX, else "
+        "$XDG_DATA_HOME/ableton-remote-script-mcp/index, else ~/.local/share/ableton-remote-script-mcp/index)",
     )
     sub = p.add_subparsers(dest="command", required=True)
 
@@ -318,7 +318,7 @@ def make_parser() -> argparse.ArgumentParser:
     lk = sub.add_parser("lookup", help="look something up in the index")
     lk_sub = lk.add_subparsers(dest="kind", required=True)
     lc = lk_sub.add_parser("class", help="a class by short, qualified or re-exported name, with inherited members")
-    lc.add_argument("name")
+    lc.add_argument("name", help="the class: short (Component), qualified or re-exported name")
     lc.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
     lc.add_argument("--own", action="store_true", help="only the class's own members, not inherited ones")
     lc.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
@@ -344,6 +344,8 @@ def make_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = make_parser().parse_args(argv)
+    if args.index_dir is None:  # resolved here, not in the parser, so `--help` shows no home path
+        args.index_dir = str(default_index_dir())
     return args.func(args)
 
 

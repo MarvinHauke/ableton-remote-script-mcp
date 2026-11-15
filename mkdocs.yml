@@ -1,0 +1,46 @@
+# Built with Zensical (pinned in pyproject.toml): `uv run zensical build --strict`.
+# Keep this file plugin-free so mkdocs-material 9.7 builds it unchanged (0001 decision 36).
+site_name: ableton-remote-script-mcp
+site_description: An unofficial API index, skill and MCP server for writing Ableton Live MIDI Remote Scripts
+site_url: https://marvinhauke.github.io/ableton-remote-script-mcp/
+repo_url: https://github.com/MarvinHauke/ableton-remote-script-mcp
+repo_name: MarvinHauke/ableton-remote-script-mcp
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+  features:
+    - navigation.sections
+    - content.code.copy
+    - search.suggest
+
+# Pages that stay in the repository and are not part of the site: the plans, the agent-skill
+# configuration and the maintainers' workflow guide.
+exclude_docs: |
+  feature-plans/
+  agents/
+  guides/
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - How it works: how-it-works.md
+  - CLI reference: reference/cli.md
+  - Known limits: limits.md
+  - Develop: develop.md
+
+markdown_extensions:
+  - tables
+  - admonition
+  - toc:
+      permalink: false
+  - pymdownx.superfences

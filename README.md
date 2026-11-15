@@ -23,10 +23,17 @@ of function bodies that only `outline` reads. `--no-statements` leaves the secon
 Every answer names the Live build and the fact's confidence (`observed` = present in that build's
 index).
 
+## Documentation
+
+[marvinhauke.github.io/ableton-remote-script-mcp](https://marvinhauke.github.io/ableton-remote-script-mcp/),
+built from `docs/` with [Zensical](https://zensical.org).
+
 ## Development
 
 ```sh
 uv run pytest            # tests that need an installed Live 12.4.16 skip themselves when it is absent
+scripts/docs-check.sh    # the CLI reference is current and the docs site builds (--strict)
+uv run python scripts/gen_cli_reference.py   # regenerate docs/reference/cli.md after changing a help text
 ```
 
 ## Credits
