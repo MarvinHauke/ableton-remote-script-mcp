@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: decided — spec and steps 2026-11-15. Frontier: step 1._
+_Stage: in work — step 1 built 2026-11-15. Frontier: step 2._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -314,6 +314,16 @@ meant to do, and uses only API names that exist in the Live build they target.
     steps instead of a fresh builder session; the plan, STATUS and the glossary are what is kept
     (user, 2026-11-15).
 
+32. **One name everywhere: `ableton-remote-script-mcp`** for the repo, the distribution and the
+    command; Python package `ableton_remote_script_mcp`. Subcommands carry the meaning
+    (`build-index`, `lookup class`, later `validate`); with no subcommand it will start the MCP
+    server over stdio (step 11), so an MCP config is just `uvx ableton-remote-script-mcp`. The
+    agent's first choice, `ableton-remote-script`, read as if the tool were a Remote Script
+    (user, 2026-11-15, step 1). Index location (agent, 2026-11-15, step 1): the index defaults to `~/.local/share/ableton-remote-script-mcp/index/`
+    (`$XDG_DATA_HOME` honoured, `ABLETON_REMOTE_SCRIPT_INDEX` or `--index-dir` override), outside
+    any repo; `/index/` is git-ignored as well. `build-index` without `--app` takes the newest
+    installed release build. The project requires Python 3.11 exactly (`marshal` needs it).
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -339,6 +349,13 @@ Every step's checks include `uv run pytest` passing.
      - **Local-only check:** in the real 12.4.16, `ControlSurfaceSpecification` exists and is
        found by `lookup`.
    - **Demo:** `build-index`, then `lookup class ControlSurfaceSpecification`.
+   - **Built 2026-11-15.** 12.4.16: 283 framework modules (`_Framework`, `ableton`), 731 classes,
+     0 unreadable files, all bases resolved through each module's imports. Classes are found by
+     simulating the bytecode from `LOAD_BUILD_CLASS` to its `CALL`, including `Generic[T]` bases
+     and `metaclass=` keywords. A base expression that isn't modelled keeps the class, flagged
+     `bases_parsed: false`. A resolved base is the name as imported, which can be a re-export
+     (`ableton.v3.control_surface.NotifyingControlElement`); following re-exports to the defining
+     module is step 3. Classes defined inside functions are not recorded.
 2. **Full extraction**
    - **Blocked by:** 1
    - **Delivers:**

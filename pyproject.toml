@@ -1,0 +1,26 @@
+[project]
+name = "ableton-remote-script-mcp"
+version = "0.1.0"
+description = "MCP server and agent skill for writing Ableton Live MIDI Remote Scripts (unofficial)"
+readme = "README.md"
+license = "MIT"
+# Live's Remote Scripts are CPython 3.11 bytecode; marshal can only read them with 3.11.
+requires-python = ">=3.11,<3.12"
+dependencies = []
+
+[project.scripts]
+ableton-remote-script-mcp = "ableton_remote_script_mcp.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ableton_remote_script_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["local_live: needs an installed Ableton Live build; skipped when it is absent"]

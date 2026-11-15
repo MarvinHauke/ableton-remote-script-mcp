@@ -3,3 +3,8 @@
 .scratch/
 .DS_Store
 __pycache__/
+# API index output: extracted from Ableton's code, stays local (CLAUDE.md)
+/index/
+.venv/
+.pytest_cache/
+*.egg-info/

@@ -6,7 +6,7 @@ A development-time assistant for **writing Ableton Live MIDI Remote Scripts** (c
 - an **MCP server** over the index
 
 It controls nothing at runtime; that is AbletonMCP's job. The architecture is plan
-`docs/feature-plans/0001-architecture.md` (stage: draft, being grilled).
+`docs/feature-plans/0001-architecture.md` (stage and frontier in its header and in `STATUS.md`).
 
 ## Where things are
 
