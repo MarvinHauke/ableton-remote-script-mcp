@@ -15,5 +15,5 @@ Stages: **draft** → **grilled** → **decided** (spec + steps) → **in work**
 
 ## Next, in dependency order
 
-1. 0001 steps 1–12 (and 9a); frontier in the plan's header and in STATUS. Milestone 1 after step 10.
+1. 0001 steps 1–12 (and 5a, 9a); frontier in the plan's header and in STATUS. Milestone 1 after step 10.
 2. Further plans as 0001 names them (expected: API index, skill, MCP server).

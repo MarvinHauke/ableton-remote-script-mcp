@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-15 (0001 step 5 built; step 7 on the frontier)._
+_Last updated: 2026-11-15 (0001 step 5 committed; step 5a, the docs site skeleton, on the frontier)._
 
 ## Now
 
@@ -29,15 +29,20 @@ _Last updated: 2026-11-15 (0001 step 5 built; step 7 on the frontier)._
   rebuild older indexes), with the conditions each statement runs under, kept in a separate
   `live-<build>.statements.json` so the API index stays names and signatures (user story 14
   amended). `uv run pytest` green (60 tests, 10 local-only).
-- [ready-for-agent] **0001 step 7** — validator: basic checks. Next in this session, after a `/compact`.
+- 0001 decision 36 (2026-11-15): a MkDocs documentation site on GitHub Pages, a docs agent and a
+  reviewer agent; skeleton as the new step 5a, user guides with step 12.
+- [ready-for-agent] **0001 step 5a** — documentation site skeleton. Next in this session, after a `/compact`.
 
 ## After grilling
 
 - Steps are built in this same session, with a `/compact` between steps (0001 decision 31).
-- Order: 1 → 2 → 3 → 5 → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12.
+- Order: 1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12.
 
 ## Small items
 
+- [ready-for-human] Ask the people responsible at Ableton whether extracted API facts and Live 13
+  beta findings may be published (0001 decisions 15 and 36); until then they stay local.
+- [ready-for-human] Delete the stray empty `decisions.md` in the repo root if it is not yours.
 - [ready-for-human] Set the GitHub repo description and topics (0001 decision 27).
 - [ready-for-human] Archive `ableton-remote-script-skill` on GitHub; its README already points here (commit 3100c40 by the skill-repo session, 2026-11-15) (0001 decision 21).
 

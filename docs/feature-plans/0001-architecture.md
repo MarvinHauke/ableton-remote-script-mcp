@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3 and 5 built 2026-11-15. Frontier: step 7._
+_Stage: in work — steps 1–3 and 5 built 2026-11-15. Frontier: step 5a._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -420,6 +420,32 @@ meant to do, and uses only API names that exist in the Live build they target.
       12.4.16: 2324 elements, 1067 components and 1001 layers over all 151 non-framework
       packages, in 0.7 s; 60 Remote Scripts show no elements.
 
+36. **A documentation site, written by a docs agent and checked by a reviewer** (user,
+    2026-11-15, after the agent's assessment of cmdAbl's setup):
+    - **Site:** MkDocs with the Material theme, published to GitHub Pages by a workflow on
+      `main`, as cmdAbl does. Pages are split by audience: users (install, how the toolchain
+      works, writing a Remote Script with the skill, the MCP setup), contributors (development,
+      architecture, tests), and maintainer pages that stay in the repo, outside the site. The
+      plans in `docs/feature-plans/` are not part of the site.
+    - **Nothing from Ableton in published pages** (the rule of CLAUDE.md and Decision 15, which
+      stands until the user has asked the people responsible at Ableton): naming API classes in
+      our own words is fine; command output, outlines and examples come from our hand-written
+      fixtures (`tests/hand_index.py`, the fake scripts), never from a real index; no Live 13
+      beta facts; Structure Void is linked and credited, not copied.
+    - **The CLI reference is generated** from the command's own argument parser by a script with
+      a `--check` mode, so a stale page fails the docs check. A local `scripts/docs-check.sh`
+      runs that check and `mkdocs build --strict`; CI runs the same.
+    - **Two agent definitions, on demand:** `.claude/agents/docs.md` writes pages from a brief and
+      from what the code and plans state, never invented behaviour; `.claude/agents/reviewer.md`
+      reviews changes read-only (contracts, the Ableton-material rule, plans and STATUS in sync)
+      and reports must-fix / consider. Docs pages are committed only after the reviewer passes
+      them. They run as subagents or as on-demand peer sessions; cmdAbl's `scripts/agents.sh`
+      team launcher is not adopted while one builder works the steps (Decision 31). These are
+      development tools for this repo, not part of the plugin (Decision 24). The rest of
+      `.claude/` stays untracked.
+    - **When:** the skeleton now, as step 5a; the user guides with step 12, once the skill and
+      the MCP server exist, so they don't churn.
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -428,7 +454,8 @@ None: grilling closed 2026-11-15 (user confirmed).
 
 Written by `/to-tickets` (2026-11-15, approved by the user). Each step is a vertical slice that works
 on its own and fits one fresh builder session. One builder at a time works the frontier in this order:
-1 → 2 → 3 → 5 → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12. Milestone 1 is complete after step 10.
+1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12. Milestone 1 is complete after step 10.
+Step 5a was added on 2026-11-15 (Decision 36).
 Every step's checks include `uv run pytest` passing.
 
 1. **Tracer bullet: index one build, look up one class**
@@ -515,6 +542,21 @@ Every step's checks include `uv run pytest` passing.
      APC_mini_mk2 (8 elements, 6 mappings, `Drum_Group` from the framework's map) and APC_mini
      (its shift button and session from `APC_Key_25`, its master volume from its own
      `_create_controls`, its transport not built because `HAS_TRANSPORT = False`).
+5a. **Documentation site skeleton** (Decision 36)
+   - **Blocked by:** 5
+   - **Delivers:**
+     - `mkdocs.yml` (Material) and the first pages: Home (what it is, unofficial, credits),
+       Getting started (install with uv, `build-index`), How it works (index → query core →
+       CLI, skill and MCP server; fact confidence; what stays local and why; the statement
+       summaries and `--no-statements`), the generated CLI reference, Known limits
+     - a script that generates the CLI reference from the argument parser, with `--check`
+     - `scripts/docs-check.sh` and a GitHub Pages workflow (the user enables Pages in the repo
+       settings)
+     - `.claude/agents/docs.md` and `.claude/agents/reviewer.md`, adapted from cmdAbl
+   - **Checks:** `scripts/docs-check.sh` passes (`mkdocs build --strict`, the reference is
+     current); a test that the reference generator's `--check` fails on a stale page; the
+     reviewer agent passes the pages, including the rule that no example comes from a real
+     index.
 6. **Structure Void as a cross-check**
    - **Blocked by:** 3
    - **Delivers:** imports a locally downloaded copy of the site's search index for Live 9–12 as
@@ -582,6 +624,8 @@ Every step's checks include `uv run pytest` passing.
       - a Claude Code plugin manifest (skill and MCP server), the MIT licence, and a README that
         says unofficial and not affiliated with Ableton and credits Structure Void
       - install instructions for other agents
+      - the user guides on the documentation site (Decision 36): writing a Remote Script with
+        the skill, the MCP server setup, and the install for Claude Code and other agents
     - **Checks:**
       - installs in Claude Code
       - `npx skills add` installs the skill
