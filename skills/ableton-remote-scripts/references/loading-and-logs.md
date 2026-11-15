@@ -13,8 +13,9 @@ yourself with `scripts/log.sh`. Never ask the user to paste the log.
 
 After `scripts/install.sh <folder>` succeeded:
 
-1. Quit and restart Live. Live reads a script's code when it loads the script; a restart makes
-   sure the new copy is the one that runs.
+1. Quit and restart Live. Live keeps a script's modules once it has imported them: reopening a
+   Set or choosing the script again runs the old code (`tested` in Live 12.4.16). Only a restart
+   runs the new copy.
 2. Settings → Link, Tempo & MIDI: in a free Control Surface slot choose `<Folder>`, and set its
    Input and Output to the controller's ports. For LED feedback the Output must be set.
 3. Say when it is done (and press a few pads or buttons if the checklist needs it).
@@ -54,6 +55,7 @@ Read it as follows:
 | `DependencyError: Required dependency register_component not provided` | an element or component was built outside `with self.component_guard():` |
 | `AttributeError: '…Component' object has no attribute 'set_…'` | an invented method; look the class up and use a member it has |
 | `TypeError: __init__() got an unexpected keyword argument` | an argument the constructor does not take; the lookup shows its signature |
+| `TypeError: int() argument must be … not 'NoneType'` in `send_value` | the script's own code sent an unset (`None`) LED value; turn the LED off for `None`, as the framework does |
 | `ModuleNotFoundError` / `ImportError` | a module Live's Python does not have, or a sibling import without the dot; the validator catches these before loading |
 
 ## When nothing happens and there is no traceback
@@ -66,3 +68,14 @@ The script loaded but a mapping does not react. Check, in this order:
 3. The session box: clip launch buttons act on the tracks and scenes inside the box drawn in
    Session View; an empty slot launches nothing.
 4. An element used twice: the second `set_…` call takes the element away from the first component.
+5. A different component holds the button: a combo with Shift, or a layer with a higher priority.
+
+## When it works only sometimes
+
+1. **Log what the script sees.** Add `self.log_message(...)` to the handlers in question (each
+   press, Shift's value, the box position before and after), let the user repeat it, and read the
+   records with `log.sh`. Take them out once the cause is found.
+2. **Compare with Ableton's script for the same controller** on the same hardware, if Live has
+   one. When it shows the same fault, suspect the controller (a worn button sends doubled or lost
+   messages, and slow hardware relights late), and write that down as unconfirmed instead of
+   working around it.

@@ -68,10 +68,7 @@ class Surface(ControlSurface):
 
     def _create_session(self):
         self._session = SessionComponent(NUM_TRACKS, NUM_SCENES, name="Session")
-        self._session.set_clip_launch_buttons(self._grid)
-        self._session.set_scene_launch_buttons(self._scene_buttons)
-        self._session.set_track_bank_buttons(self._right, self._left)
-        self._session.set_scene_bank_buttons(self._down, self._up)
+        # LED values first: handing over the buttons lights them with the values set so far
         for scene_index in range(NUM_SCENES):
             scene = self._session.scene(scene_index)
             for track_index in range(NUM_TRACKS):
@@ -80,6 +77,12 @@ class Surface(ControlSurface):
                 slot.set_started_value(LED_CLIP_PLAYING)
                 slot.set_triggered_to_play_value(LED_CLIP_TRIGGERED)
                 slot.set_recording_value(LED_CLIP_RECORDING)
+        self._session.set_clip_launch_buttons(self._grid)
+        self._session.set_scene_launch_buttons(self._scene_buttons)
+        # Plain buttons only: bank buttons repeat while held, so with Shift combos use one step
+        # per press instead (references/framework-script.md, "One button, two jobs")
+        self._session.set_track_bank_buttons(self._right, self._left)
+        self._session.set_scene_bank_buttons(self._down, self._up)
         self.set_highlighting_session_component(self._session)  # the box in Live's Session View
 
     def _create_mixer(self):

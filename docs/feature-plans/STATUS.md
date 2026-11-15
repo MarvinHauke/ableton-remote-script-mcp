@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-15 (0001 step 9 in work: skill v1 drafted, the APC mini mk1 script waits for the load test)._
+_Last updated: 2026-11-15 (0001 step 9 built: skill v1, the APC mini mk1 script passed its load test)._
 
 ## Now
 
@@ -41,21 +41,27 @@ _Last updated: 2026-11-15 (0001 step 9 in work: skill v1 drafted, the APC mini m
   rules `folder-name`, `syntax-error`, `create-instance` and `unresolved-import`; imports are
   checked against the Python Live ships, which the index now lists (0001 decision 37, index
   schema 5; rebuild older indexes). `uv run pytest` green (87 tests, 11 local-only).
-- 0001 step 9 in work on `feat/0001-step-9-skill-v1` (2026-11-15): the skill
+- 0001 step 9 built on `feat/0001-step-9-skill-v1` (2026-11-15): the skill
   `skills/ableton-remote-scripts/` v1 (workflow, `_Framework` reference and template, loading and
   logs, four scripts), the commands `install` and `log`, and `folder-name` for names that are
-  not Python names (0001 decision 38). A fresh agent wrote `examples/APC_mini_mk1/` with the
-  skill; it validates clean against 12.4.16 and is installed in the User Library. Its feedback
-  was folded into the skill. `uv run pytest` green (102 tests, 13 local-only).
-- [ready-for-human] **Load `APC_mini_mk1` in Live 12.4.16** and walk the checklist in
-  [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md); the agent reads `Log.txt`.
+  not Python names (0001 decision 38). `examples/APC_mini_mk1/` passed the load test and the
+  12-item checklist in Live 12.4.16; results, fixes and the comparison with Ableton's `APC_mini`
+  are in [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), and the skill took the
+  repeatable findings (0001 decision 40). `uv run pytest` green (102 tests, 13 local-only).
+- Next: step 9a, skill evals.
 
 ## After grilling
 
 - Steps are built in this same session, with a `/compact` between steps (0001 decision 31).
-- Order: 1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12.
+- Order: 1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12 → 13 (13, the
+  with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [needs-triage] `APC_mini_mk1`: Shift's fader modes (volume, pan, send, device) and track
+  modes (stop, solo, arm, mute, select), as on Ableton's script. Not in a step yet.
+- [needs-triage] Whether `OptimizedControlSurface` matters for scripts with combos; the APC mini
+  test controller could not tell (0001 decision 40). Needs other hardware.
 
 - [ready-for-agent] Before the first push (the repo is public): take the Live 13 beta findings out of
   the research doc's section 3 (12.4.16 → 13.0b25 differences; it also lists the User Library's

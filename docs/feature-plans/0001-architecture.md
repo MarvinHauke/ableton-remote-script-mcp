@@ -527,6 +527,21 @@ meant to do, and uses only API names that exist in the Live build they target.
       its behaviour checklist and the results; the scripts written in the demos live in
       `examples/` (our own code).
 
+39. **A with/without benchmark comes last, as step 13** (user, 2026-11-15, step 9). Once every
+    other step is built, the same Remote Script tasks run with the skill and the MCP server and
+    without them. The scores, time and tokens go in a short README table that links to the full
+    results. The load test in Live stays the user's step. Published results hold only our own
+    tasks and scores, on 12.4 builds: no Ableton material, no Live 13 beta facts.
+40. **The APC mini load test: what goes into the skill** (user and agent, 2026-11-15, step 9).
+    The user ran the checklist in Live 12.4.16; three items were added during it (stop LEDs,
+    Stop All, Shift + an unbuilt button does nothing). A finding goes into the skill only when it
+    happens every time and the framework source or a traceback explains it (user). Intermittent
+    faults that Ableton's `APC_mini` shows on the same controller too (late relights, doubled or
+    lost Shift messages) are recorded in the milestone page as unconfirmed, because the controller or its
+    Shift button may be worn (user). Plain `reset()` is kept in `disconnect`: a forced send was
+    not needed once the test was run by choosing None (user's retest). Shift's fader and track
+    modes are not part of step 9 (agent).
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -535,8 +550,8 @@ None: grilling closed 2026-11-15 (user confirmed).
 
 Written by `/to-tickets` (2026-11-15, approved by the user). Each step is a vertical slice that works
 on its own and fits one fresh builder session. One builder at a time works the frontier in this order:
-1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12. Milestone 1 is complete after step 10.
-Step 5a was added on 2026-11-15 (Decision 36).
+1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12 → 13. Milestone 1 is complete after step 10.
+Step 5a was added on 2026-11-15 (Decision 36), step 13 on 2026-11-15 (Decision 39).
 Every step's checks include `uv run pytest` passing.
 
 1. **Tracer bullet: index one build, look up one class**
@@ -689,6 +704,11 @@ Every step's checks include `uv run pytest` passing.
      - the behaviour checklist passes, covering the button matrix and buttons (Decision 29)
      - every API name it uses is `observed`
      - it is compared with Ableton's `APC_mini`
+   - **Built** (2026-11-15): the load test and the 12-item checklist pass in Live 12.4.16, the
+     comparison and the findings are in [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md),
+     and the skill took the repeatable findings (Decision 40). Every API name is `observed`,
+     except `is_grouped` and `group_track` (observed only in the Push 3 helper's proxy model,
+     `tested` by the checklist) and three `SessionComponent` instance attributes (`documented`).
 9a. **Skill evals**
    - **Blocked by:** 9
    - **Delivers:** with `/skill-creator`'s eval workflow:
@@ -727,6 +747,18 @@ Every step's checks include `uv run pytest` passing.
       - `npx skills add` installs the skill
       - no Ableton material or Live 13 data in the published files
       - the user sets the GitHub description and topics (Decision 27)
+
+13. **Benchmark: with and without the skill and the MCP server** (Decision 39)
+    - **Blocked by:** 12
+    - **Delivers:**
+      - a set of Remote Script tasks (write a script for a controller, add a feature, fix a
+        script that does not load), run with the skill and the MCP server and without them
+      - scores checked by a script: the result validates clean against the build's index, every
+        API name it uses is in that build, the known traps are avoided; time and tokens per run
+      - a short README table, linked to the full results on the documentation site
+    - **Checks:**
+      - the user loads the best and the worst script of each side in Live; the agent reads `Log.txt`
+      - no Ableton material or Live 13 data in the published results
 
 ## Out of scope
 

@@ -38,7 +38,7 @@ script uses most:
 | `song()` | the `Live.Song.Song` of the open Set |
 | `set_highlighting_session_component(session)` | draws the session box in Session View |
 | `schedule_message(delay_in_ticks, callback, parameter=None)` | run `callback` a number of display ticks later |
-| `disconnect()` | override to turn off LEDs, then call `super().disconnect()` |
+| `disconnect()` | override to turn off LEDs (`reset()` on each button matrix), then call `super().disconnect()` |
 
 ## Elements: the physical controls
 
@@ -61,7 +61,7 @@ scene, so order the rows top to bottom even when the hardware numbers its pads f
 
 | Class | Constructor | Members a script sets |
 |---|---|---|
-| `_Framework.SessionComponent.SessionComponent` | `(num_tracks=0, num_scenes=0, auto_name=False, enable_skinning=False, …)`, plus `name=`, `is_enabled=` and `layer=` from `ControlSurfaceComponent` | `scene(index)` returns a scene; `set_clip_launch_buttons(matrix)`, `set_scene_launch_buttons(matrix)`, `set_track_bank_buttons(right_button, left_button)`, `set_scene_bank_buttons(down_button, up_button)`, `set_stop_track_clip_buttons(buttons)`, `set_stop_all_clips_button(button)`, `set_mixer(mixer)`, `set_offsets(track_offset, scene_offset)` |
+| `_Framework.SessionComponent.SessionComponent` | `(num_tracks=0, num_scenes=0, auto_name=False, enable_skinning=False, …)`, plus `name=`, `is_enabled=` and `layer=` from `ControlSurfaceComponent` | `scene(index)` returns a scene; `set_clip_launch_buttons(matrix)`, `set_scene_launch_buttons(matrix)`, `set_track_bank_buttons(right_button, left_button)`, `set_scene_bank_buttons(down_button, up_button)`, `set_stop_track_clip_buttons(buttons)`, `set_stop_clip_value(value)`, `set_stop_clip_triggered_value(value)`, `set_stop_all_clips_button(button)`, `set_mixer(mixer)`, `set_offsets(track_offset, scene_offset)` |
 | `_Framework.SceneComponent.SceneComponent` (from `session.scene(i)`) | | `clip_slot(index)`, `set_launch_button(button)`, `set_scene_value(value)`, `set_no_scene_value(value)`, `set_triggered_value(value)` |
 | `_Framework.ClipSlotComponent.ClipSlotComponent` (from `scene.clip_slot(j)`) | | `set_launch_button(button)`, `set_stopped_value(value)`, `set_started_value(value)`, `set_triggered_to_play_value(value)`, `set_triggered_to_record_value(value)`, `set_recording_value(value)`, `set_record_button_value(value)` |
 | `_Framework.MixerComponent.MixerComponent` | `(num_tracks=0, num_returns=0, auto_name=False, invert_mute_feedback=False, …)` | `channel_strip(index)`, `master_strip()`, `selected_strip()`, `return_strip(index)`, `set_volume_controls(controls)`, `set_arm_buttons(buttons)`, `set_solo_buttons(buttons)`, `set_mute_buttons(buttons)`, `set_track_select_buttons(buttons)` |
@@ -80,6 +80,26 @@ stopped, and so on for triggered and recording. Which value shows which colour o
 controller (its manual lists the velocities its LEDs accept), so the values belong with the device
 facts. What a slot sends when it was given no value is not in the index; set a value for every
 state the checklist covers, and check the LEDs in the behaviour checklist.
+
+- **Stop buttons:** `set_stop_clip_value` lights a track's stop button while the track plays,
+  `set_stop_clip_triggered_value` while a quantized stop waits. Unset, the stop value starts as
+  `None` (the button stays dark while its track plays) and the triggered value as 127
+  (`documented`, decompiled 12.0 framework; setting both `tested` in Live 12.4.16).
+- **Set LED values before the layer.** Assigning a layer hands the buttons over at once, and the
+  component lights them with the values it has, so the first lighting uses the defaults otherwise
+  (`documented`, decompiled 12.0 framework).
+- **An override that sends LED values must handle `None`.** The framework treats an unset value
+  as "turn off"; code of your own that passes it to `send_value` crashes with
+  `TypeError: int() argument must be … not 'NoneType'`, and only once there is something to
+  light, such as a playing clip when the Set opens (`tested` in Live 12.4.16).
+- **Group tracks:** Live reports a playing clip only on the track that holds it, so a group
+  track's stop button is never lit while the tracks in it play (`tested` in Live 12.4.16). The
+  group's button blinks when the group itself is stopped. To light it, listen to
+  `playing_slot_index` of every track and check `is_grouped` and `group_track` (`observed` in the
+  Push 3 helper's proxy model of `Live.Track.Track`).
+- **Turning LEDs off:** `reset()` on a button matrix turns its lit LEDs off; in `disconnect()` it
+  is enough when the user chooses None as the Control Surface (`tested` in Live 12.4.16). When
+  the user removes the output port instead, no script can reach the device and the LEDs stay lit.
 
 ## Rules that keep a script loading
 
@@ -109,8 +129,32 @@ before writing one.
   the combo (higher priority) takes the button away from the plain binding while Shift is held.
   A button that is the modifier of several combos needs
   `resource_type=_Framework.Resource.SharedResource` in its constructor, so they can all hold it.
-  Ableton's `APC_mini` outline shows the pattern.
-- **Layers on components:** a component takes `layer=Layer(clip_launch_buttons=grid, …)`; each
+  Ableton's `APC_mini` outline shows the pattern. Four things go with it (each `tested` in Live
+  12.4.16, explained by the decompiled 12.0 framework):
+  - **Give every Shift combination a job.** A button with no combo keeps its plain job while
+    Shift is held, so Shift + an unbuilt button stops clips or launches a scene. Put combos for
+    those buttons in a matrix and give it, through a layer, to a component that only holds them.
+  - **Move one step per press with combos.** The session's bank buttons
+    (`set_track_bank_buttons`, `set_scene_bank_buttons`) repeat while held and stop only on the
+    button's release. When the user lets go of Shift first, the release goes to the plain
+    binding, and the box keeps moving. A small component that calls `session.set_offsets` on
+    each press has no such state.
+  - **Light a combo's button in its setter.** When Shift is pressed, the combo takes its button
+    and the layer calls the component's setter again. Send the LED there, only when
+    `bool(combo)` is true (the combo holds its button).
+  - **Write LEDs only to buttons the component holds.** Another component's LED updates still
+    reach a button a combo holds (a session's stop LEDs, for example) unless it checks
+    `matrix.owns_control_element(button)` first. And leave a borrowed button's LED as it is: a
+    scene relights its button only when it is given a different one, so an LED darkened while
+    Shift was held stays dark after it is let go.
+  Open question: Ableton's combo scripts build on `_Framework.ControlSurface.OptimizedControlSurface`
+  (`observed`), which hands each button to its final owner once per incoming MIDI message
+  (`documented`). Whether a plain `ControlSurface` behaves worse with combos is not known yet.
+- **Layers on components:** assign the layer after building the component,
+  `session.layer = Layer(clip_launch_buttons=grid, …)`. A `layer=` passed to the constructor is
+  grabbed only when the component's enabled state changes, so on a component that starts enabled
+  it never takes effect: no button works and no LED lights, with no traceback (`tested` in Live
+  12.4.16; Ableton's scripts pass `is_enabled=False` and enable the component later). Each layer
   key is the name after `set_` of one of the component's setters (`set_clip_launch_buttons`).
   This rule is `documented` (read in the decompiled 12.0 framework); the index shows only the
   setters, so look the setter up for each key.
