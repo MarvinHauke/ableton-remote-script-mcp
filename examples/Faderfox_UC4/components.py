@@ -1,14 +1,27 @@
-"""Two small components of our own, for panel functions no framework component has: the Monitor
-green buttons and the Global group's scene start button."""
+"""Components of our own: the Monitor green buttons and the Global group's scene start button,
+which no framework component has, and a session ring that is on without an identity reply."""
 
 from ableton.v3.base import depends, listens, listens_group
 from ableton.v3.control_surface import Component
+from ableton.v3.control_surface.components import (
+    SessionRingComponent as SessionRingComponentBase,
+)
 from ableton.v3.control_surface.controls import ButtonControl, control_list
 from ableton.v3.live import liveobj_valid
 
 # values of a track's current_monitoring_state (Live.Track.Track.monitoring_states)
 MONITOR_IN = 0
 MONITOR_AUTO = 1
+
+
+class SessionRingComponent(SessionRingComponentBase):
+    """The framework builds the session ring disabled and enables it only when the controller
+    answers the identity request (Specification `identity_response_id_bytes`). The UC4 is not
+    identified, so the ring enables itself; otherwise Live draws no box."""
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.set_enabled(True)
 
 
 class MonitorComponent(Component):

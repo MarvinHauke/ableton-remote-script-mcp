@@ -71,8 +71,9 @@ the UC4 on SE17 and its port as the Control Surface's input and output.
 
 1. **Loads:** `log.sh --script Faderfox_UC4` shows `Faderfox UC4 (SE17) ready` and no
    traceback.
-2. **Session ring:** a box of 8 tracks × 1 scene is drawn in Session View, on the selected scene;
-   selecting another scene in Live moves it.
+2. **Session ring:** a box of 8 tracks × 1 scene is drawn in Session View; selecting another
+   scene with the UC4 (Global encoder 4, Track buttons 5–6) moves it. A mouse click doesn't:
+   the framework follows only selections made through the script (corrected during the test).
 3. **Faders:** faders 1–8 set the volume of the 8 tracks in the box; each picks the value up
    before it moves it (`SnAP`). Fader 9 moves the crossfader.
 4. **Send and pan groups:** in Send 1–4 the encoders set sends A–D of the 8 tracks; in Pan their
@@ -103,4 +104,22 @@ the UC4 on SE17 and its port as the Control Surface's input and output.
 
 ## Results
 
-Not run yet.
+Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
+
+| Item | Result |
+|---|---|
+| 1 Loads | passed: `Faderfox UC4 (SE17) ready`, no traceback (also confirms how Live logs a v3 script) |
+| 2 Session ring | passed after fix 1; the box follows Global encoder 4 |
+| 3 Faders | passed after fix 2: volumes, pickup (`SnAP`), crossfader |
+
+Fixes found by the test:
+
+1. **No box drawn.** v3 builds the session ring disabled and enables it only when the
+   controller answers the identity request (`observed` in 12.4.16's `ControlSurface`
+   statements). The UC4 doesn't, so the script's ring enables itself
+   (`session_ring_component_type`). The box the user first saw was the APC mini's.
+2. **No values sent to the UC4,** so its pickup compared against its own last value and the
+   volume jumped. A v3 `EncoderElement` sends a mapped parameter's value back only with
+   `is_feedback_enabled=True` (default `False`, `observed`); FANTOM and Komplete Kontrol S mk3
+   pass it. Now set on every fader and absolute encoder; the UC4 displays Live's values and
+   picks up.

@@ -21,37 +21,41 @@ CH14 = 13  # Ch14: the Track encoder group, fader 9 and the Track green buttons
 # "Relative (2's Comp.)"
 RELATIVE = MapMode.LinearTwoCompliment
 
+# Live sends a mapped parameter's value back only to elements built with is_feedback_enabled=True
+# (v3's default is False). The UC4 shows it on its display and its pickup (SnAP) waits for it.
+SHOWS_VALUE = {"is_feedback_enabled": True}
+
 
 class Elements(ElementsBase):
     def __init__(self, *a, **k):
         super().__init__(*a, global_channel=CH13, **k)
         # faders 1-8 (CC 40-47, SnAP: the UC4 sends only after catching the value) and fader 9
-        self.add_encoder_matrix([range(40, 48)], "Faders")
-        self.add_encoder(48, "Crossfader", channel=CH14)
+        self.add_encoder_matrix([range(40, 48)], "Faders", **SHOWS_VALUE)
+        self.add_encoder(48, "Crossfader", channel=CH14, **SHOWS_VALUE)
 
         # encoder groups 1-4 (Send 1-4), 7 (Pan) and 6 (Rack): eight absolute CCs each
-        self.add_encoder_matrix([range(8)], "Send_A_Encoders")
-        self.add_encoder_matrix([range(8, 16)], "Send_B_Encoders")
-        self.add_encoder_matrix([range(16, 24)], "Send_C_Encoders")
-        self.add_encoder_matrix([range(24, 32)], "Send_D_Encoders")
-        self.add_encoder_matrix([range(32, 40)], "Pan_Encoders")
-        self.add_encoder_matrix([range(48, 56)], "Rack_Encoders")
+        self.add_encoder_matrix([range(8)], "Send_A_Encoders", **SHOWS_VALUE)
+        self.add_encoder_matrix([range(8, 16)], "Send_B_Encoders", **SHOWS_VALUE)
+        self.add_encoder_matrix([range(16, 24)], "Send_C_Encoders", **SHOWS_VALUE)
+        self.add_encoder_matrix([range(24, 32)], "Send_D_Encoders", **SHOWS_VALUE)
+        self.add_encoder_matrix([range(32, 40)], "Pan_Encoders", **SHOWS_VALUE)
+        self.add_encoder_matrix([range(48, 56)], "Rack_Encoders", **SHOWS_VALUE)
 
         # encoder group 5 (Track), Ch14 CC 56-63; encoders 7 and 8 are left free
-        self.add_encoder(56, "Track_Volume_Encoder", channel=CH14)
-        self.add_encoder(57, "Track_Send_A_Encoder", channel=CH14)
-        self.add_encoder(58, "Track_Send_B_Encoder", channel=CH14)
+        self.add_encoder(56, "Track_Volume_Encoder", channel=CH14, **SHOWS_VALUE)
+        self.add_encoder(57, "Track_Send_A_Encoder", channel=CH14, **SHOWS_VALUE)
+        self.add_encoder(58, "Track_Send_B_Encoder", channel=CH14, **SHOWS_VALUE)
         self.add_encoder(59, "Track_Select_Encoder", channel=CH14, map_mode=RELATIVE)
         self.add_encoder(60, "Device_Select_Encoder", channel=CH14, map_mode=RELATIVE)
-        self.add_encoder(61, "Track_Pan_Encoder", channel=CH14)
+        self.add_encoder(61, "Track_Pan_Encoder", channel=CH14, **SHOWS_VALUE)
 
         # encoder group 8 (Global), CC 56-63; encoders 5 and 7 are left free
         self.add_encoder(56, "Tempo_Coarse_Encoder", map_mode=RELATIVE)
         self.add_encoder(57, "Tempo_Fine_Encoder", map_mode=RELATIVE)
-        self.add_encoder(58, "Cue_Volume_Encoder")
+        self.add_encoder(58, "Cue_Volume_Encoder", **SHOWS_VALUE)
         self.add_encoder(59, "Scene_Select_Encoder", map_mode=RELATIVE)
-        self.add_encoder(61, "Master_Volume_Encoder")
-        self.add_encoder(63, "Master_Pan_Encoder")
+        self.add_encoder(61, "Master_Volume_Encoder", **SHOWS_VALUE)
+        self.add_encoder(63, "Master_Pan_Encoder", **SHOWS_VALUE)
 
         # the Global group's push buttons, notes 120-127
         self.add_button(120, "Nudge_Down_Button", msg_type=MIDI_NOTE_TYPE)

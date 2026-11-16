@@ -28,7 +28,7 @@ from ableton.v3.control_surface import (
     create_skin,
 )
 
-from .components import MonitorComponent, SceneLaunchComponent
+from .components import MonitorComponent, SceneLaunchComponent, SessionRingComponent
 from .elements import Elements
 from .mappings import create_mappings
 from .skin import Skin
@@ -42,6 +42,7 @@ class Specification(ControlSurfaceSpecification):
     num_tracks = 8
     num_scenes = 1
     link_session_ring_to_scene_selection = True  # Launch plays the selected scene's row
+    session_ring_component_type = SessionRingComponent  # on without an identity reply
     create_mappings_function = create_mappings
     component_map = {"Monitor": MonitorComponent, "Scene_Launch": SceneLaunchComponent}
 

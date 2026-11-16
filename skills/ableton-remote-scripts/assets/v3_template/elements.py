@@ -19,7 +19,8 @@ class Elements(ElementsBase):
     def __init__(self, *a, **k):
         super().__init__(*a, global_channel=CHANNEL, **k)
         # the name in snake case is the element's name in the mappings: "faders", "play_button"
-        self.add_encoder_matrix([FADER_CCS], "Faders")
+        # is_feedback_enabled: Live sends the value back (for a value display or device pickup)
+        self.add_encoder_matrix([FADER_CCS], "Faders", is_feedback_enabled=True)
         self.add_button_matrix([TRACK_BUTTON_NOTES], "Track_Buttons", msg_type=MIDI_NOTE_TYPE)
         self.add_button(PLAY_NOTE, "Play_Button", msg_type=MIDI_NOTE_TYPE)
         self.add_button(STOP_NOTE, "Stop_Button", msg_type=MIDI_NOTE_TYPE)

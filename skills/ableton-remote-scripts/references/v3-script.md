@@ -54,9 +54,30 @@ The fields a script sets most, with the framework default:
 | `link_session_ring_to_track_selection` | `False` | the ring follows the selected track |
 | `link_session_ring_to_scene_selection` | `False` | the ring follows the selected scene |
 | `component_map` | `{}` | your own components by name, or a framework one replaced |
-| `identity_response_id_bytes` | `None` | bytes of the device's SysEx identity reply; set, the script waits for the reply before it starts (`documented`) |
+| `identity_response_id_bytes` | `None` | bytes of the device's SysEx identity reply (see below) |
+| `session_ring_component_type` | `SessionRingComponent` | a ring class of your own (see below) |
 | `hello_messages`, `goodbye_messages` | `None` | MIDI sent on start and on exit |
 | `feedback_channels`, `playing_feedback_velocity` | `None`, `127` | note feedback for drum pads and the like |
+
+**A controller with no identity reply gets no session box.** The framework builds the session
+ring disabled and enables it only when the controller answers the SysEx identity request
+(`observed` in 12.4.16's `ControlSurface`). Without `identity_response_id_bytes` it stays
+disabled: the mappings work, but Live draws no box. Give such a script a ring that enables
+itself (`tested` on the Faderfox UC4 in 12.4.16):
+
+```python
+from ableton.v3.control_surface.components import SessionRingComponent as SessionRingBase
+
+class SessionRingComponent(SessionRingBase):
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.set_enabled(True)   # no identity reply will enable it
+```
+
+and set `session_ring_component_type = SessionRingComponent` in the Specification.
+`link_session_ring_to_scene_selection` (and `…_track_selection`) moves the box only for
+selections made through the script's `View_Control` (`scene_encoder`, `prev_scene_button`, …),
+not for clicks in Live (`observed`, `tested`).
 
 The validator reports a field the base class doesn't have (`specification-field`). A typo
 otherwise only makes a new class attribute that nothing reads.
@@ -92,6 +113,13 @@ checks every name in the mappings against what `Elements` builds (`element-name`
 `Live.MidiMap.MapMode` values: `Absolute`, `LinearTwoCompliment` (1 up, 127 down, smooth),
 `AccelTwoCompliment`, `LinearBinaryOffset` (65 up, 63 down), `LinearSignedBit`, and more. Which
 one the device sends is a device fact.
+
+**Values back to the controller.** An encoder element sends a mapped parameter's value back
+only when it's built with `is_feedback_enabled=True`; the default is `False` (observed in
+12.4.16; FANTOM and Komplete Kontrol S mk3 pass `True`). Set it for every fader and absolute
+knob of a controller that shows values or picks them up (a value display, LED rings, soft
+pickup on the device): without it the device never learns Live's value, and its own pickup
+jumps (`tested` on the Faderfox UC4 in 12.4.16).
 
 **One element per MIDI message.** Two controls that send the same type, channel and number
 (the same note on two pages of a controller) are one element; build it once and map it once.
