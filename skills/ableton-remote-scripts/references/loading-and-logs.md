@@ -77,6 +77,12 @@ The script loaded but a mapping does not react. Check, in this order:
 
 ## When it works only sometimes
 
+An exception in one listener can stop the listeners after it that the same message would have
+reached: the framework calls them in turn without catching errors (`documented`, decompiled 12.0
+framework), and while a combo threw on every Shift message, the script's other Shift listener
+never saw a release (`tested` in Live 12.4.16). So read the framework-only tracebacks first, even when the symptom
+looks unrelated.
+
 1. **Log what the script sees.** Add `self.log_message(...)` to the handlers in question (each
    press, Shift's value, the box position before and after), let the user repeat it, and read the
    records with `log.sh`. Take them out once the cause is found.

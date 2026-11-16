@@ -102,6 +102,15 @@ state the checklist covers, and check the LEDs in the behaviour checklist.
   group's button blinks when the group itself is stopped. To light it, listen to
   `playing_slot_index` of every track and check `is_grouped` and `group_track` (`observed` in the
   Push 3 helper's proxy model of `Live.Track.Track`).
+- **Let the element skip unchanged values.** `send_value(value)` sends nothing when the value and
+  channel are the ones it sent last; `force=True` sends anyway (`documented`, decompiled 12.0
+  framework; the signature is `observed` in 12.4.16). Keep `force` for the rare reset: unneeded
+  LED messages add up, and the APC mini mk1 we tested lost button presses when flooded with them
+  (`tested` in Live 12.4.16, 0001 decision 41).
+- **Timed LEDs:** for a blink or a light show, use the control surface's task scheduler
+  (`_Framework.Task`, `observed` in 12.4.16), never `time.sleep`, which stops Live
+  (`documented`, Structure Void's cookbook). Software blinking sends a message per change, so
+  mind the traffic above.
 - **Turning LEDs off:** `reset()` on a button matrix turns its lit LEDs off; in `disconnect()` it
   is enough when the user chooses None as the Control Surface (`tested` in Live 12.4.16). When
   the user removes the output port instead, no script can reach the device and the LEDs stay lit.

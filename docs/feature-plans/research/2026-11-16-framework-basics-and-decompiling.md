@@ -41,14 +41,24 @@ Nothing from the posts changes the APC mini script. One idea is worth taking up:
 rule that warns when two elements are built for the same MIDI type, channel and number, which
 the posts name as a cause of a script that does not load.
 
-## Structure Void's guides
+## Structure Void's guides (read 2026-11-16)
 
-Not read again here: the site answers automated fetches with 403, and the Chrome extension was
-not connected. The sitemap lists 18 guide pages, among them `debugging`, `cookbook`,
-`midi-message-flow`, `controller-colours` and `idea-to-script`, which the 2026-11-14 note did not
-cover. Next time Chrome is connected, read those five for reliability tips, in particular what
-`midi-message-flow` says about forwarding and MIDI map rebuilds, given the LED-traffic finding of
-0001 decision 41.
+Read in Chrome: `debugging`, `midi-message-flow`, `cookbook`, `controller-colours` and
+`idea-to-script` (midiremotescripts.structure-void.com, Julien Bayle, CC BY-NC-SA 4.0; summarised
+here in our own words, every point `documented` until checked).
+
+| Point | For us |
+|---|---|
+| An exception in a callback can stall a script (input stops, LEDs freeze); during development, catch and log it in risky handlers, and remove that later so real bugs are not hidden | matches what we saw on 2026-11-16: while a combo threw on every Shift message, the other listeners of that message never ran (our Shift logger got no releases). Worth a line in the skill |
+| Log every incoming message by overriding `receive_midi` | an in-Live alternative to ReceiveMIDI; ReceiveMIDI is better for blaming the hardware, since it reads the device apart from Live |
+| Direct mapping (Live connects a fader to a parameter in its core, no Python) versus forwarding (the script gets the message) | matches the framework: our faders are direct mappings, so fader noise never reaches our Python |
+| A MIDI map rebuild is requested and done later, not at once | known; no change |
+| Time things with the framework's task scheduler, never `time.sleep` (it freezes Live) | the way to blink faster than the hardware does, which the user asked for; but software blinking adds LED traffic, which this controller handles badly (0001 decision 41) |
+| The cookbook's grid example sends every pad with `force=True` | the opposite of what we measured: forced sends skip the element's check for unchanged values (decompiled 12.0 framework), and unneeded LED traffic made the APC mini lose presses. The skill should say to leave `force` for the rare reset |
+| Remove every listener you add by hand in `disconnect()`; components built in the guard are torn down for you | already in the skill |
+| Show a status-bar message when the script has loaded | a cheap check for the user; worth adding to the template and the APC script |
+| Re-selecting the control surface re-runs `create_instance`; some setups need a restart to clear cached code | our test is stricter: in 12.4.16 only a restart loads new code (tested 2026-11-15) |
+| Colour values are per controller; the colours page lists the tables of Ableton's scripts, the APC mini mk2 among them, not the mk1 | our mk1 values come from Akai's protocol (the device facts page) |
 
 ## Other sources
 

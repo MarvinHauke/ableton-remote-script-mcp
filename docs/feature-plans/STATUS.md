@@ -62,12 +62,11 @@ _Last updated: 2026-11-16 (0001 step 9 built: skill v1, the APC mini mk1 script 
 - [needs-triage] Validator rule: warn when two elements are built for the same MIDI type, channel
   and number (a load failure the 2010 blog posts name; check it in 12.4.16 first). From
   [research/2026-11-16-framework-basics-and-decompiling.md](research/2026-11-16-framework-basics-and-decompiling.md).
-- [ready-for-agent] Read Structure Void's guides `debugging`, `cookbook`, `midi-message-flow`,
-  `controller-colours` and `idea-to-script` for reliability tips (the site blocks automated
-  fetches; needs the Chrome extension).
 
 - [needs-triage] `APC_mini_mk1`: Shift's fader modes (volume, pan, send, device) and track
   modes (stop, solo, arm, mute, select), as on Ableton's script. Not in a step yet.
+- [ready-for-human] On the next Live restart, check that `APC_mini_mk1` shows "APC_mini_mk1
+  loaded" in Live's status bar (added 2026-11-16, not yet run in Live).
 - [ready-for-human] The user plans to get a second grid controller (2026-11-15). On it, check
   how much LED traffic it takes before it loses presses; the APC mini's limit is in
   [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md) (0001 decision 41).

@@ -231,6 +231,7 @@ class APC_mini_mk1(OptimizedControlSurface):
             self._create_session()
             self._create_mixer()
         self.log_message("APC_mini_mk1 ready")
+        self.show_message("APC_mini_mk1 loaded")  # in Live's status bar, for the user
 
     def _create_elements(self):
         self._grid = ButtonMatrixElement(

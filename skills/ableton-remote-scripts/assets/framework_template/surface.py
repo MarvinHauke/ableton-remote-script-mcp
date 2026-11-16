@@ -54,6 +54,7 @@ class Surface(ControlSurface):
             self._create_session()
             self._create_mixer()
         self.log_message("ready")
+        self.show_message(f"{type(self).__name__} loaded")  # in Live's status bar, for the user
 
     def _create_elements(self):
         self._grid = ButtonMatrixElement(
