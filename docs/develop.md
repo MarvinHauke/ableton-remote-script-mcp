@@ -37,17 +37,17 @@ scripts/eval_run.sh <out dir>                          # all cases, 3 runs per a
 scripts/eval_run.sh <out dir> --case uc4-mixer-v3 --runs 1 --ablation none   # one quick run
 ```
 
-- **What it needs:** an index built with `build-index`, and Python 3.12 at
-  `/opt/homebrew/bin/python3.12` (or `EVAL_PYTHON`). The sandbox can read neither this repo nor
-  `~/.local/share`, so for the length of the round the script puts a self-contained build of the
-  CLI and a copy of the index into `~/.local/bin`, and removes them afterwards.
+- **What it needs:** an index built with `build-index`, and uv's Python 3.11 (`uv python install
+  3.11`; `EVAL_PYTHON` names another one the sandbox can read). The sandbox can read neither this
+  repo nor `~/.local/share`, so for the length of the round the script puts a self-contained
+  build of the CLI, a copy of that Python and a copy of the index into `~/.local/bin`, and
+  removes them afterwards.
 - **The scores:** `scores.md` and `scores.json` in `<out dir>` hold each run's validator
   findings and its unknown names (`scripts/eval_names.py`) against Live 12.4.16 (`EVAL_BUILD`
   to change it), and flag runs that read the repo or the skill's `evals/`, or that use the CLI
   without the skill.
-- **Python versions:** the CLI inside the sandbox runs on Python 3.12, so its `validate` checks
-  imports against 3.12's standard library, while the scoring runs on the project's 3.11. A
-  script that imports a module only one of them has can score differently in the two places.
+- **Python versions:** the CLI inside the sandbox and the scoring both run on Python 3.11, as
+  Live does. On another Python, `validate` lists its framework checks as not checked.
 - **What is left afterwards:** each run's trace goes to `<out dir>/traces/`, and the sandboxes
   the eval command kept in the temp folder are deleted (they hold traces with output from Live's
   `.pyc` files). The out dir must be outside the repo or git-ignored; the script refuses

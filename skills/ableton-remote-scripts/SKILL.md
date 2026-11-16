@@ -87,9 +87,18 @@ Each script's header lists its options and exit codes.
    finds them by the folder name.
 
 7. **Validate, then install.** Run `scripts/validate.sh <folder>` and fix every finding; the
-   validator parses the code as Live's Python does and checks imports and `create_instance`
-   against the build. Names used on objects (`self._session.set_foo(...)`) are not checked by it,
-   which is why step 6 looks them up. The index has names and signatures, not behaviour: when the
+   validator parses the code as Live's Python does and checks against the build:
+   - imports and `create_instance`
+   - v3 mapping keys and element names, and the component map
+   - Specification fields
+   - overridden framework methods' signatures
+   - components built outside `component_guard`
+   - `disconnect` overrides
+
+   An `error` is proven wrong by the index; a `warning` is likely wrong. Read the "not checked"
+   list too: those names (keys of a component that answers names by pattern, such as v3's
+   `MixerComponent`) are yours to look up. Names used on objects outside the mappings
+   (`self._session.set_foo(...)`) are not checked either, which is why step 6 looks them up. The index has names and signatures, not behaviour: when the
    code relies on what a method does (which LED value it sends, whether it releases a button),
    say so in the report and put it on the checklist. Then `scripts/install.sh <folder>` (add `--replace` after
    the first time).

@@ -284,5 +284,8 @@ def validate_script(folder: Path, index_dir: Path, live_build: str | None = None
     index, missing = _open(index_dir, live_build)
     if missing:
         return missing
+    statements = load_statements(index_dir, index)
+    if statements:
+        attach_statements(index, statements)  # the framework checks read the framework's code
     return {"status": "ok", "live_build": index["live_build"], "confidence": "observed",
             **validate_folder(folder.resolve(), index)}

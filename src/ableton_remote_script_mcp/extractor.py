@@ -837,14 +837,19 @@ def _flatten(classes: list[ClassFact]) -> list[ClassFact]:
 def read_module(path: Path, root: Path, source_prefix: str | None = None) -> ModuleFacts:
     rel = path.relative_to(root)
     name, is_package = module_name(rel)
-    code = load_code(path)
+    return read_code(load_code(path), name, is_package, str(Path(source_prefix or root.name) / rel))
+
+
+def read_code(code: types.CodeType, name: str, is_package: bool, source: str) -> ModuleFacts:
+    """The facts of one module's code object: a `.pyc` of Live's, or a script's source compiled
+    by this same Python 3.11 (the validator's framework checks)."""
     body = _run_body(code)
     imports = collect_imports(code, name, is_package)
     members, docstring = _members(body, in_class=False, skip=set(imports) | {"__all__"})
     return ModuleFacts(
         name=name,
         is_package=is_package,
-        source=str(Path(source_prefix or root.name) / rel),
+        source=source,
         classes=_flatten(body.classes),
         imports=imports,
         star_imports=star_imports(code, name, is_package),

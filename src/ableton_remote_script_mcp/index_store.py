@@ -129,7 +129,7 @@ def generation(module: str) -> str | None:
     return None
 
 
-def _packages(mods: list[ModuleFacts], root: str, build: str, source_prefix: str) -> dict[str, dict]:
+def package_facts(mods: list[ModuleFacts], root: str, build: str, source_prefix: str) -> dict[str, dict]:
     """Top-level packages of one root: their kind and the framework generation they build on.
 
     A package's framework is the generation its own module-level imports bind most often
@@ -222,6 +222,55 @@ def _members(members: dict) -> dict:
     return {name: m.as_dict() for name, m in members.items()}
 
 
+def add_module_facts(mod: ModuleFacts, root: str, build: str, modules: dict, classes: dict,
+                     confidence: str = "observed") -> None:
+    """Put one module's facts and its classes' facts into `modules` and `classes`, by fact key."""
+    proxy = root == PUSH3_HELPER_ROOT and mod.name.split(".")[0] == PROXY_PACKAGE
+    entry = {
+        "name": mod.name,
+        "root": root,
+        "source": mod.source,
+        "package": mod.is_package,
+        "imports": mod.imports,
+        "star_imports": mod.star_imports,
+        "members": _members(mod.members),
+        "live_build": build,
+        "confidence": confidence,
+    }
+    if mod.docstring:
+        entry["docstring"] = mod.docstring
+    if proxy:
+        entry["proxy_model"] = True
+    modules[fact_key(root, mod.name)] = entry
+    top_level = {c.qualname for c in mod.classes}
+    for c in mod.classes:
+        fact = {
+            "name": c.name,
+            "qualname": c.qualname,
+            "module": mod.name,
+            "root": root,
+            "line": c.line,
+            "bases": [
+                {"expr": b, "resolved": resolve_base(b, mod.imports, mod.name, top_level)}
+                for b in c.bases
+            ],
+            "keywords": c.keywords,
+            "bases_parsed": c.bases_parsed,
+            "decorators": c.decorators,
+            "members": _members(c.members),
+            "source": mod.source,
+            "live_build": build,
+            "confidence": confidence,
+        }
+        if c.docstring:
+            fact["docstring"] = c.docstring
+        if proxy:
+            fact["proxy_model"] = True
+            if mod.name.startswith(PROXY_PACKAGE + ".Live."):
+                fact["proxy_of"] = f"{mod.name[len(PROXY_PACKAGE) + 1 :]}.{c.qualname}"
+        classes[fact_key(root, f"{mod.name}.{c.qualname}")] = fact
+
+
 def build_index(install: LiveInstall) -> dict:
     build = install.live_build
     roots = [(SCRIPTS_ROOT, install.scripts_root, SCRIPTS_SUBPATH)]
@@ -239,52 +288,9 @@ def build_index(install: LiveInstall) -> dict:
                 read.append(read_module(path, root_path, prefix))
             except (UnreadablePyc, OSError) as e:
                 errors.append({"source": f"{prefix}/{path.relative_to(root_path)}", "root": root, "error": str(e)})
-        packages.update(_packages(read, root, build, prefix))
+        packages.update(package_facts(read, root, build, prefix))
         for mod in read:
-            proxy = root == PUSH3_HELPER_ROOT and mod.name.split(".")[0] == PROXY_PACKAGE
-            entry = {
-                "name": mod.name,
-                "root": root,
-                "source": mod.source,
-                "package": mod.is_package,
-                "imports": mod.imports,
-                "star_imports": mod.star_imports,
-                "members": _members(mod.members),
-                "live_build": build,
-                "confidence": "observed",
-            }
-            if mod.docstring:
-                entry["docstring"] = mod.docstring
-            if proxy:
-                entry["proxy_model"] = True
-            modules[fact_key(root, mod.name)] = entry
-            top_level = {c.qualname for c in mod.classes}
-            for c in mod.classes:
-                fact = {
-                    "name": c.name,
-                    "qualname": c.qualname,
-                    "module": mod.name,
-                    "root": root,
-                    "line": c.line,
-                    "bases": [
-                        {"expr": b, "resolved": resolve_base(b, mod.imports, mod.name, top_level)}
-                        for b in c.bases
-                    ],
-                    "keywords": c.keywords,
-                    "bases_parsed": c.bases_parsed,
-                    "decorators": c.decorators,
-                    "members": _members(c.members),
-                    "source": mod.source,
-                    "live_build": build,
-                    "confidence": "observed",
-                }
-                if c.docstring:
-                    fact["docstring"] = c.docstring
-                if proxy:
-                    fact["proxy_model"] = True
-                    if mod.name.startswith(PROXY_PACKAGE + ".Live."):
-                        fact["proxy_of"] = f"{mod.name[len(PROXY_PACKAGE) + 1 :]}.{c.qualname}"
-                classes[fact_key(root, f"{mod.name}.{c.qualname}")] = fact
+            add_module_facts(mod, root, build, modules, classes)
     python = install.python_root
     return {
         "schema": SCHEMA_VERSION,

@@ -20,6 +20,9 @@ reason: the C++ modules Live itself provides (`LIVE_MODULES`), and the C modules
 standard library, which are built into Live's binary and have no file (all of the standard
 library when the index has no record of Live's Python). Below a top-level Python
 module (`xml.etree`), names are not checked.
+
+Framework checks (plan 0001 step 8): see `framework_checks.py`. Their findings have the
+severity `error` or `warning`; what they cannot decide is listed under `not_checked` too.
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .framework_checks import check_framework
 from .index_store import SCRIPTS_ROOT
 
 LIVE_PYTHON = (3, 11)
@@ -209,7 +213,8 @@ def _check_imports(src: Source, imports: _Imports, findings: list[dict], not_che
                    "c-stdlib": f"{module.split('.')[0]} is a C module of Python's standard library: "
                                "Live's files cannot show whether its binary has it built in"}
         if where in reasons:
-            not_checked.append({"file": src.path, "line": node.lineno, "import": text, "reason": reasons[where]})
+            not_checked.append({"file": src.path, "line": node.lineno, "rule": "unresolved-import", "what": text,
+                                "import": text, "reason": reasons[where]})
         return where in reasons
 
     for node in ast.walk(src.tree):
@@ -331,7 +336,8 @@ def validate_folder(folder: Path, index: dict) -> dict:
     for src in sources.values():
         if src.tree is not None:
             _check_imports(src, imports, findings, not_checked)
+    check_framework(index, script, sources, findings, not_checked)
     findings.sort(key=lambda f: (f["file"] != ".", f["file"], f["line"] or 0, f["rule"]))
-    not_checked.sort(key=lambda n: (n["file"], n["line"]))
+    not_checked.sort(key=lambda n: (n["file"], n["line"] or 0))
     return {"script": script, "folder": str(folder), "files": len(paths), "findings": findings,
             "not_checked": not_checked}

@@ -42,7 +42,8 @@ command works the same, and `outline` tells you that the summaries are missing.
 ## Checking a script
 
 `validate` reads your script's `.py` files with Python's own parser, never runs them, and checks
-them against one build's index:
+them against one build's index. Each finding has a severity: `error` (the index proves it wrong),
+or `warning` (likely wrong, but the framework accepts it). The basic rules:
 
 | Rule | Finds |
 | --- | --- |
@@ -56,8 +57,30 @@ can't be decided from the index; they are listed as *not checked*, with the reas
 Live provides from its own C++ code (`Live`, `MidiRemoteScript`), and the C modules of Python's
 standard library, which are part of Live's program and not files the index can see.
 
-Checks of how the script uses the framework (signatures of overridden methods, Specification
-fields) are not built yet.
+### Framework checks
+
+The framework checks look at how the script uses Live's framework. The validator compiles your
+script with Python 3.11, the way Live does, and reads it with the same code that reads Live's own
+scripts for the index. Then it looks at your Specification, component map, mappings, elements and
+classes as `outline` would show them, without running anything.
+
+| Rule | Severity | Finds |
+| --- | --- | --- |
+| `mapping-key` | error | A key in a v3 mappings section that the component's class has neither as a control nor as a `set_<key>` setter, looked up along the class's inheritance. In a modes section, its own keys are checked against the modes component, which also gets a `<mode>_button` for each mode. Each mode's keys are checked against the component the mode names. |
+| `element-name` | error | A value in the mappings (`"pads"`, `"pads_raw[3]"`) that names no element your Elements class builds. Names are lower case with spaces as `_`; a matrix also gets `<name>_raw`; `add_modified_control` makes `<control>_with_<modifier>`. |
+| `unknown-component` | warning | A mappings section that names nothing in the component map and has no modes, which is what a typo looks like. A mode whose `component=` names no component, or a mode without `component=`, is an error: the framework raises a `KeyError` while it sets up. |
+| `specification-field` | warning | A field in your Specification that Live's `ControlSurfaceSpecification` doesn't have, so the framework never reads it. |
+| `override-signature` | error | A method that overrides one of the framework's methods but can't take the arguments the framework's signature allows: too few or too many positional arguments, or keyword arguments that don't match. A renamed parameter is fine. `__init__` is yours to call and isn't checked. |
+| `component-guard` | error | An element or component built in a control surface's `__init__` outside `with self.component_guard():`, also through a method `__init__` calls. v3's `setup()` and the Elements class are exempt: the framework runs them inside the guard. |
+| `disconnect-base` | warning | A `disconnect` that doesn't call the `disconnect` it overrides, so the framework's clean-up doesn't run. |
+
+Every close name the index has is offered with the finding (`close: num_tracks`). What a rule
+can't decide is listed as *not checked*, with the reason. Some examples:
+- a component whose class answers names by pattern (v3's `MixerComponent` takes any `set_…`)
+- element names your Elements class builds in a loop
+- a component map that isn't a plain dict
+
+The framework checks need Python 3.11; on another Python they are listed as not checked.
 
 ## Loading a script
 

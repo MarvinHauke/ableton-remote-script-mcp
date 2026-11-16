@@ -128,7 +128,7 @@ def framework(ix: Index, changed: bool) -> None:
     ix.package("ableton", "framework")
     ix.module("ableton.v2.base.event")
     ix.cls("ableton.v2.base.event", "EventObject", ["object"], line=10, members={
-        "disconnect": method(12),
+        "disconnect": method(12, statements=[call(13, "self._disconnect_disconnectables")]),
         "register_disconnectable": method(15, p("disconnectable")),
     })
     ix.module("ableton.v2.control_surface.control", package=True,
@@ -217,11 +217,16 @@ def outline_scripts(ix: Index) -> None:
         "__init__": method(12, p("global_channel", default="0"), ARGS, KWARGS),
         "add_button": method(20, p("identifier"), p("name"), KWARGS),
         "add_button_matrix": method(30, p("identifiers"), p("base_name"), p("channels", default="None"), ARGS, KWARGS),
+        "add_modified_control": method(40, p("control", default="None"), p("modifier", default="None"),
+                                       p("name", default="None")),
     })
     ix.module(f"{V3}.control_surface", imports={"EventObject": "ableton.v2.base.event.EventObject"})
-    ix.cls(f"{V3}.control_surface", "ControlSurface", ["EventObject"], line=5, members={"setup": method(9, statements=[
-        store(10, "self.component_map['Background']", "self._background"),
-    ])})
+    ix.cls(f"{V3}.control_surface", "ControlSurface", ["EventObject"], line=5, members={
+        "setup": method(9, statements=[store(10, "self.component_map['Background']", "self._background")]),
+        "component_guard": method(12),
+        "port_settings_changed": method(14),
+        "receive_midi": method(16, p("midi_bytes")),
+    })
     ix.module(f"{V3}.control_surface_specification")
     ix.cls(f"{V3}.control_surface_specification", "ControlSurfaceSpecification", [], line=3, members={
         "elements_type": attr(4, "None"),
@@ -230,8 +235,20 @@ def outline_scripts(ix: Index) -> None:
         "create_mappings_function": method(7, kind="function"),
     })
     ix.module(f"{V3}.components", imports={"Component": f"{V3}.Component"})
+    controls = {  # what the framework checks look keys up in (step 8)
+        "MixerComponent": {"set_volume_controls": method(11, p("controls")),
+                           "__getattr__": method(12, p("name"), statements=[call(13, "name.startswith", "'set_send'")])},
+        "SessionComponent": {"set_clip_launch_buttons": method(21, p("buttons")),
+                             "stop_all_clips_button": attr(22, "ButtonControl()")},
+        "TransportComponent": {"play_button": attr(31, "ButtonControl()")},
+    }
     for line, name in ((10, "MixerComponent"), (20, "SessionComponent"), (30, "TransportComponent")):
-        ix.cls(f"{V3}.components", name, ["Component"], line=line)
+        ix.cls(f"{V3}.components", name, ["Component"], line=line, members=controls[name])
+    ix.module(f"{V3}.mode", imports={"Component": f"{V3}.Component"})
+    ix.cls(f"{V3}.mode", "ModesComponent", ["Component"], line=5, members={
+        "cycle_mode_button": attr(6, "ButtonControl()"),
+        "add_mode": method(8, p("name"), p("mode_or_component"), p("behaviour", default="None")),
+    })
     ix.module(f"{V3}.component_map", imports={
         "partial": "functools.partial",
         **{n: f"{V3}.components.{n}" for n in ("MixerComponent", "SessionComponent", "TransportComponent")},

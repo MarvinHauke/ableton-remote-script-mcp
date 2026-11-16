@@ -410,7 +410,10 @@ class _Outliner:
         return {"component": text, "defined_in": found.key if found and found.status == "class" else None,
                 "from": source, "line": line}
 
-    def mappings(self, spec_key: str) -> dict | None:
+    def mapping_sections(self, spec_key: str) -> dict | None:
+        """The sections the mappings function returns, each as (name, {key: value text}, line).
+        `complete` is False when the function also fills the dict in a way this does not read
+        (a computed key, `mappings.update(...)`, a value that is not a dict)."""
         field = self.lineage(spec_key).members.get("create_mappings_function")
         if not field or field["origin"] not in self.classes or self.is_framework(field["origin"]):
             return None
@@ -418,29 +421,50 @@ class _Outliner:
         if field["kind"] == "attribute":
             found = self.resolver.resolve_in_module(field.get("value") or "", module, self.root)
             if found.status != "function":
-                return {"function": field.get("value"), "defined_in": None, "mappings": []}
+                return {"function": field.get("value"), "defined_in": None, "module": None, "sections": [],
+                        "complete": False}
             name = found.name.rsplit(".", 1)[-1]
             function, statements = found.name, self.modules[found.key]["members"][name].get("statements", [])
+            module = self.modules[found.key]["name"]
         else:
             function, statements = f"{field['origin']}.create_mappings_function", field.get("statements", [])
-        out = []
+        sections, complete = [], True
         for st in statements:
             target = st.get("target") or st.get("store") or ""
             match = _SUBSCRIPT_TARGET.match(target)
             if "call" in st and st["call"] == "dict" and match:
-                out.append(_mapping(ast.literal_eval(match["key"]), st["kwargs"], st["line"]))
+                if "**" in st["kwargs"] or st["args"]:
+                    complete = False
+                sections.append((ast.literal_eval(match["key"]), dict(st["kwargs"]), st["line"]))
             elif "call" in st and st["call"] == "dict" and target == "return":
                 for k, v in st["kwargs"].items():
                     node = _parse(v)
                     if isinstance(node, ast.Call) and _callee_text(node.func) == "dict":
-                        out.append(_mapping(k, {kw.arg: ast.unparse(kw.value) for kw in node.keywords if kw.arg}, st["line"]))
+                        sections.append((k, {kw.arg: ast.unparse(kw.value) for kw in node.keywords if kw.arg},
+                                         st["line"]))
+                    else:
+                        complete = False
             elif "store" in st and match:
                 node = _parse(st["value"])
-                if isinstance(node, ast.Dict):
-                    out.append(_mapping(ast.literal_eval(match["key"]),
-                                        {str(k.value): ast.unparse(v) for k, v in zip(node.keys, node.values)
-                                         if isinstance(k, ast.Constant)}, st["line"]))
-        return {"function": function, "mappings": out}
+                if isinstance(node, ast.Dict) and all(isinstance(k, ast.Constant) for k in node.keys):
+                    sections.append((ast.literal_eval(match["key"]),
+                                     {str(k.value): ast.unparse(v) for k, v in zip(node.keys, node.values)},
+                                     st["line"]))
+                else:
+                    complete = False
+            elif ("store" in st and st["store"].startswith("mappings[")) or (
+                    "call" in st and st["call"].startswith("mappings.") and st["call"] != "mappings.items"):
+                complete = False
+        return {"function": function, "module": module, "sections": sections, "complete": complete}
+
+    def mappings(self, spec_key: str) -> dict | None:
+        found = self.mapping_sections(spec_key)
+        if found is None:
+            return None
+        out = {"function": found["function"], "mappings": [_mapping(*s) for s in found["sections"]]}
+        if "defined_in" in found:
+            out["defined_in"] = None
+        return out
 
     def outline(self) -> dict:
         pkg = self.package

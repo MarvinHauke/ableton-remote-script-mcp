@@ -287,7 +287,8 @@ def format_findings(answer: dict) -> str:
         lines += [f"  {where}: {f['severity']} [{f['rule']}] {f['message']}", f"      fix: {f['fix']}"]
     if answer["not_checked"]:
         lines.append(f"not checked ({len(answer['not_checked'])}):")
-        lines += [f"  {n['file']}:{n['line']}: `{n['import']}`: {n['reason']}" for n in answer["not_checked"]]
+        lines += [f"  {n['file']}:{n['line']}: [{n['rule']}] `{n['what']}`: {n['reason']}" if n["line"]
+                  else f"  {n['file']}: [{n['rule']}] `{n['what']}`: {n['reason']}" for n in answer["not_checked"]]
     return "\n".join(lines)
 
 

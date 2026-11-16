@@ -4,9 +4,10 @@
 #     scripts/eval_run.sh <out dir> [extra `claude plugin eval` options, e.g. --case uc4-mixer-v3 --runs 1]
 #
 # The eval command runs each case in a sandbox that may read only the skill folder and a few bin
-# folders such as ~/.local/bin: not this repo, not ~/.local/share (where the index and uv's tools
-# live). So for the length of the run this puts a self-contained build of the CLI (a zipapp,
-# run by a Python outside /Users) and a copy of the index into ~/.local/bin, and removes both
+# folders such as ~/.local/bin: not this repo, not ~/.local/share (where the index and uv's
+# Pythons live). So for the length of the run this puts a self-contained build of the CLI (a
+# zipapp), a copy of uv's Python 3.11 to run it (the validator's framework checks compile the
+# script as Live's 3.11 does) and a copy of the index into ~/.local/bin, and removes all three
 # afterwards. The runs without the skill never learn the CLI is there; the sandbox keeps them
 # away from the repo, whose example script would answer the APC mini case.
 #
@@ -20,15 +21,15 @@ out=${1:?usage: scripts/eval_run.sh <out dir> [claude plugin eval options]}
 shift
 repo=$(cd "$(dirname "$0")/.." && pwd)
 skill="$repo/skills/ableton-remote-scripts"
-python=${EVAL_PYTHON:-/opt/homebrew/bin/python3.12}  # readable inside the sandbox; lookup and validate need no 3.11
 eval_build=${EVAL_BUILD:-12.4.16}
 bin="$HOME/.local/bin"
 app="$bin/ableton-remote-script-mcp"
 index_copy="$bin/.ableton-remote-script-mcp-eval-index"
+python_copy="$bin/.ableton-remote-script-mcp-eval-python"
 index_src=${ABLETON_REMOTE_SCRIPT_INDEX:-$HOME/.local/share/ableton-remote-script-mcp/index}
 
-if [ -e "$app" ] || [ -e "$index_copy" ]; then
-    echo "$app or $index_copy already exists; remove it (a uv tool install?) before an eval run" >&2
+if [ -e "$app" ] || [ -e "$index_copy" ] || [ -e "$python_copy" ]; then
+    echo "$app, $index_copy or $python_copy already exists; remove it (a uv tool install?) before an eval run" >&2
     exit 2
 fi
 mkdir -p "$out"
@@ -40,7 +41,7 @@ case "$out" in
 esac
 
 build=$(mktemp -d)
-cleanup() { rm -rf "$app" "$index_copy" "$build"; }
+cleanup() { rm -rf "$app" "$index_copy" "$python_copy" "$build"; }
 trap cleanup EXIT
 trap 'exit 130' INT TERM HUP  # exit runs the EXIT trap
 
@@ -52,6 +53,13 @@ os.environ.setdefault("ABLETON_REMOTE_SCRIPT_INDEX", "$index_copy")
 from ableton_remote_script_mcp.cli import main
 sys.exit(main())
 EOF
+if [ -n "${EVAL_PYTHON:-}" ]; then
+    python=$EVAL_PYTHON  # must be readable inside the sandbox
+else
+    uv_python=$(uv python find --system 3.11)
+    cp -R "$(cd "$(dirname "$uv_python")/.." && pwd -P)" "$python_copy"
+    python="$python_copy/bin/python3.11"
+fi
 "$python" -m zipapp "$build" -o "$app" -p "$python"
 cp -R "$index_src" "$index_copy"
 "$app" list builds >/dev/null

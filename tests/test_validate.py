@@ -78,7 +78,8 @@ logger = logging.getLogger(__name__)
 class MySurface(ControlSurface):
     def __init__(self, c_instance):
         super().__init__(c_instance)
-        self._session = SessionComponent()
+        with self.component_guard():
+            self._session = SessionComponent()
 """,
 }
 
@@ -120,7 +121,7 @@ def test_clean_v3_script_has_no_findings(tmp_path, index_dir):
 def test_clean_framework_script_has_no_findings(tmp_path, index_dir):
     answer = validate(write(tmp_path, CLEAN_FRAMEWORK), index_dir)
     assert answer["findings"] == []
-    reasons = {n["import"]: n["reason"] for n in answer["not_checked"]}
+    reasons = {n["what"]: n["reason"] for n in answer["not_checked"] if n["rule"] == "unresolved-import"}
     live = ["import Live", "import MidiRemoteScript", "from Live.Song import Song"]
     assert [i for i in reasons if i != "import math"] == live  # `import sys` is built into Python: no entry
     assert "Live's own C++ code" in reasons["import Live"]
@@ -246,7 +247,7 @@ def test_index_without_a_record_of_lives_python(tmp_path, index_dir):
     path.write_text(json.dumps(index))
     answer = validate(write(tmp_path, {**CLEAN_V3, "mappings.py": "import ctypes\nimport json\n"}), index_dir)
     assert answer["findings"] == []
-    assert [n["import"] for n in answer["not_checked"]] == ["import ctypes", "import json"]
+    assert [n["what"] for n in answer["not_checked"] if n["rule"] == "unresolved-import"] == ["import ctypes", "import json"]
 
 
 def test_cli_output_as_in_getting_started(tmp_path, index_dir, capsys):

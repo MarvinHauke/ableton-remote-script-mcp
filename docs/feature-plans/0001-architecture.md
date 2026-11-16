@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) 2026-11-16. Frontier: step 8._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: the 9a re-run after step 8, then step 10._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -596,6 +596,22 @@ meant to do, and uses only API names that exist in the Live build they target.
     some with partial bodies, so an error there may be a real change since 12.0 or a gap left
     by the decompiler. The glossary gains
     Eval case, Arm, Grader and Unknown name.
+44. **How step 8's checks read a script, and what Decision 43 left open** (agent, 2026-11-16,
+    step 8; for the user's review). The validator compiles the script's sources with Python 3.11,
+    reads them with the extractor that reads Live's `.pyc` files, and lays the facts over a copy
+    of the index in place of an indexed script of the same name. So the outline's reading of
+    Specifications, component maps, mappings and elements works on the user's script unchanged.
+    On another Python the framework checks are listed as `not_checked`; `eval_run.sh` therefore
+    copies uv's Python 3.11 into the sandbox instead of using Homebrew's 3.12. Four points
+    Decision 43 left open, decided from the reference run:
+    - A modes component gets a `<mode>_button` control for each mode; such keys are known.
+    - A class with its own `__getattr__` answers names by pattern. A key is `not_checked` when
+      `set_<key>` starts with a prefix its `__getattr__` tests (`name.startswith(...)`), or when
+      no prefix can be read. This leaves v3's `MixerComponent` keys unchecked.
+    - A mode naming a component that is neither in the component map nor a modes section, or a
+      mode without `component=`, is an `error` under `unknown-component`. The framework raises a
+      KeyError while it sets up. Decision 43's `warning` stays for a section with no modes.
+    - `disconnect-base` stays quiet when the overridden `disconnect` has no statements (a `pass`).
 
 ## Open questions
 
@@ -751,6 +767,15 @@ Every step's checks include `uv run pytest` passing.
    - **Checks:** a bad sample for each rule; a clean hand-written v3 sample gives no findings.
      Local-only: the v3 scripts in `reference/` (gluon's factory scripts, MidiFighterV3) give
      no `error` against 12.4.16 that is ours (Decision 43 says how each one is read).
+   - **Built** (2026-11-16): `framework_checks.py` with the seven rules of Decision 43, read as
+     Decision 44 says; `tests/test_framework_checks.py` (a clean v3 sample, a bad sample per
+     rule). Local-only against 12.4.16:
+     - gluon's Live 12 clone (147 script folders) and MidiFighterV3 give no `error`. The one
+       `warning` is MidiFighterV3's `disconnect`, which skips its base: a real finding.
+     - The Live 11.2.11 clone gives one `error`, an `override-signature` in `pushbase`. The
+       Live 12 clone's `pushbase` matches 12.4.16, so it is an API change since 11, not a false
+       positive.
+     - A copy of `APC_mini_mk2` with seven mistakes planted gives each one as a finding.
 9. **Skill v1 and the APC mini mk1 script (Milestone 1, part 1)**
    - **Blocked by:** 3, 5, 7
    - **Delivers:** the skill, drafted with `/skill-creator`, in the open Agent Skills format:

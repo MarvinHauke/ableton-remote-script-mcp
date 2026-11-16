@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-16 (0001 step 9a built: the skill evals' baseline round)._
+_Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks)._
 
 ## Now
 
@@ -60,7 +60,15 @@ _Last updated: 2026-11-16 (0001 step 9a built: the skill evals' baseline round).
   `uv run pytest` green (116 tests, 13 local-only).
 - 0001 decision 43 (2026-11-16): step 8's rules and severities decided. `reference/MidiFighterV3`
   cloned (no licence, local only) as a working community v3 script for the false-positive check.
-- Next: step 8, validator framework checks.
+- 0001 step 8 built on `feat/0001-step-8-framework-checks` (2026-11-16): the validator's
+  framework checks (`mapping-key`, `element-name`, `unknown-component`, `specification-field`,
+  `override-signature`, `component-guard`, `disconnect-base`) with the severities `error` and
+  `warning` and a `not_checked` list. The script is compiled with Python 3.11 and read by the
+  extractor over a copy of the index (0001 decision 44). Local-only: gluon's Live 12 clone and
+  MidiFighterV3 give no error against 12.4.16; the one error in the Live 11 clone is a real API
+  change. `eval_run.sh` now copies uv's Python 3.11 into the sandbox. `uv run pytest` green
+  (135 tests, 13 local-only).
+- Next: re-run 9a after step 8 (0001 decision 42; needs the usage limit), then step 10.
 
 ## After grilling
 
@@ -73,6 +81,14 @@ _Last updated: 2026-11-16 (0001 step 9a built: the skill evals' baseline round).
 - [needs-triage] Validator rule for attribute names by class (for example a made-up
   `self.song().some_method()` outside the mappings); step 8 checks only v3 mappings by class
   (0001 decision 43).
+
+- [needs-triage] `mapping-key` for v3's `MixerComponent`: its `__getattr__` passes `set_…` on to
+  its channel strips, so its keys are not checked (0001 decision 44). A rule could look the key
+  up on the channel strip class.
+
+- [needs-triage] remotify.io (Control Surface Studio, a paid Remote Script generator, with
+  tutorials): a possible `documented` source and, if its terms allow, generated scripts for the
+  false-positive check (user's suggestion, 2026-11-16). Not looked at yet.
 
 - [ready-for-agent] Run the skill's trigger check: 20 queries in
   `skills/ableton-remote-scripts/evals/trigger-eval.json`, one round of `/skill-creator`'s

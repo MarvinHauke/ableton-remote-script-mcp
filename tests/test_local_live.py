@@ -174,7 +174,7 @@ def test_live_python_and_a_clean_script_in_12_4_16(index_dir, index, tmp_path):
         "class Specification(ControlSurfaceSpecification):\n    pass\n\n\n"
         "def create_instance(c_instance):\n    return ControlSurface(specification=Specification, c_instance=c_instance)\n")
     answer = validate_script(folder, index_dir, "12.4.16")
-    assert answer["findings"] == [] and [n["import"] for n in answer["not_checked"]] == ["import Live"]
+    assert answer["findings"] == [] and [n["what"] for n in answer["not_checked"] if n["rule"] == "unresolved-import"] == ["import Live"]
     (folder / "__init__.py").write_text("from ableton.v3.control_surface import NoSuchName\n")
     rules = [f["rule"] for f in validate_script(folder, index_dir, "12.4.16")["findings"]]
     assert rules == ["create-instance", "unresolved-import"]
