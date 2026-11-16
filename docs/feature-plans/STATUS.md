@@ -75,6 +75,15 @@ _Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks).
   or 13 unknown names: `Song.scale_intervals` and `add_…_listener`/`remove_…_listener` on clips
   and tracks. The Push 3 helper's model has no listener methods at all, which is the same gap
   in the `Live` module as below. A reference for the user's planned APC mini drum sequencer.
+- `reference/beatstep` cloned (2026-11-16, user's link): raphaelquast's Beatstep_Q, a `_Framework`
+  script for the Arturia BeatStep with a 16-step sequencer, browser and session control, written
+  for Live 9–11 (last commit 2023-11-24), GPL-3.0. Against 12.4.16: 0 findings in 7 files.
+  `eval_names.py` finds 107 unknown names, none shown to be wrong:
+  - about 80 are `add_…_listener`, `remove_…_listener` and `…_has_listener` on songs, tracks
+    and clips
+  - `is_foldable` (6), `Live.Base.LimitationError`, `Live.Browser.Relation.equal`: the gap in
+    the `Live` module below
+  - about 40 are its own setters, which it makes with `setattr` in a loop (`set_B_mode`, …)
 - 0001 step 8 built on `feat/0001-step-8-framework-checks` (2026-11-16): the validator's
   framework checks (`mapping-key`, `element-name`, `unknown-component`, `specification-field`,
   `override-signature`, `component-guard`, `disconnect-base`) with the severities `error` and
@@ -114,6 +123,12 @@ _Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks).
   indexed build). `eval_names.py` doesn't flag those, since other scripts use them ("used").
   The index needs another source for the `Live` module (a runtime dump, kept local), and these
   names could be `tested` facts.
+
+- [needs-triage] `eval_names.py`: count `add_<p>_listener`, `remove_<p>_listener` and
+  `<p>_has_listener` as known when `<p>` is a known name (Live makes them for every listenable
+  property; the Push 3 helper's model has none). Count names a script's own `setattr` builds
+  from a literal prefix as its own. Most unknown names in Beatstep_Q, the APC40 mkII step
+  sequencer and cmdAbl are one of the two (2026-11-16).
 
 - [ready-for-agent] Run the skill's trigger check: 20 queries in
   `skills/ableton-remote-scripts/evals/trigger-eval.json`, one round of `/skill-creator`'s
