@@ -10,6 +10,13 @@ _Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks).
 - Research done: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)
   (Structure Void, gluon repos, local Live installs, existing MCPs, review of ChatGPT's discovery toolkit).
 - `reference/gluon-live11`, `reference/gluon-live12` and `reference/MidiFighterV3` cloned (shallow, git-ignored).
+  `reference/PrismScript` added by the user (2026-11-16): the Prism MIDI Sequencer's Remote Script
+  (V2.0, a `_Framework` `ControlSurface` that works through the Live object model, listeners and
+  SysEx). Its page states no licence, so it stays local. Against 12.4.16 it validates with no
+  findings; `eval_names.py` finds 2 unknown names, both a listener on `Song.View` for
+  `appointed_device`, which the index has on `Song` (observed in the Push 3 helper's model only).
+  The script catches the error, so the listener most likely never attaches in Live; not checked
+  in Live.
 - Planning structure in place (this folder, `CLAUDE.md`, `docs/agents/`, `docs/guides/`), committed on `docs/plan-0001`.
 - 0001 grilled (Decisions 1–27). Python 3.11.12 installed via uv (0001 decision 5).
 - 0001 decided: spec and steps (2026-11-15).

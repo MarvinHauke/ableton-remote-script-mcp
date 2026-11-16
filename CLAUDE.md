@@ -14,7 +14,7 @@ It controls nothing at runtime; that is AbletonMCP's job. The architecture is pl
 - `docs/feature-plans/research/`: cited source investigations. Read `2026-11-14-sources-investigation.md` before working on the index, the skill or the MCP.
 - `docs/guides/skills-workflow.md`: how a feature runs (draft → grill → spec → steps → build → review → test).
 - `docs/agents/`: configuration for the mattpocock skills (tracker, triage labels, domain docs).
-- `reference/` (git-ignored): local clones of gluon's decompiled Live 11.2.11 and Live 12 scripts (12.0-era framework, nine recent controllers from 12's Python 3.11 bytecode), and `MidiFighterV3` (no licence, local only), for reading framework internals.
+- `reference/` (git-ignored): local clones of gluon's decompiled Live 11.2.11 and Live 12 scripts (12.0-era framework, nine recent controllers from 12's Python 3.11 bytecode), `MidiFighterV3` and `PrismScript` (no licence, local only), for reading framework internals and real-world scripts.
 - Installed Live apps, the primary API source: `/Applications/Ableton Live 12 Suite.app` (12.4.16), `… 12 Beta.app` (12.4.25b1), `… 13 Beta.app` (13.0b25). Scripts are under `Contents/App-Resources/MIDI Remote Scripts/`, Python 3.11 `.pyc` only.
 
 ## Rules that hold everywhere
