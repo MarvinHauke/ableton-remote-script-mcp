@@ -67,6 +67,14 @@ _Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks).
   `uv run pytest` green (116 tests, 13 local-only).
 - 0001 decision 43 (2026-11-16): step 8's rules and severities decided. `reference/MidiFighterV3`
   cloned (no licence, local only) as a working community v3 script for the false-positive check.
+- `reference/APC40_MkII_StepSequencer_v1.0`, `v1.1` and `v1.1.1` added by the user (2026-11-16):
+  a Push-style step sequencer, grid keyboard and drum mode for the APC40 mkII, built on
+  Ableton's `APC40_MkII` script (`_Framework`). No licence stated, so they stay local. v1.1.1 is
+  the one to read: v1.1's main script differs from it only in the version string, and v1.0 is
+  the older 1,700-line version. All give no findings against 12.4.16. `eval_names.py` finds 11
+  or 13 unknown names: `Song.scale_intervals` and `add_…_listener`/`remove_…_listener` on clips
+  and tracks. The Push 3 helper's model has no listener methods at all, which is the same gap
+  in the `Live` module as below. A reference for the user's planned APC mini drum sequencer.
 - 0001 step 8 built on `feat/0001-step-8-framework-checks` (2026-11-16): the validator's
   framework checks (`mapping-key`, `element-name`, `unknown-component`, `specification-field`,
   `override-signature`, `component-guard`, `disconnect-base`) with the severities `error` and
