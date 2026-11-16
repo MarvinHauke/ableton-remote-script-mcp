@@ -30,9 +30,11 @@ when it starts.
 
 - each traceback that passes through the script's folder, put back together (Live writes it in
   fragments)
-- the script's own messages (`log_message`). The framework starts each with the control surface's
-  class name (`documented`, decompiled 12.0 framework), so they are found only when the
-  `ControlSurface` subclass carries the folder's name
+- the script's own messages. A `_Framework` script's `log_message` starts each with the control
+  surface's class name (`documented`, decompiled 12.0 framework), so they are found only when the
+  `ControlSurface` subclass carries the folder's name. A v3 script logs with Python's `logging`
+  (`logging.getLogger(__name__)`), which names the module, and the module starts with the folder
+  name; a message above `INFO` shows its level
 - tracebacks whose frames are all in Live's shared packages (`_Framework`, `ableton`, …), under
   "framework-only": no frame names a script, so they may be this script's (a broken combo, a
   listener it set up) or another loaded script's. Read them when the script misbehaves
@@ -83,7 +85,7 @@ framework), and while a combo threw on every Shift message, the script's other S
 never saw a release (`tested` in Live 12.4.16). So read the framework-only tracebacks first, even when the symptom
 looks unrelated.
 
-1. **Log what the script sees.** Add `self.log_message(...)` to the handlers in question (each
+1. **Log what the script sees.** Add `self.log_message(...)` (v3: `logger.info(...)`) to the handlers in question (each
    press, Shift's value, the box position before and after), let the user repeat it, and read the
    records with `log.sh`. Take them out once the cause is found.
 2. **Record what the controller sends,** beside the log, when presses seem lost or doubled.

@@ -387,7 +387,7 @@ def format_log(answer: dict) -> str:
         lines += [f"  line {m['line']}: ({m['script']}) {m['text']}" for m in shown]
     elif answer["script"]:
         lines.append(f"no messages from {answer['script']} (is it selected as a Control Surface, and is its "
-                     "ControlSurface class named like the folder?)")
+                     "ControlSurface class named like the folder, or a v3 script's logger named by its module?)")
     return "\n".join(lines)
 
 

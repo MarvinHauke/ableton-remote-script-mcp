@@ -57,6 +57,9 @@ LOG = [
     *traceback_records(20, "My_Script"),
     *traceback_records(30, "Other_Script"),
     record(40, "info", "Python: INFO:_Framework.ControlSurface:1 - LOG: (My_Script) ready"),
+    record(41, "info", "Python: INFO:My_V3_Script:12 - Faderfox UC4 script ready"),
+    record(42, "info", "Python: WARNING:My_V3_Script.elements:3 - two elements share a number"),
+    record(43, "info", "Python: WARNING:ableton.v2.control_surface.control_surface:240 - Got unknown message"),
 ]
 
 TRACEBACK = """\
@@ -83,7 +86,19 @@ def test_log_reads_the_last_session(log):
     assert [t["scripts"] for t in answer["tracebacks"]] == [["My_Script"], ["Other_Script"]]
     assert answer["tracebacks"][0]["text"] == TRACEBACK
     assert [(m["script"], m["text"]) for m in answer["messages"]] == [
-        ("Other_Script", "Initializing..."), ("My_Script", "ready")]
+        ("Other_Script", "Initializing..."), ("My_Script", "ready"),
+        ("My_V3_Script", "Faderfox UC4 script ready"),
+        ("My_V3_Script", "WARNING: two elements share a number"),
+        ("ableton", "WARNING: Got unknown message")]
+
+
+def test_log_reads_python_logging_of_a_v3_script(log):
+    """A v3 script logs with `logging.getLogger(__name__)`; Live writes it as
+    `Python: <LEVEL>:<module>:<line> - <text>`. `_Framework`'s own copy of a `log_message` is
+    left out, since the `RemoteScriptMessage` record already holds it."""
+    answer = read_log(log, "My_V3_Script")
+    assert [m["text"] for m in answer["messages"]] == [
+        "Faderfox UC4 script ready", "WARNING: two elements share a number"]
 
 
 def test_log_for_one_script(log):

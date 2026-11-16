@@ -95,7 +95,8 @@ Live.
 - **`log`** reads `Log.txt` in Live's preferences folder, of the Live build you name or the one
   that ran last, from the point where Live last started. Live writes a traceback in many small
   pieces; `log` puts each one back together. With `--script`, it shows the tracebacks that pass
-  through that script's folder and the messages the script logged, and counts the others. It
+  through that script's folder and the messages the script logged (a `_Framework` script's
+  `log_message`, a v3 script's Python `logging`), and counts the others. It
   also shows tracebacks whose frames are all in Live's shared packages (`_Framework`, `ableton`,
   …) as "framework-only": a broken combo, for example, fails there without naming the script.
 

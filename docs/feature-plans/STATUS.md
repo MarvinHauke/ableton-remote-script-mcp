@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-16 (Structure Void's runtime pages as a documented source, 0001 decision 45)._
+_Last updated: 2026-11-17 (0001 step 10 in work: v3 references and the UC4 script, decisions 46 and 47)._
 
 ## Now
 
@@ -110,7 +110,16 @@ _Last updated: 2026-11-16 (Structure Void's runtime pages as a documented source
   incoming CC are untested: assumptions for the load test's checklist. Which Global control is
   which printed function is unknown: the script's choice, told to the user. Global encoders use
   the same channel and numbers (ch13, 56–63) as group 8's green buttons, as CC versus notes.
-- Next: re-run 9a after step 8 (0001 decision 42; needs the usage limit), then step 10.
+- 0001 step 10 in work on `feat/0001-step-10-v3-uc4` (2026-11-17): the skill's
+  `references/v3-script.md` and `assets/v3_template/`, and `examples/Faderfox_UC4/` for SE17
+  (all encoder and green button groups mapped at once, two components of our own, the Global
+  assignment the script's choice; 0001 decision 47). Both validate with no findings against
+  12.4.16 (14 keys of the mixer's name patterns not checked, looked up by hand). `log --script`
+  now also reads a v3 script's Python `logging`. Facts and the 14-item checklist:
+  [milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md). `uv run pytest` green
+  (144 tests, 15 local-only).
+- Next: the user's UC4 load test in Live 12.4.16, then one 9a round (0001 decision 46: not one
+  after step 8 as well; needs the usage limit).
 
 ## After grilling
 

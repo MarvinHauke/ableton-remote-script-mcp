@@ -75,8 +75,9 @@ Each script's header lists its options and exit codes.
      the oldest generation and still ships in Live 12.
    Look up whichever you choose; never mix generations in one script. For `_Framework`, read
    [references/framework-script.md](references/framework-script.md) and start from
-   `assets/framework_template/`. For v3, outline a similar v3 script of Ableton's (step 5) and
-   look up each class it uses; this skill has no v3 reference page yet.
+   `assets/framework_template/`. For v3, read [references/v3-script.md](references/v3-script.md)
+   (Specification, elements, mappings and modes, skins, components of your own) and start from
+   `assets/v3_template/`.
 
 5. **Read a reference script.** Find one of Ableton's scripts for similar hardware
    (`scripts/lookup.sh search <controller name> --kind module`) and outline it. The outline shows
@@ -87,8 +88,8 @@ Each script's header lists its options and exit codes.
    behaviour list asks for. Before using a class, method or argument, look it up; the lookup
    shows inherited members and exact signatures. Keep the folder name a plain Python name
    (`My_Controller`): Live imports the script by its folder name. Name the `ControlSurface`
-   subclass like the folder too: its log messages start with the class name, and the log script
-   finds them by the folder name.
+   subclass like the folder too: a `_Framework` script's log messages start with the class
+   name, a v3 script's with its module, and the log script finds both by the folder name.
 
 7. **Validate, then install.** Run `scripts/validate.sh <folder>` and fix every finding; the
    validator parses the code as Live's Python does and checks against the build:

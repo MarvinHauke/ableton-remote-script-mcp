@@ -181,8 +181,9 @@ def test_live_python_and_a_clean_script_in_12_4_16(index_dir, index, tmp_path):
 
 
 @pytest.mark.local_live
-def test_skill_template_is_clean_in_12_4_16(index_dir, tmp_path):
-    template = Path(__file__).parent.parent / "skills/ableton-remote-scripts/assets/framework_template"
+@pytest.mark.parametrize("name", ["framework_template", "v3_template"])
+def test_skill_template_is_clean_in_12_4_16(index_dir, tmp_path, name):
+    template = Path(__file__).parent.parent / "skills/ableton-remote-scripts/assets" / name
     folder = tmp_path / "Template_Check"
     shutil.copytree(template, folder)
     answer = validate_script(folder, index_dir, "12.4.16")
@@ -190,7 +191,8 @@ def test_skill_template_is_clean_in_12_4_16(index_dir, tmp_path):
 
 
 @pytest.mark.local_live
-def test_apc_mini_mk1_example_is_clean_in_12_4_16(index_dir):
-    folder = Path(__file__).parent.parent / "examples/APC_mini_mk1"
+@pytest.mark.parametrize("name", ["APC_mini_mk1", "Faderfox_UC4"])
+def test_example_is_clean_in_12_4_16(index_dir, name):
+    folder = Path(__file__).parent.parent / "examples" / name
     answer = validate_script(folder, index_dir, "12.4.16")
     assert answer["status"] == "ok" and answer["findings"] == [], answer["findings"]

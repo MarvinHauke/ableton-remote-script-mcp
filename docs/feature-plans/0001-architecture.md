@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: the 9a re-run after step 8, then step 10._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: step 10 (in work: the UC4 load test), then one 9a round (Decision 46)._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -628,6 +628,33 @@ meant to do, and uses only API names that exist in the Live build they target.
     - The validator doesn't use them: no rule checks attribute names by class yet (STATUS).
     - The pages come from one unstated Live 12.x build. A runtime probe stays out, as Decision 23
       says.
+46. **One 9a round after step 10, not one after step 8 as well** (agent proposed 2026-11-16; the
+    user went ahead with step 10 without objecting, 2026-11-17). Decision 42 planned a re-run
+    after step 8 and another after step 10. A round costs much of the user's usage limit, and the
+    v3 cases (the UC4 mixer, the port to v3) need the v3 references of step 10 to show a
+    difference. So one round runs after step 10, with step 8's checks and the v3 pages in place.
+47. **How step 10's UC4 script is built** (agent, 2026-11-17, step 10).
+    - **Target:** the UC4's factory setup SE17 (the user: "use a dump from the UC4 Editor, note
+      which one"). The device facts come from the UC4 Editor's model of SE17 and its device
+      page; the UC4 architect confirmed SE17 on the device is factory. To restore it, the user
+      runs `rESc`; nothing is sent to the device.
+    - **Every group at once:** the UC4 switches its encoder and green button groups itself, and
+      each group sends other numbers, so the script maps all of them and needs no modes. Two
+      controls sending the same message (the Track group's push buttons 3–4 and the Track green
+      buttons 1–2) are one element.
+    - **Framework components first,** two of our own where none fits: Monitor (In/Auto per
+      track) and the selected scene's start button. The printed `Quant` and the Track group's
+      encoders 7–8 are left out.
+    - **The Global group's assignment is the script's choice:** which encoder or push button is
+      which printed function is not known. It is listed in the milestone page and on the
+      checklist.
+    - **`log --script` also reads Python's `logging`.** v3 has no `log_message`; Ableton's v3
+      scripts log with `logging.getLogger(__name__)`, which Live writes as
+      `Python: <LEVEL>:<module>:<line> - <text>`. `_Framework`'s copy of a `log_message` is skipped.
+    - **The v3 pages** are one reference, `references/v3-script.md`, and `assets/v3_template/`,
+      both written from the 12.4.16 index and outlines of Ableton's v3 scripts. The facts the
+      index can't show (what a skin does with a missing name, what `Mixer.MuteOn` means) are
+      marked `documented`, read in the decompiled 12.0 framework.
 
 ## Open questions
 
@@ -824,8 +851,8 @@ Every step's checks include `uv run pytest` passing.
      `eval_score.py` and `eval_run.sh`, and the scores in
      [milestone-1/skill-evals.md](milestone-1/skill-evals.md). With the skill every behaviour
      grader passed. "Fewer invented names" is not met yet: both arms had none, and the name check
-     cannot see names in v3 mappings (Decision 42). Re-run after step 8 as well; the trigger
-     check is still to run.
+     cannot see names in v3 mappings (Decision 42). One more round after step 10 (Decision 46);
+     the trigger check is still to run.
 10. **v3 references and the UC4 script (Milestone 1, part 2)**
     - **Blocked by:** 8, 9a
     - **Delivers:** the v3 template and references (Specification and elements,
@@ -833,6 +860,11 @@ Every step's checks include `uv run pytest` passing.
     - **Demo:** Claude writes a v3 script for the UC4 from the UC4 Editor's device facts.
     - **Checks:** the same as step 9 on the UC4; the 9a evals re-run and show the v3 references
       help. Milestone 1 is complete (Decision 28).
+    - **In work** (2026-11-17): `references/v3-script.md`, `assets/v3_template/` and
+      `examples/Faderfox_UC4/` (Decision 47) validate with no findings against 12.4.16; the
+      device facts, what the script does and the 14-item checklist are in
+      [milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md). Next: the user's load test,
+      then the one 9a round (Decision 46).
 11. **MCP server v1**
     - **Blocked by:** 4, 6, 10
     - **Delivers:** the tools `search_api`, `get_class`, `outline_reference_script`, `diff_builds`,

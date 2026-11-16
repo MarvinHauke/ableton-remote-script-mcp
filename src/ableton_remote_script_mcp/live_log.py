@@ -3,8 +3,11 @@
 Live writes a script's traceback in fragments, one log record per `write` call:
 `<time>: error: RemoteScriptError: <fragment>`. A fragment that ended with a newline is followed by
 an empty line in the file, and a repeated fragment becomes `Last message repeated N time(s): …`.
-Joining the fragments gives the traceback back as Python printed it. A script's `log_message`
-appears as `<time>: info: RemoteScriptMessage: (<Script>) <text>`.
+Joining the fragments gives the traceback back as Python printed it. A `_Framework` script's
+`log_message` appears as `<time>: info: RemoteScriptMessage: (<Script>) <text>`. A v3 script
+logs with Python's `logging` (`logging.getLogger(__name__)`, as Ableton's v3 scripts do), which
+Live writes as `<time>: info: Python: <LEVEL>:<module>:<line> - <text>`; the script is the
+module's first part (observed in 12.4.16 logs for `_Framework`'s own logger).
 
 Only the user runs Live; this module only reads the file.
 """
@@ -19,6 +22,7 @@ RECORD = re.compile(r"^(\d{4}-\d\d-\d\dT[\d:.]+): (\w+): (.*)$")
 REPEATED = re.compile(r"^Last message repeated (\d+) time\(s\): (.*)$")
 STARTED = re.compile(r"^Started: Live (\S+)")
 MESSAGE = re.compile(r"^\((.+?)\) (.*)$")
+PYTHON_LOG = re.compile(r"^Python: (DEBUG|INFO|WARNING|ERROR|CRITICAL):([\w.]+):\d+ - (.*)$")
 SCRIPT_PATH = re.compile(r"Remote Scripts/([^/\"]+)/")
 IMPORT_LINE = re.compile(r"^\s*import (\S+)\s*$", re.MULTILINE)  # Live's `import <folder>` when the name breaks it
 ERROR_TAG = "RemoteScriptError: "
@@ -103,6 +107,10 @@ def read_log(path: Path, script: str | None = None) -> dict:
         current = None
         if text.startswith(MESSAGE_TAG) and (m := MESSAGE.match(text[len(MESSAGE_TAG):])):
             messages.append({"line": start + n, "script": m.group(1), "text": m.group(2)})
+        elif (p := PYTHON_LOG.match(text)) and not p.group(2).startswith("_Framework."):
+            level, module, said = p.groups()  # _Framework's copy of a RemoteScriptMessage is skipped
+            messages.append({"line": start + n, "script": module.split(".")[0],
+                             "text": said if level == "INFO" else f"{level}: {said}"})
     for t in tracebacks:
         t["text"] = "".join(t.pop("parts")).strip("\n")
         t["scripts"] = sorted(set(SCRIPT_PATH.findall(t["text"]))

@@ -31,9 +31,11 @@
     - `component-guard` follows the methods `__init__` calls one level deep.
     - Attribute names outside the mappings (`self.song().made_up()`) are not checked.
     - The framework checks need Python 3.11, the Python Live runs.
-- **`log` finds a script's messages by its class name.** The framework starts each message with
+- **`log` finds a script's messages by a name.** `_Framework` starts each `log_message` with
   the name of the script's control surface class (as read in the decompiled 12.0 framework), so `--script` finds them only when that class is
-  named like the folder. Tracebacks are found by the folder in their file paths.
+  named like the folder. A v3 script's messages come from Python's `logging`, and Live names
+  the logger's module, which starts with the folder name when the script uses
+  `logging.getLogger(__name__)`. Tracebacks are found by the folder in their file paths.
 - **The `Live` module is seen through a model.** Live's C++ objects are not in the compiled
   files; the index uses the Push 3 helper's pure-Python model of them, which mirrors the Live
   Object Model but is not Live itself.
