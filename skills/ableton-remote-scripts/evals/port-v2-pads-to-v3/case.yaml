@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: port-v2-pads-to-v3
+expected_outcome: |
+  A folder Pad_Box_16_v3 on `ableton.v3` that does what Pad_Box_16 does: a 4x4 session box on
+  the pads (notes 36-51; note 36 is the bottom-left pad, and the top row is the first scene), four track volume faders (CC 20-23), and four buttons
+  (notes 60-63) moving the box left, right, up and down. Pad_Box_16 is unchanged. The framework
+  names it uses exist in Live 12.4.16.
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: uc4-mixer-v3
+expected_outcome: |
+  A Remote Script folder on `ableton.v3` that Live 12.4.16 can load: a mixer of 8 tracks with
+  volume, pan and mute, the crossfader on fader 9, and two push buttons that move the tracks by a
+  bank of 8. Every MIDI number comes from the prompt; the script does not count on the green LEDs.
+  The framework names it uses exist in Live 12.4.16.

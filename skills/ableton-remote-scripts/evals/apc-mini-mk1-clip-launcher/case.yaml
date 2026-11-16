@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: apc-mini-mk1-clip-launcher
+expected_outcome: |
+  A Remote Script folder in the working directory, on `_Framework` or `ableton.v3`, that Live
+  12.4.16 can load: an 8x8 session box on the grid (top row = first scene), scene launch, track
+  stop buttons, eight track volume faders and a master fader, and Shift plus the first four track
+  buttons moving the box. Every MIDI number and LED value comes from the prompt. The framework
+  names it uses exist in Live 12.4.16, and the answer tells the user how to load it.

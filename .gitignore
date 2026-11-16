@@ -11,3 +11,7 @@ __pycache__/
 
 # Docs site build output (zensical / mkdocs)
 /site/
+
+# Skill eval results (generated scripts, transcripts, reports)
+/skills/*-workspace/
+/skills/*/evals/results/

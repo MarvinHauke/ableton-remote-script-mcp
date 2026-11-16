@@ -1,0 +1,22 @@
+[
+  {"query": "I just bought a Novation Launch Control XL mk1 and want my own control surface script for Live 12 so the knobs control sends A and B of the selected 8 tracks. Can you write it?", "should_trigger": true},
+  {"query": "my remote script doesnt show up in the control surface dropdown in ableton, folder is in User Library/Remote Scripts/My-Controller. whats wrong", "should_trigger": true},
+  {"query": "Live's Log.txt shows AttributeError: 'SessionComponent' object has no attribute 'set_clip_buttons' after I select my script. how do I fix that?", "should_trigger": true},
+  {"query": "make my cheap 16-pad usb controller work with ableton so the pads launch clips and light up", "should_trigger": true},
+  {"query": "Port this _Framework control surface (ControlSurface, SessionComponent, MixerComponent) to ableton.v3 with a ControlSurfaceSpecification", "should_trigger": true},
+  {"query": "In my ableton.v3 Specification, how do I add a Shift button so that shift+pad selects the track instead of launching the clip?", "should_trigger": true},
+  {"query": "Write create_instance and a ControlSurface subclass for a Behringer X-Touch Mini: 8 encoders on device parameters of the selected device, the buttons for mute.", "should_trigger": true},
+  {"query": "The LEDs of my APC-style grid stay lit after I set the control surface to None in Live. My script's disconnect() just calls super. What should it do?", "should_trigger": true},
+  {"query": "which class in Live 12.4's _Framework handles transport buttons (play, stop, record) for a midi controller script, and what are its setter names?", "should_trigger": true},
+  {"query": "I wrote a midi remote script in python for my Faderfox, but the faders move the wrong tracks after I scroll the session box. Here's the code: ...", "should_trigger": true},
+  {"query": "Using AbletonMCP, fire clip 3 on track 2 and set the tempo to 124 in my running Live set", "should_trigger": false},
+  {"query": "Build a Max for Live MIDI effect that turns incoming CCs from my controller into note repeats", "should_trigger": false},
+  {"query": "Write an Ableton Live extension with @ableton-extensions/sdk that adds a context-menu action to rename all clips on a track", "should_trigger": false},
+  {"query": "How do I MIDI-map a knob on my controller to the filter cutoff in Ableton without writing any code? MIDI map mode doesn't seem to react.", "should_trigger": false},
+  {"query": "Write a Bitwig Studio controller extension in JavaScript for my Arturia KeyLab so the pads launch clips", "should_trigger": false},
+  {"query": "With python and mido, read the CCs my Faderfox UC4 sends and print them to the terminal", "should_trigger": false},
+  {"query": "In a Max for Live device, how do I use live.object to get the names of all tracks in the Live set?", "should_trigger": false},
+  {"query": "Write a Reaper ReaScript in Python that arms all tracks whose name contains 'vox'", "should_trigger": false},
+  {"query": "My Faderfox UC4 editor (a Svelte web app) needs a SysEx dump parser for the setup data. Can you write it in TypeScript?", "should_trigger": false},
+  {"query": "Design a TouchOSC layout for my iPad with 8 faders and 8 mute buttons that talks to Ableton over OSC", "should_trigger": false}
+]

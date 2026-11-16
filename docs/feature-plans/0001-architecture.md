@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a and 7 built 2026-11-15. Frontier: step 9._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) 2026-11-16. Frontier: step 8._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -551,6 +551,51 @@ meant to do, and uses only API names that exist in the Live build they target.
     only `_Framework` frames, which `log --script` did not show. Now `log --script` lists such
     tracebacks as framework-only and exits 1 for them. This answers the open question of
     Decision 40: the second controller is no longer needed for it.
+42. **The skill evals' baseline round; invented names in v3 mappings go to step 8** (agent
+    proposed, user agreed, 2026-11-16, step 9a). The three cases ran three times with and without
+    the skill in `claude plugin eval`'s sandbox, which hides this repo but not the installed Live.
+    With the skill, all behaviour graders passed (without: 78%, 93% and 100%), and the
+    `_Framework` case took less time and money. Both arms had no validator findings and no
+    unknown names, so the check "fewer invented names" is not met. Without the skill, Claude
+    reads Live's `.pyc` files itself. And the name check reads only attribute names and
+    constructor keywords, which leaves most of a v3 script (names as text in the mappings)
+    unchecked. So step 8's checks of the Specification and the component map also check the
+    control names in a mappings function, and 9a is re-run after step 8 and after step 10. The
+    trigger check waits until the usage limit allows it (the first round hit the user's 5-hour
+    limit). Scores: [milestone-1/skill-evals.md](milestone-1/skill-evals.md).
+43. **Step 8's rules, severities and real-world check** (agent proposed, user agreed,
+    2026-11-16, step 8). Findings have three severities: `error` (the build's index proves it
+    wrong), `warning` (likely wrong, but the framework accepts it) and `not_checked` (the rule
+    can't decide, listed with the reason). The rules:
+    - **Mapping keys** (`error`): each key of a component-map name must be a member `<key>`
+      or a setter `set_<key>` of that component's class through its MRO, or `enable`. The
+      class comes from the framework's default component map, the Specification's
+      `component_map` and the script's own setup. Modes sections are checked the same way for
+      each mode, and their own keys against `ModesComponent`. A component the rule can't
+      resolve is `not_checked`.
+    - **Element names** (`error`): a name on the right of a mapping must be one the Elements
+      class builds (snake case of `name=` or `base_name=`, with `_raw` and `[i]`); names built
+      in a loop or by computation are `not_checked`.
+    - **Top-level names not in the component map** (`warning`) only when the section has no
+      modes, because that's what a typo looks like.
+    - **Specification fields** the base class doesn't have (`warning`).
+    - **Overridden framework methods** that can't take the framework's arguments (`error`);
+      renamed parameters and keyword style are not flagged.
+    - **Elements or components built outside `component_guard`** in a ControlSurface
+      subclass's `__init__`, following called methods one level deep (`error`); v3's `setup()`
+      and an Elements class are exempt.
+    - **`disconnect` not calling its base** (`warning`).
+    
+    `eval_names.py`'s name-only check doesn't become a validator rule; an attribute rule by
+    class goes to STATUS. The clean v3 sample is hand-written in `tests/` over the hand-written
+    index. In addition, a local-only check runs the rules over working v3 scripts in
+    `reference/`: gluon's decompiled factory scripts and `hkdsun/MidiFighterV3` (Live 12; it has
+    no licence and so stays local). Each `error` there is read: it is a false positive in our
+    rules unless the script is older than the build. Most of gluon's scripts are decompiled from
+    12.0-era bytecode, and only nine recent controllers from Live 12's Python 3.11 bytecode,
+    some with partial bodies, so an error there may be a real change since 12.0 or a gap left
+    by the decompiler. The glossary gains
+    Eval case, Arm, Grader and Unknown name.
 
 ## Open questions
 
@@ -698,10 +743,14 @@ Every step's checks include `uv run pytest` passing.
    - **Blocked by:** 7
    - **Delivers:** checks for:
      - signatures of overridden framework methods
-     - Specification fields and component-map keys
+     - Specification fields and component-map keys, and the control names in a mappings
+       function (Decision 42)
      - components built outside `component_guard`
      - `disconnect` not calling its base
-   - **Checks:** a bad sample for each rule; a clean v3 sample gives no findings.
+     - with the severities `error`, `warning` and `not_checked` (Decision 43)
+   - **Checks:** a bad sample for each rule; a clean hand-written v3 sample gives no findings.
+     Local-only: the v3 scripts in `reference/` (gluon's factory scripts, MidiFighterV3) give
+     no `error` against 12.4.16 that is ours (Decision 43 says how each one is read).
 9. **Skill v1 and the APC mini mk1 script (Milestone 1, part 1)**
    - **Blocked by:** 3, 5, 7
    - **Delivers:** the skill, drafted with `/skill-creator`, in the open Agent Skills format:
@@ -730,6 +779,12 @@ Every step's checks include `uv run pytest` passing.
        ones; the description is tuned until it does
    - **Checks:** a report with and without the skill; fewer invented names with the skill.
      Re-run after step 10.
+   - **Built** (2026-11-16, baseline round): the three cases, `scripts/eval_names.py`,
+     `eval_score.py` and `eval_run.sh`, and the scores in
+     [milestone-1/skill-evals.md](milestone-1/skill-evals.md). With the skill every behaviour
+     grader passed. "Fewer invented names" is not met yet: both arms had none, and the name check
+     cannot see names in v3 mappings (Decision 42). Re-run after step 8 as well; the trigger
+     check is still to run.
 10. **v3 references and the UC4 script (Milestone 1, part 2)**
     - **Blocked by:** 8, 9a
     - **Delivers:** the v3 template and references (Specification and elements,

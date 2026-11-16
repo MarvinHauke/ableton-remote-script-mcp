@@ -119,7 +119,24 @@ is decided only where a script's own class attributes settle it.
 
 **Finding**:
 A problem the validator reports in a script: the file and line, the rule it breaks, what is
-wrong and how to fix it.
+wrong and how to fix it. Its severity is `error` (the build's index proves it wrong), `warning`
+(likely wrong, but the framework accepts it) or `not_checked` (the rule can't decide, with the
+reason).
+
+**Eval case**:
+One task for the skill evals: the prompt as a user would type it, the input files, the expected
+outcome and its graders. Each case runs in both arms.
+
+**Arm**:
+One side of an eval comparison: the runs with the skill or the runs without it.
+
+**Grader**:
+One checked statement about an eval run's result. Most are judged from the run's trace and
+files; the validator and the unknown-name check are computed by a script.
+
+**Unknown name**:
+A name in a generated script that neither the API index nor Ableton's own scripts know: a
+candidate for an invented name, to be read before it counts as one.
 
 **Origin**:
 For a member a class has, the class along its MRO that defines it: the class itself or the base

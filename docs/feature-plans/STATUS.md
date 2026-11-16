@@ -3,13 +3,13 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-16 (0001 step 9 built: skill v1, the APC mini mk1 script passed its load test)._
+_Last updated: 2026-11-16 (0001 step 9a built: the skill evals' baseline round)._
 
 ## Now
 
 - Research done: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)
   (Structure Void, gluon repos, local Live installs, existing MCPs, review of ChatGPT's discovery toolkit).
-- `reference/gluon-live11` and `reference/gluon-live12` cloned (shallow, git-ignored).
+- `reference/gluon-live11`, `reference/gluon-live12` and `reference/MidiFighterV3` cloned (shallow, git-ignored).
 - Planning structure in place (this folder, `CLAUDE.md`, `docs/agents/`, `docs/guides/`), committed on `docs/plan-0001`.
 - 0001 grilled (Decisions 1–27). Python 3.11.12 installed via uv (0001 decision 5).
 - 0001 decided: spec and steps (2026-11-15).
@@ -49,7 +49,18 @@ _Last updated: 2026-11-16 (0001 step 9 built: skill v1, the APC mini mk1 script 
   are in [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), and the skill took the
   repeatable findings (0001 decisions 40 and 41). `log --script` also shows framework-only
   tracebacks. `uv run pytest` green (103 tests, 13 local-only).
-- Next: step 9a, skill evals.
+- 0001 step 9a built on `feat/0001-step-9a-skill-evals` (2026-11-16, baseline round): three eval
+  cases in `skills/ableton-remote-scripts/evals/`, `scripts/eval_names.py` (unknown API names),
+  `eval_score.py` and `eval_run.sh` (`claude plugin eval` in its sandbox). With the skill every
+  behaviour grader passed; both arms had no unknown names, and the name check cannot see names
+  in v3 mappings, so step 8 also checks them and 9a is re-run after step 8 (0001 decision 42;
+  scores in [milestone-1/skill-evals.md](milestone-1/skill-evals.md)). After review: the name
+  check's false negatives fixed and the 18 scripts checked again (still no unknown names), tests
+  for the eval scripts, `eval_run.sh` pins 12.4.16, keeps the traces and deletes the sandboxes.
+  `uv run pytest` green (116 tests, 13 local-only).
+- 0001 decision 43 (2026-11-16): step 8's rules and severities decided. `reference/MidiFighterV3`
+  cloned (no licence, local only) as a working community v3 script for the false-positive check.
+- Next: step 8, validator framework checks.
 
 ## After grilling
 
@@ -58,6 +69,15 @@ _Last updated: 2026-11-16 (0001 step 9 built: skill v1, the APC mini mk1 script 
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [needs-triage] Validator rule for attribute names by class (for example a made-up
+  `self.song().some_method()` outside the mappings); step 8 checks only v3 mappings by class
+  (0001 decision 43).
+
+- [ready-for-agent] Run the skill's trigger check: 20 queries in
+  `skills/ableton-remote-scripts/evals/trigger-eval.json`, one round of `/skill-creator`'s
+  `run_loop.py` (60 short `claude -p` calls), with `ANTHROPIC_API_KEY` unset so the claude.ai
+  login is used. Wait until the usage limit allows it (0001 decision 42).
 
 - [needs-triage] Validator rule: warn when two elements are built for the same MIDI type, channel
   and number (a load failure the 2010 blog posts name; check it in 12.4.16 first). From
