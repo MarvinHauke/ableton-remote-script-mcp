@@ -97,6 +97,11 @@ _Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks).
   tutorials): a possible `documented` source and, if its terms allow, generated scripts for the
   false-positive check (user's suggestion, 2026-11-16). Not looked at yet.
 
+- [needs-triage] Live object model names that the Push 3 helper's model lacks, so the index
+  doesn't have them: `Track.is_foldable`, `Song.song_length` and the `ticks` of a beat time.
+  The user's own cmdAbl Remote Script uses all three, and it runs in Live (12.4.25 beta). Found
+  with `eval_names.py` (2026-11-16). They could become `tested` facts, or come from another source.
+
 - [ready-for-agent] Run the skill's trigger check: 20 queries in
   `skills/ableton-remote-scripts/evals/trigger-eval.json`, one round of `/skill-creator`'s
   `run_loop.py` (60 short `claude -p` calls), with `ANTHROPIC_API_KEY` unset so the claude.ai
