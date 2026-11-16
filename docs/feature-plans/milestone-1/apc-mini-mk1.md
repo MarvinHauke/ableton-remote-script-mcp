@@ -141,6 +141,9 @@ property of the unit, so only the script side (the optimized surface sends far l
 the skill. ReceiveMIDI and the log differ by a few messages in one run; the counts are close,
 not exact.
 
+The status-bar message on load ("APC_mini_mk1 loaded") shows when the script is chosen again
+while Live runs; at start-up Live's own scanning messages cover it (2026-11-16).
+
 ### Not covered
 
 - Removing the controller's ports while the script runs leaves the LEDs lit: the script can no

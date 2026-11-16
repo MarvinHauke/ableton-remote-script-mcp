@@ -65,9 +65,6 @@ _Last updated: 2026-11-16 (0001 step 9 built: skill v1, the APC mini mk1 script 
 
 - [needs-triage] `APC_mini_mk1`: Shift's fader modes (volume, pan, send, device) and track
   modes (stop, solo, arm, mute, select), as on Ableton's script. Not in a step yet.
-- [ready-for-human] `APC_mini_mk1`'s status-bar message ("APC_mini_mk1 loaded") ran without a
-  traceback on 2026-11-16, but the user did not see it: Live's own scanning messages probably
-  covered it at start-up. Check once when Live starts quietly, or after choosing the script again.
 - [ready-for-human] The user plans to get a second grid controller (2026-11-15). On it, check
   how much LED traffic it takes before it loses presses; the APC mini's limit is in
   [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md) (0001 decision 41).
