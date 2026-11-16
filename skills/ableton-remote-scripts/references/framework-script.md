@@ -27,8 +27,9 @@ argument, `c_instance`, Live's handle for this control surface slot, and passes 
 `ControlSurface.__init__`.
 
 The control surface class (`_Framework.ControlSurface.ControlSurface`) builds everything in its
-`__init__`, inside `with self.component_guard():`, and releases it in `disconnect()`. Members a
-script uses most:
+`__init__`, inside `with self.component_guard():`, and releases it in `disconnect()`. A script
+with Shift combos builds on its subclass `_Framework.ControlSurface.OptimizedControlSurface`
+instead (`observed`; see "One button, two jobs"). Members a script uses most:
 
 | Member | Use |
 |---|---|
@@ -53,7 +54,11 @@ An element wraps one device control and its MIDI identity. Message types come fr
 | `_Framework.ButtonMatrixElement.ButtonMatrixElement` | `(rows=[[button, …], …], name=…)` | a grid; also a single row of buttons, as one row |
 
 `name=` is a keyword of `ControlElement.__init__`; named elements make tracebacks and Live's own
-control surface naming easier to read. A matrix's first row is the one the session gives its first
+control surface naming easier to read. Keep each row's buttons in a list of your own as well: a
+matrix's `get_button(column, row)` returns a button only while a component holds the matrix, and
+`None` before (`documented`, decompiled 12.0 framework; `tested` in Live 12.4.16, where combos
+built from `get_button()` right after building the matrix wrapped `None`). Iterating the matrix
+behaves the same way (`documented`). A matrix's first row is the one the session gives its first
 scene, so order the rows top to bottom even when the hardware numbers its pads from the bottom up
 (`documented`, the pattern of Ableton's grid scripts; the load test checks it).
 
@@ -129,8 +134,15 @@ before writing one.
   the combo (higher priority) takes the button away from the plain binding while Shift is held.
   A button that is the modifier of several combos needs
   `resource_type=_Framework.Resource.SharedResource` in its constructor, so they can all hold it.
-  Ableton's `APC_mini` outline shows the pattern. Four things go with it (each `tested` in Live
+  Ableton's `APC_mini` outline shows the pattern. Five things go with it (each `tested` in Live
   12.4.16, explained by the decompiled 12.0 framework):
+  - **Build on `OptimizedControlSurface`.** On the plain `ControlSurface` every ownership change
+    is handled at once, and with Shift combos each Shift press and release made the components
+    send most of their LEDs again (measured: 80–320 messages a second, about 90% unchanged; the
+    APC mini used in the test then lost button presses). The optimized surface applies the changes once per
+    incoming message (50 a second on average with the same Set). It also really hands a combo its
+    button, so a combo that wraps `None` fails at once with
+    `AttributeError: 'NoneType' object has no attribute 'resource'` instead of doing nothing.
   - **Give every Shift combination a job.** A button with no combo keeps its plain job while
     Shift is held, so Shift + an unbuilt button stops clips or launches a scene. Put combos for
     those buttons in a matrix and give it, through a layer, to a component that only holds them.
@@ -147,9 +159,6 @@ before writing one.
     `matrix.owns_control_element(button)` first. And leave a borrowed button's LED as it is: a
     scene relights its button only when it is given a different one, so an LED darkened while
     Shift was held stays dark after it is let go.
-  Open question: Ableton's combo scripts build on `_Framework.ControlSurface.OptimizedControlSurface`
-  (`observed`), which hands each button to its final owner once per incoming MIDI message
-  (`documented`). Whether a plain `ControlSurface` behaves worse with combos is not known yet.
 - **Layers on components:** assign the layer after building the component,
   `session.layer = Layer(clip_launch_buttons=grid, …)`. A `layer=` passed to the constructor is
   grabbed only when the component's enabled state changes, so on a component that starts enabled

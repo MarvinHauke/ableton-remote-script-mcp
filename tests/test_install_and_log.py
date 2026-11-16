@@ -93,6 +93,33 @@ def test_log_for_one_script(log):
     assert read_log(log, "Quiet_Script")["tracebacks"] == []
 
 
+def framework_traceback(time):
+    """A traceback whose frames are all in Live's own `_Framework`, as a broken combo gives."""
+    frame = '  File "output/Live/mac/MIDI Remote Scripts/_Framework/ComboElement.py", line 172, in invariant'
+    return [record(time, "error", "RemoteScriptError: Traceback (most recent call last):"), "",
+            record(time + 0.001, "error", f"RemoteScriptError: {frame}"), "",
+            record(time + 0.002, "error",
+                   "RemoteScriptError: AttributeError: 'NoneType' object has no attribute 'resource'"), ""]
+
+
+def test_log_shows_framework_only_tracebacks_with_the_script(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "prefs" / "Live 12.4.16" / "Log.txt"
+    path.parent.mkdir(parents=True)
+    path.write_text("\n".join(LOG + framework_traceback(50) + framework_traceback(51)) + "\n")
+    answer = read_log(path, "My_Script")
+    assert len(answer["tracebacks"]) == 1 and answer["others"] == 1
+    assert [t["scripts"] for t in answer["framework_only"]] == [["_Framework"], ["_Framework"]]
+    assert read_log(path)["framework_only"] == []  # without --script every traceback is listed anyway
+    from ableton_remote_script_mcp.live_log import is_framework
+    assert all(map(is_framework, ["_Framework", "_APC", "ableton", "pushbase", "novation"]))
+    assert not any(map(is_framework, ["APC_mini", "microKONTROL", "My_Script"]))
+    monkeypatch.setenv("ABLETON_PREFERENCES", str(path.parent.parent))
+    assert main(["log", "--script", "Quiet_Script"]) == 1
+    out = capsys.readouterr().out
+    assert "framework-only tracebacks (2)" in out and "and 1 more the same" in out
+    assert "no attribute 'resource'" in out
+
+
 def test_find_log(log, tmp_path):
     prefs = log.parent.parent
     older = prefs / "Live 12.4.15" / "Log.txt"

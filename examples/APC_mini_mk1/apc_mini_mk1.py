@@ -18,7 +18,7 @@ What it does:
 from _Framework.ButtonElement import ButtonElement
 from _Framework.ButtonMatrixElement import ButtonMatrixElement
 from _Framework.ComboElement import ComboElement
-from _Framework.ControlSurface import ControlSurface
+from _Framework.ControlSurface import OptimizedControlSurface
 from _Framework.ControlSurfaceComponent import ControlSurfaceComponent
 from _Framework.InputControlElement import MIDI_CC_TYPE, MIDI_NOTE_TYPE
 from _Framework.Layer import Layer
@@ -218,7 +218,12 @@ class BoxNavigation(ControlSurfaceComponent):
         self._update_lights()
 
 
-class APC_mini_mk1(ControlSurface):
+class APC_mini_mk1(OptimizedControlSurface):
+    # OptimizedControlSurface, not ControlSurface: with Shift combos the plain one resent most LEDs
+    # on every Shift press (80-320 messages a second, about 90% unchanged) and the test controller
+    # then lost button presses; with the optimized one every press arrived (tested in Live
+    # 12.4.16). It applies the ownership changes once per incoming message (documented, decompiled
+    # 12.0 framework); Ableton's APC_mini builds on it too.
     def __init__(self, c_instance):
         super().__init__(c_instance)
         with self.component_guard():
@@ -232,9 +237,13 @@ class APC_mini_mk1(ControlSurface):
             name="Grid",
             rows=[[make_button(note, f"Grid_{row}_{col}") for col, note in enumerate(notes)]
                   for row, notes in enumerate(GRID_NOTES)])
+        # Keep the buttons in lists too: a matrix's get_button() returns a button only while the
+        # matrix is held by a component, None before that (documented, decompiled 12.0 framework;
+        # seen in Live 12.4.16: every combo built from get_button() wrapped None).
+        self._scene_button_list = [
+            make_button(note, f"Scene_{i}") for i, note in enumerate(SCENE_NOTES)]
         self._scene_buttons = ButtonMatrixElement(
-            name="Scene_Buttons",
-            rows=[[make_button(note, f"Scene_{i}") for i, note in enumerate(SCENE_NOTES)]])
+            name="Scene_Buttons", rows=[self._scene_button_list])
         self._track_button_list = [
             make_button(note, f"Track_{i}") for i, note in enumerate(TRACK_NOTES)]
         self._track_buttons = ButtonMatrixElement(
@@ -248,14 +257,14 @@ class APC_mini_mk1(ControlSurface):
             for button, name in zip(self._track_button_list, ("Up", "Down", "Left", "Right")))
         self._up, self._down, self._left, self._right = up, down, left, right
         # Shift + the bottom scene button stops all clips, as on Ableton's own APC mini script
-        self._stop_all = ComboElement(self._scene_buttons.get_button(7, 0), modifiers=[self._shift],
+        self._stop_all = ComboElement(self._scene_button_list[7], modifiers=[self._shift],
                                       name="Stop_All")
         # Shift + the other track and scene buttons has no job yet: those combos do nothing
         self._shift_unassigned = ButtonMatrixElement(name="Shift_Unassigned", rows=[
             [ComboElement(button, modifiers=[self._shift], name=f"Shift_Track_{i}")
              for i, button in enumerate(self._track_button_list) if i >= 4]
-            + [ComboElement(self._scene_buttons.get_button(i, 0), modifiers=[self._shift],
-                            name=f"Shift_Scene_{i}") for i in range(NUM_SCENES - 1)]])
+            + [ComboElement(button, modifiers=[self._shift], name=f"Shift_Scene_{i}")
+               for i, button in enumerate(self._scene_button_list[:-1])]])
         self._faders = [make_fader(cc, f"Fader_{i}") for i, cc in enumerate(FADER_CCS)]
         self._master_fader = make_fader(MASTER_FADER_CC, "Master_Fader")
 

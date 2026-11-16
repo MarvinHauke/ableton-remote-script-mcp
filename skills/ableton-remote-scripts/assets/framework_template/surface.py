@@ -42,6 +42,8 @@ def make_fader(cc, name):
 # Rename the class to the script's folder name: the framework starts each log message with the
 # class name (documented: decompiled 12.0 framework), and `log.sh --script <Folder>` finds the
 # messages by the folder name.
+# With Shift combos (ComboElement), build on OptimizedControlSurface from the same module instead
+# (tested in Live 12.4.16; references/framework-script.md, "One button, two jobs").
 class Surface(ControlSurface):
     def __init__(self, c_instance):
         super().__init__(c_instance)

@@ -28,6 +28,17 @@ TRACEBACK_HEAD = "Traceback (most recent call last):"
 CHAINED = ("another exception occurred:", "the direct cause of the following exception:")
 
 
+SHARED_PACKAGES = {"ableton", "pushbase", "novation"}
+
+
+def is_framework(name: str) -> bool:
+    """Live's shared packages rather than a controller script: the names starting with an
+    underscore (`_Framework`, `_Generic`, `_APC`, ...) and `ableton`, `pushbase`, `novation`
+    (observed in the 12.4.16 install, where `iRig_Keys_IO`, `microKONTROL` and `padKONTROL` are
+    controller scripts despite their lower-case first letter)."""
+    return name.startswith("_") or name in SHARED_PACKAGES
+
+
 def preferences_dir() -> Path:
     """Where Live keeps one folder per build (`Live 12.4.16/`) with its `Log.txt`."""
     return Path(os.environ.get("ABLETON_PREFERENCES", Path.home() / "Library/Preferences/Ableton"))
@@ -58,7 +69,9 @@ def read_log(path: Path, script: str | None = None) -> dict:
     """The tracebacks and messages since Live last started, as the query core answers.
 
     With `script`, only the tracebacks that pass through that script's folder and the messages it
-    logged; `others` counts the tracebacks left out.
+    logged. `framework_only` holds the tracebacks whose frames are all in Live's shared packages:
+    no frame names a script, so they may come from this script (a framework call it set up, such
+    as a combo) or from another one. `others` counts the tracebacks left out.
     """
     if not path.is_file():
         return {"status": "not_found", "message": f"no Live log at {path}"}
@@ -95,9 +108,12 @@ def read_log(path: Path, script: str | None = None) -> dict:
         t["scripts"] = sorted(set(SCRIPT_PATH.findall(t["text"]))
                               | (set(IMPORT_LINE.findall(t["text"])) if '"<string>"' in t["text"] else set()))
     others = 0
+    framework_only: list[dict] = []
     if script:
         kept = [t for t in tracebacks if script in t["scripts"]]
-        others = len(tracebacks) - len(kept)
+        framework_only = [t for t in tracebacks if t["scripts"] and script not in t["scripts"]
+                          and all(map(is_framework, t["scripts"]))]
+        others = len(tracebacks) - len(kept) - len(framework_only)
         tracebacks = kept
         messages = [m for m in messages if m["script"] == script]
     return {
@@ -107,6 +123,7 @@ def read_log(path: Path, script: str | None = None) -> dict:
         "session_line": start + 1,
         "script": script,
         "tracebacks": tracebacks,
+        "framework_only": framework_only,
         "messages": messages,
         "others": others,
     }

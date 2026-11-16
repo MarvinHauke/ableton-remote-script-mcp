@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-15 (0001 step 9 built: skill v1, the APC mini mk1 script passed its load test)._
+_Last updated: 2026-11-16 (0001 step 9 built: skill v1, the APC mini mk1 script passed its load test)._
 
 ## Now
 
@@ -47,7 +47,8 @@ _Last updated: 2026-11-15 (0001 step 9 built: skill v1, the APC mini mk1 script 
   not Python names (0001 decision 38). `examples/APC_mini_mk1/` passed the load test and the
   12-item checklist in Live 12.4.16; results, fixes and the comparison with Ableton's `APC_mini`
   are in [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), and the skill took the
-  repeatable findings (0001 decision 40). `uv run pytest` green (102 tests, 13 local-only).
+  repeatable findings (0001 decisions 40 and 41). `log --script` also shows framework-only
+  tracebacks. `uv run pytest` green (103 tests, 13 local-only).
 - Next: step 9a, skill evals.
 
 ## After grilling
@@ -58,13 +59,18 @@ _Last updated: 2026-11-15 (0001 step 9 built: skill v1, the APC mini mk1 script 
 
 ## Small items
 
+- [needs-triage] Validator rule: warn when two elements are built for the same MIDI type, channel
+  and number (a load failure the 2010 blog posts name; check it in 12.4.16 first). From
+  [research/2026-11-16-framework-basics-and-decompiling.md](research/2026-11-16-framework-basics-and-decompiling.md).
+- [ready-for-agent] Read Structure Void's guides `debugging`, `cookbook`, `midi-message-flow`,
+  `controller-colours` and `idea-to-script` for reliability tips (the site blocks automated
+  fetches; needs the Chrome extension).
+
 - [needs-triage] `APC_mini_mk1`: Shift's fader modes (volume, pan, send, device) and track
   modes (stop, solo, arm, mute, select), as on Ableton's script. Not in a step yet.
-- [needs-triage] Whether `OptimizedControlSurface` matters for scripts with combos; the APC mini
-  test controller could not tell (0001 decision 40). Needs other hardware.
-- [ready-for-human] The user plans to get a second grid controller (2026-11-15). On it, retest
-  the unconfirmed APC mini glitches (late relights, doubled or lost Shift messages) and the
-  `OptimizedControlSurface` question (0001 decision 40).
+- [ready-for-human] The user plans to get a second grid controller (2026-11-15). On it, check
+  how much LED traffic it takes before it loses presses; the APC mini's limit is in
+  [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md) (0001 decision 41).
 
 - [ready-for-agent] Before the first push (the repo is public): take the Live 13 beta findings out of
   the research doc's section 3 (12.4.16 → 13.0b25 differences; it also lists the User Library's

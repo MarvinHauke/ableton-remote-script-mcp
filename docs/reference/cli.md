@@ -131,7 +131,7 @@ ableton-remote-script-mcp log [--script SCRIPT] [--build BUILD] [--log LOG] [--j
 
 | Argument | What it does |
 | --- | --- |
-| `--script SCRIPT` | Only this script's tracebacks and messages (its folder name). |
+| `--script SCRIPT` | Only this script's tracebacks and messages (its folder name), plus the framework-only tracebacks that may be its own; exit 1 for either. |
 | `--build BUILD` | Read the log of this Live build (default: the most recently written log). |
 | `--log LOG` | Path to a Log.txt (default: found under $ABLETON_PREFERENCES, else ~/Library/Preferences/Ableton). |
 | `--json` | Print the answer as JSON. |

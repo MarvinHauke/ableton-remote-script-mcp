@@ -33,9 +33,13 @@ when it starts.
 - the script's own messages (`log_message`). The framework starts each with the control surface's
   class name (`documented`, decompiled 12.0 framework), so they are found only when the
   `ControlSurface` subclass carries the folder's name
+- tracebacks whose frames are all in Live's shared packages (`_Framework`, `ableton`, …), under
+  "framework-only": no frame names a script, so they may be this script's (a broken combo, a
+  listener it set up) or another loaded script's. Read them when the script misbehaves
 - how many tracebacks from other scripts or Live itself it left out
 
-It exits 0 with no traceback, 1 with tracebacks and 2 when it finds no log.
+It exits 0 with no traceback, 1 with tracebacks of the script or framework-only ones, and 2 when
+it finds no log.
 
 Read it as follows:
 
@@ -55,6 +59,7 @@ Read it as follows:
 | `DependencyError: Required dependency register_component not provided` | an element or component was built outside `with self.component_guard():` |
 | `AttributeError: '…Component' object has no attribute 'set_…'` | an invented method; look the class up and use a member it has |
 | `TypeError: __init__() got an unexpected keyword argument` | an argument the constructor does not take; the lookup shows its signature |
+| `AttributeError: 'NoneType' object has no attribute 'resource'` in `ComboElement`, with only `_Framework` frames | a combo wraps `None`, usually built from `matrix.get_button()`; build it from the button itself |
 | `TypeError: int() argument must be … not 'NoneType'` in `send_value` | the script's own code sent an unset (`None`) LED value; turn the LED off for `None`, as the framework does |
 | `ModuleNotFoundError` / `ImportError` | a module Live's Python does not have, or a sibling import without the dot; the validator catches these before loading |
 
@@ -75,7 +80,14 @@ The script loaded but a mapping does not react. Check, in this order:
 1. **Log what the script sees.** Add `self.log_message(...)` to the handlers in question (each
    press, Shift's value, the box position before and after), let the user repeat it, and read the
    records with `log.sh`. Take them out once the cause is found.
-2. **Compare with Ableton's script for the same controller** on the same hardware, if Live has
-   one. When it shows the same fault, suspect the controller (a worn button sends doubled or lost
-   messages, and slow hardware relights late), and write that down as unconfirmed instead of
-   working around it.
+2. **Record what the controller sends,** beside the log, when presses seem lost or doubled.
+   ReceiveMIDI (a command-line tool; `receivemidi dev "<port>" ts`) reads the controller
+   directly while Live runs. When the controller already sends fewer presses than the user made,
+   the device loses them; when it sends them all and the script logs fewer, look inside Live.
+3. **Count what the script sends.** A controller can lose button presses while it is flooded with
+   LED messages. Override `_do_send_midi(self, midi_event_bytes)` for a moment to count messages
+   a second and how many repeat the value a button already has, and log the count from
+   `update_display()`. Many unchanged values mean the script resends LEDs it does not need to.
+4. **Compare with Ableton's script for the same controller** on the same hardware, if Live has
+   one. When it shows the same fault, suspect the controller and write that down as unconfirmed
+   instead of working around it; when it does not, the difference is in the script.

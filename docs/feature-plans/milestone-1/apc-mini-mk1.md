@@ -58,8 +58,8 @@ Items 10–12 were added during the load test, on the user's request and from wh
 
 ## Results
 
-Run by the user in Live 12.4.16 on 2026-11-15, with the agent reading `Log.txt`; the user ran
-Ableton's `APC_mini` on the same controller for comparison.
+Run by the user in Live 12.4.16 on 2026-11-15 and 2026-11-16, with the agent reading `Log.txt`;
+the user ran Ableton's `APC_mini` on the same controller for comparison.
 
 | Item | Result |
 |---|---|
@@ -73,8 +73,8 @@ Ableton's `APC_mini` on the same controller for comparison.
 | 8. Faders | passes: every fader reaches its target |
 | 9. Disconnect | passes with `reset()` on the matrices |
 | 10. Stop LEDs | passes, group tracks included |
-| 11. Stop all | passes |
-| 12. Shift + an unbuilt button | passes |
+| 11. Stop all | passes after the combo fix below; the first pass was false (2026-11-16) |
+| 12. Shift + an unbuilt button | passes after the combo fix below; scene buttons were blocked only by accident before |
 
 Every name the script uses is `observed` in the 12.4.16 index, with two notes. The track members
 `is_grouped` and `group_track` are `observed` only in the Push 3 helper's proxy model of
@@ -107,15 +107,39 @@ Each of these happened every time and is explained by the framework source or a 
 - **Scene LEDs stayed dark after Shift** when the unbuilt buttons were darkened while Shift was
   held: a scene relights its button only when it is given a different one. The script now leaves
   those LEDs as they are.
+- **The scene-button combos had no button** (2026-11-16): they were built with
+  `matrix.get_button()`, which returns a button only while a component holds the matrix and
+  `None` before. So Shift + the bottom scene button only launched scene 8, which stops all clips
+  when the scene is empty and looked like Stop All. The plain `ControlSurface` hid this; with
+  `OptimizedControlSurface` every Shift press threw
+  `AttributeError: 'NoneType' object has no attribute 'resource'` from `_Framework` frames only.
+  The combos are now built from a list of the buttons.
+- **Shift made the controller drop button presses** (2026-11-16): with the plain
+  `ControlSurface` and its Shift combos, every Shift press and release made the script send most
+  LEDs again, 80–320 messages a second, about 90% of them unchanged. On
+  `OptimizedControlSurface`, as Ableton's script is, it is 50 a second on average, at most 176,
+  and every press arrives (see the measurements below).
 
-### Seen, not confirmed
+### Measured on this unit: how many Shift presses get through
 
-The test controller may be slow or worn, its Shift button in particular; these were seen with
-Ableton's `APC_mini` too, so they are not taken as the script's behaviour and are not in the skill:
+ReceiveMIDI read the controller directly, beside Live's log; the script counted the MIDI it sent
+(temporary log records, removed afterwards). Clips changed the LEDs all the time in every run
+with Live.
 
-- LEDs relight late after Shift is let go or after the box moves.
-- Shift is sometimes reported pressed twice without a release, and a button release sometimes
-  arrives without its press.
+| Run | Pressed | Sent by the controller | Received by the script | Script's MIDI out while pressing Shift |
+|---|---|---|---|---|
+| Live closed, 2 runs (2026-11-15) | 60 | 60 presses, 60 releases | (Live closed) | |
+| Hands off for 1 minute | 0 | nothing | nothing | about 11 a second |
+| Plain `ControlSurface` (2026-11-15) | 30 | 18 / 17, sent late | the same | |
+| Ableton's `APC_mini` (2026-11-16) | 30 | 30 / 30, no delay | | |
+| Plain `ControlSurface` (2026-11-16) | 30 | 12 / 14 | 15 / 16 | 80–320 a second, about 90% unchanged |
+| `OptimizedControlSurface`, fixed combos (2026-11-16) | 35 | 35 / 35 | 35 / 35 | 50 a second on average, at most 176 |
+
+The button is sound. Under the plain surface's LED flood this unit stops sending some presses,
+and a lost release looks like a doubled press. How much LED traffic a controller takes is a
+property of the unit, so only the script side (the optimized surface sends far less) goes into
+the skill. ReceiveMIDI and the log differ by a few messages in one run; the counts are close,
+not exact.
 
 ### Not covered
 
@@ -141,6 +165,6 @@ parts behave is `documented` from the decompiled 12.0 reference:
   later; ours assigns the layer after construction. Both make the layer take effect.
 - **Its surface is an `OptimizedControlSurface`** (`observed`), which hands each button to its
   final owner once per incoming MIDI message instead of on every ownership change
-  (`documented`, decompiled 12.0 framework). Ours is a plain `ControlSurface`. Whether that matters for scripts with combos is open: on this
-  controller it could not be told apart from the delays above.
+  (`documented`, decompiled 12.0 framework). Ours was a plain `ControlSurface` and now builds on
+  it too, after the measurements above.
 - **It uses skins** (named colour values) for its LEDs; ours passes the velocities directly.

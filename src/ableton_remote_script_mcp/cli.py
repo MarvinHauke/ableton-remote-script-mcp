@@ -340,6 +340,17 @@ def format_log(answer: dict) -> str:
     for t in tbs:
         lines.append(f"  line {t['line']}:")
         lines += [f"    {text}" for text in t["text"].splitlines()]
+    framework_only = answer.get("framework_only", [])
+    if framework_only:
+        lines.append(f"framework-only tracebacks ({len(framework_only)}): no frame names a script, so they may "
+                     f"come from {answer['script']} or from another script using the framework")
+        seen: dict[str, list[int]] = {}
+        for t in framework_only:
+            seen.setdefault(t["text"], []).append(t["line"])
+        for text, at in seen.items():
+            more = f" and {len(at) - 1} more the same" if len(at) > 1 else ""
+            lines.append(f"  line {at[0]}{more}:")
+            lines += [f"    {row}" for row in text.splitlines()]
     if answer["others"]:
         lines.append(f"({answer['others']} traceback{'s' * (answer['others'] != 1)} from other scripts or Live "
                      "not shown; run without --script to see them)")
@@ -370,7 +381,7 @@ def _cmd_log(args: argparse.Namespace) -> int:
         print(answer["message"])
     if answer["status"] != "ok":
         return 2
-    return 1 if answer["tracebacks"] else 0
+    return 1 if answer["tracebacks"] or answer["framework_only"] else 0
 
 
 def _cmd_list_builds(args: argparse.Namespace) -> int:
@@ -461,7 +472,8 @@ def make_parser() -> argparse.ArgumentParser:
     ins.set_defaults(func=_cmd_install)
 
     lg = sub.add_parser("log", help="tracebacks and messages of Remote Scripts in Live's Log.txt (last session)")
-    lg.add_argument("--script", help="only this script's tracebacks and messages (its folder name)")
+    lg.add_argument("--script", help="only this script's tracebacks and messages (its folder name), plus the "
+                    "framework-only tracebacks that may be its own; exit 1 for either")
     lg.add_argument("--build", help="read the log of this Live build (default: the most recently written log)")
     lg.add_argument("--log", help="path to a Log.txt (default: found under $ABLETON_PREFERENCES, else "
                     "~/Library/Preferences/Ableton)")

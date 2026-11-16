@@ -541,6 +541,16 @@ meant to do, and uses only API names that exist in the Live build they target.
     Shift button may be worn (user). Plain `reset()` is kept in `disconnect`: a forced send was
     not needed once the test was run by choosing None (user's retest). Shift's fader and track
     modes are not part of step 9 (agent).
+41. **Shift scripts build on `OptimizedControlSurface`; combos come from button lists; `log`
+    shows framework-only tracebacks** (agent, 2026-11-16, step 9; the user ran the tests).
+    Measured with ReceiveMIDI beside the log: on the plain `ControlSurface` each Shift press made
+    the script resend most LEDs and the controller lost presses; on the optimized surface, as
+    Ableton's `APC_mini`, every press got through. The scene combos had been built with
+    `matrix.get_button()`, which returns `None` until a component holds the matrix, so Stop All
+    and item 12 had passed by accident; the optimized surface turned that into a traceback with
+    only `_Framework` frames, which `log --script` did not show. Now `log --script` lists such
+    tracebacks as framework-only and exits 1 for them. This answers the open question of
+    Decision 40: the second controller is no longer needed for it.
 
 ## Open questions
 
@@ -706,7 +716,7 @@ Every step's checks include `uv run pytest` passing.
      - it is compared with Ableton's `APC_mini`
    - **Built** (2026-11-15): the load test and the 12-item checklist pass in Live 12.4.16, the
      comparison and the findings are in [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md),
-     and the skill took the repeatable findings (Decision 40). Every API name is `observed`,
+     and the skill took the repeatable findings (Decisions 40 and 41). Every API name is `observed`,
      except `is_grouped` and `group_track` (observed only in the Push 3 helper's proxy model,
      `tested` by the checklist) and three `SessionComponent` instance attributes (`documented`).
 9a. **Skill evals**
