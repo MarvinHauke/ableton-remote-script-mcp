@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks)._
+_Last updated: 2026-11-16 (Structure Void's runtime pages as a documented source, 0001 decision 45)._
 
 ## Now
 
@@ -92,6 +92,12 @@ _Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks).
   MidiFighterV3 give no error against 12.4.16; the one error in the Live 11 clone is a real API
   change. `eval_run.sh` now copies uv's Python 3.11 into the sandbox. `uv run pytest` green
   (135 tests, 13 local-only).
+- 0001 decision 45 built (2026-11-16): `import-structure-void` reads Structure Void's 43 Live 12
+  runtime pages (121 classes, 2655 members, 33 functions) into a local `documented` document.
+  `lookup class` and `search` show those facts, and `eval_names.py` counts them, plus names a
+  script's `setattr` builds. Unknown names: Beatstep_Q 107 → 6, the APC40 mkII step sequencer
+  13 → 0, Prism 2 → 0, cmdAbl 10 → 6 (the rest are Python's socket methods and setters built
+  without a literal start). `uv run pytest` green (141 tests, 13 local-only).
 - Next: re-run 9a after step 8 (0001 decision 42; needs the usage limit), then step 10.
 
 ## After grilling
@@ -114,21 +120,10 @@ _Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks).
   tutorials): a possible `documented` source and, if its terms allow, generated scripts for the
   false-positive check (user's suggestion, 2026-11-16). Not looked at yet.
 
-- [needs-triage] The `Live` module is thin in the index: the Push 3 helper's model of Live's
-  objects lacks many object model names. cmdAbl's Remote Script, which runs in Live, uses three
-  of them, and cmdAbl's architect session reports them working: `Track.is_foldable`,
-  `Song.song_length`, and the `ticks` of a beat time. The model also lacks `Track.fold_state`,
-  `Song.loop_start`, `loop_length` and `get_current_beats_song_time`, `Device.chains`,
-  `has_drum_pads`, a drum chain's `in_note` and the beat time class (2026-11-16, the same in every
-  indexed build). `eval_names.py` doesn't flag those, since other scripts use them ("used").
-  The index needs another source for the `Live` module (a runtime dump, kept local), and these
-  names could be `tested` facts.
-
-- [needs-triage] `eval_names.py`: count `add_<p>_listener`, `remove_<p>_listener` and
-  `<p>_has_listener` as known when `<p>` is a known name (Live makes them for every listenable
-  property; the Push 3 helper's model has none). Count names a script's own `setattr` builds
-  from a literal prefix as its own. Most unknown names in Beatstep_Q, the APC40 mkII step
-  sequencer and cmdAbl are one of the two (2026-11-16).
+- [needs-triage] A validator rule for attribute names by class on Live's objects
+  (`song.view.add_appointed_device_listener` is on `Song`, not `Song.View`: Prism has this bug,
+  and the name-only check can't see it). It could use the proxy model and Structure Void's
+  `documented` classes (0001 decision 45).
 
 - [ready-for-agent] Run the skill's trigger check: 20 queries in
   `skills/ableton-remote-scripts/evals/trigger-eval.json`, one round of `/skill-creator`'s

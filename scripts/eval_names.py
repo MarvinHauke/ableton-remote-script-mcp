@@ -6,10 +6,14 @@ The skill evals score each generated script with this. It reads the script's `.p
 Python's parser (never runs them) and puts every attribute name (`x.name`) and every keyword
 argument of a framework constructor into one of these:
 
-- `own`: the script defines it (a def, a class, an assigned attribute; a parameter defines none)
+- `own`: the script defines it (a def, a class, an assigned attribute, a `setattr` name, also one
+  built from a literal start such as `"set_" + key`; a parameter defines none)
 - `index`: a class, module or member name in the build's API index (observed)
 - `used`: not a member in the index, but Ableton's own scripts use it in a call
   (the statement summaries), which covers most `Live` object attributes (`song().tracks`)
+- `documented`: none of these, but on Structure Void's runtime pages of the `Live` module
+  (`import-structure-void`), which have the listener methods and properties the Push 3 helper's
+  model lacks: `documented`, not observed
 - `python`: a method of Python's containers and strings (`append`, `format`), a dunder, or any
   attribute of a name bound by `import` of a standard-library module (`logging.getLogger`)
 - `unknown`: none of these. An invented name, or a `Live` object attribute that no Ableton
@@ -43,6 +47,7 @@ from ableton_remote_script_mcp.index_store import (
     load_statements,
 )
 from ableton_remote_script_mcp.resolve import Resolver, lineage
+from ableton_remote_script_mcp.structure_void import live_major, load_document
 
 # Not int, range or slice: they bring `start`, `stop`, `real`, names a script may invent on Live objects.
 CONTAINER_TYPES = (str, bytes, list, tuple, dict, set, frozenset)
@@ -82,9 +87,32 @@ def own_names(trees: list[ast.Module]) -> set[str]:
             elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
                 names.add(node.id)
             elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "setattr" \
-                    and len(node.args) > 1 and isinstance(node.args[1], ast.Constant):
-                names.add(str(node.args[1].value))
+                    and len(node.args) > 1:
+                key = node.args[1]
+                if isinstance(key, ast.Constant):
+                    names.add(str(key.value))
+                elif isinstance(key, ast.BinOp) and isinstance(key.left, ast.Constant) and isinstance(key.left.value, str):
+                    names.add(PREFIX + key.left.value)  # setattr(self, "set_B_" + key, …)
+                elif isinstance(key, ast.JoinedStr) and key.values and isinstance(key.values[0], ast.Constant):
+                    names.add(PREFIX + str(key.values[0].value))
     return names
+
+
+PREFIX = "\0prefix:"  # an own name that `setattr` builds from this literal start
+
+
+def is_own(name: str, own: set[str]) -> bool:
+    return name in own or any(o.startswith(PREFIX) and name.startswith(o[len(PREFIX):]) for o in own)
+
+
+def documented_names(doc: dict | None) -> set[str]:
+    """Names on Structure Void's runtime pages of the `Live` module (`structure_void.py`)."""
+    if not doc:
+        return set()
+    names = {c["name"] for c in doc["classes"].values()}
+    names |= {n for c in doc["classes"].values() for n in c["members"]}
+    return names | {k.rsplit(".", 1)[-1] for k in doc["functions"]} | {c["module"].rsplit(".", 1)[-1]
+                                                                       for c in doc["classes"].values()}
 
 
 def _init_params(index: dict, resolver: Resolver, class_key: str) -> set[str] | None:
@@ -131,7 +159,7 @@ def framework_imports(tree: ast.Module) -> dict[str, str]:
     return bound
 
 
-def check(folder: Path, index: dict, statements: dict | None) -> dict:
+def check(folder: Path, index: dict, statements: dict | None, doc: dict | None = None) -> dict:
     sources = sorted(p for p in folder.rglob("*.py") if "__pycache__" not in p.parts)
     trees, broken = [], []
     for path in sources:
@@ -142,7 +170,8 @@ def check(folder: Path, index: dict, statements: dict | None) -> dict:
     defined, used = known_names(index, statements)
     own = own_names([t for _, t in trees])
     resolver = Resolver(index)
-    counts = {"own": 0, "python": 0, "index": 0, "used": 0, "unknown": 0}
+    documented = documented_names(doc)
+    counts = {"own": 0, "python": 0, "index": 0, "used": 0, "documented": 0, "unknown": 0}
     unknown, used_only, kwargs_unknown, kwargs_checked = [], [], [], 0
     for path, tree in trees:
         rel = str(path.relative_to(folder))
@@ -151,7 +180,8 @@ def check(folder: Path, index: dict, statements: dict | None) -> dict:
             if isinstance(node, ast.Attribute) and not isinstance(node.ctx, ast.Store):
                 name = node.attr
                 of_stdlib = isinstance(node.value, ast.Name) and node.value.id in stdlib
-                bucket = ("own" if name in own else "index" if name in defined else "used" if name in used
+                bucket = ("own" if is_own(name, own) else "index" if name in defined else "used" if name in used
+                          else "documented" if name in documented
                           else "python" if name in PYTHON_ATTRS or of_stdlib else "unknown")
                 counts[bucket] += 1
                 if bucket == "unknown":
@@ -196,7 +226,7 @@ def main(argv: list[str] | None = None) -> int:
     statements = load_statements(args.index_dir, index)
     if statements:
         attach_statements(index, statements)  # keyword checks need to see where **k goes
-    result = check(args.folder.resolve(), index, statements)
+    result = check(args.folder.resolve(), index, statements, load_document(args.index_dir, live_major(build)))
     if args.json:
         print(json.dumps(result, indent=2))
     else:

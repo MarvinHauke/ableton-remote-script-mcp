@@ -34,6 +34,7 @@ from ableton_remote_script_mcp.index_store import (
     load_index,
     load_statements,
 )
+from ableton_remote_script_mcp.structure_void import live_major, load_document
 from ableton_remote_script_mcp.validator import validate_folder
 
 REPO = Path(__file__).resolve().parent.parent
@@ -127,7 +128,7 @@ def score_run(run: dict, case: str, arm: str, index: dict, statements: dict | No
     out["scripts"] = []
     for folder in script_folders(cwd, inputs):
         validated = validate_folder(folder.resolve(), index)
-        names = check_names(folder.resolve(), index, statements)
+        names = check_names(folder.resolve(), index, statements, index.get("_structure_void"))
         copy = keep_to / folder.name
         shutil.copytree(folder, copy, dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__"))
         out["scripts"].append({
@@ -241,6 +242,7 @@ def main(argv: list[str] | None = None) -> int:
     statements = load_statements(args.index_dir, index)
     if statements:
         attach_statements(index, statements)
+    index["_structure_void"] = load_document(args.index_dir, live_major(build))  # documented names
     scores = {"live_build": build, "result": str(args.result), "cases": {}}
     for case in result["cases"]:
         name = case.get("name") or case.get("id")

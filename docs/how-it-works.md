@@ -109,8 +109,27 @@ Every answer names its Live build and a confidence:
 | `tested` | Used by a small script that loaded in that build. |
 | `documented` | Found only in a secondary source, such as Structure Void, a forum or old decompiled code. |
 
-Today every answer is `observed`. A name that is `observed` in one build says nothing about
+Most answers are `observed`. A name that is `observed` in one build says nothing about
 another build: ask that build.
+
+### Live's own objects
+
+Live's song, tracks, clips and devices come from Live's C++ code, not from files the index can
+read. The index sees them through the model the Push 3 helper ships. That model lacks many
+names: listener methods such as `add_notes_listener`, and properties such as `is_foldable`.
+
+`import-structure-void` fills that gap from [Structure Void](https://midiremotescripts.structure-void.com)'s
+"runtime" pages, which were read inside an unstated Live 12.x:
+
+```sh
+uv run ableton-remote-script-mcp import-structure-void
+```
+
+It fetches the pages once, keeps them and the facts read from them on your machine (the pages
+are CC BY-NC-SA 4.0), and marks every fact from them `documented`, with its page. Then
+`lookup class` shows those members next to the model's, and `search` finds them. A name that
+both have is shown once, as `observed`. The `View` classes (`Song.View`, `Clip.View`) have no
+members on those pages; the model has them.
 
 ## What stays local, and why
 

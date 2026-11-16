@@ -27,6 +27,7 @@ from .index_store import (
 from .live_install import LiveInstall
 from .outline import find_script, outline_package
 from .resolve import Resolver, lineage
+from .structure_void import live_major, load_document
 from .validator import validate_folder
 
 BUILD_INDEX_HINT = "run `uv run ableton-remote-script-mcp build-index` (or `--app <Live.app>` for a specific build)"
@@ -102,13 +103,19 @@ def get_class(name: str, index_dir: Path, live_build: str | None = None) -> dict
         keys = [name]
     else:
         keys = [k for k, c in classes.items() if name in (c["name"], c["qualname"], f"{c['module']}.{c['qualname']}")]
+    if not keys:  # `Live.Song.Song`: the Push 3 helper's model of it
+        keys = [k for k, c in classes.items() if c.get("proxy_of") == name]
     if not keys and "." in name:
         root, _, bare = name.rpartition(":") if name.startswith(PUSH3_HELPER_ROOT + ":") else (SCRIPTS_ROOT, "", name)
         found = resolver.resolve(bare, root)
         if found.status == "class":
             keys, resolved_from = [found.key], {"name": name, "via": list(found.via)}
+    doc = load_document(index_dir, live_major(live_build))
     if not keys:
-        return _not_found(live_build, f"class {name!r}")
+        documented = _documented_classes(doc, name)
+        if not documented:
+            return _not_found(live_build, f"class {name!r}")
+        return {"status": "ok", "live_build": live_build, "classes": [], "documented": documented}
     keys.sort(key=lambda k: (classes[k]["root"] != SCRIPTS_ROOT, k))
     proxies = _proxies(index)
     answer = {
@@ -116,9 +123,29 @@ def get_class(name: str, index_dir: Path, live_build: str | None = None) -> dict
         "live_build": live_build,
         "classes": [_class_answer(index, resolver, k, proxies) for k in keys],
     }
+    for c in answer["classes"]:  # a proxy model class: what Structure Void's page adds to it
+        documented = doc and doc["classes"].get(c.get("proxy_of") or "")
+        if documented:
+            c["documented"] = _documented_entry(doc, c["proxy_of"], set(c["all_members"]))
     if resolved_from:
         answer["resolved_from"] = resolved_from
     return answer
+
+
+def _documented_entry(doc: dict, key: str, have: set[str] = frozenset()) -> dict:
+    """A class of Structure Void's runtime pages, `documented`, with the members not in `have`."""
+    c = doc["classes"][key]
+    return {"qualified_name": key, "kind": c["kind"], "bases": c["bases"], "doc": c.get("doc"),
+            "source": c["url"], "covers": doc["covers"], "licence": doc["licence"], "confidence": "documented",
+            "members": {n: m for n, m in c["members"].items() if n not in have}}
+
+
+def _documented_classes(doc: dict | None, name: str) -> list[dict]:
+    if not doc:
+        return []
+    keys = [k for k, c in doc["classes"].items()
+            if name in (k, c["name"], f"{c['module'].rsplit('.', 1)[-1]}.{c['name']}")]
+    return [_documented_entry(doc, k) for k in sorted(keys)]
 
 
 def _not_found(live_build: str, what: str) -> dict:
@@ -207,6 +234,17 @@ def search(query: str, index_dir: Path, live_build: str | None = None, kind: str
         for mname, m in mod.get("members", {}).items():
             consider(m["kind"], mname, f"{key}.{mname}", mod["root"], mod["name"], m.get("docstring"),
                      {"in_module": key, "source": mod["source"], "line": m.get("line")})
+    doc = load_document(index_dir, live_major(live_build))
+    for key, c in (doc or {}).get("classes", {}).items():
+        extra = {"source": c["url"], "confidence": "documented"}
+        before = len(hits)
+        consider("class", c["name"], key, "structure-void", c["module"], c.get("doc"), extra)
+        for mname, m in c["members"].items():
+            consider(m["kind"], mname, f"{key}.{mname}", "structure-void", c["module"], m.get("doc"),
+                     {"in_class": key, **extra})
+        for _, hit in hits[before:]:
+            hit["confidence"] = "documented"
+            hit["rank_note"] = f"Structure Void, {doc['covers']}"
     if not hits:
         return _not_found(live_build, f"{kind + ' ' if kind else ''}{query!r}")
     hits.sort(key=lambda h: h[0])

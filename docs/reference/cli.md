@@ -41,6 +41,19 @@ ableton-remote-script-mcp list builds [--json]
 | --- | --- |
 | `--json` | Print the query core's answer as JSON. |
 
+## `import-structure-void`
+
+Fetch Structure Void's runtime pages of the Live module as a documented source.
+
+```text
+ableton-remote-script-mcp import-structure-void [--live LIVE] [--refresh]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--live LIVE` | Live major version (default: 12). |
+| `--refresh` | Fetch the pages again instead of reusing the local copies. |
+
 ## `lookup`
 
 Look something up in the index.

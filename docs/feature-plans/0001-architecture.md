@@ -612,6 +612,22 @@ meant to do, and uses only API names that exist in the Live build they target.
       mode without `component=`, is an `error` under `unknown-component`. The framework raises a
       KeyError while it sets up. Decision 43's `warning` stays for a section with no modes.
     - `disconnect-base` stays quiet when the overridden `disconnect` has no statements (a `pass`).
+45. **Structure Void's runtime pages come into the index now, as `documented`** (user
+    decided, 2026-11-16, after step 8; agent proposed how). Decision 23 already named them as the
+    `documented` source for the `Live` module. Four outside scripts checked after step 8
+    (cmdAbl, Prism, the APC40 mkII step sequencer, Beatstep_Q) showed how thin the Push 3
+    helper's model is: no listener methods, no `is_foldable`, no beat time class. The user chose
+    this over a 9a re-run first, to save tokens.
+    - `import-structure-void` fetches the Live 12 runtime pages (43 pages) once. The pages and the
+      document read from them (`structure-void-live12.json`) stay in the index folder, since
+      the pages are CC BY-NC-SA 4.0.
+    - `lookup class` adds the members the proxy model lacks, and `search` finds them; each fact is
+      `documented` and names its page.
+    - `eval_names.py` counts them in a `documented` bucket. It also counts names a script's
+      `setattr` builds from a literal start as its own.
+    - The validator doesn't use them: no rule checks attribute names by class yet (STATUS).
+    - The pages come from one unstated Live 12.x build. A runtime probe stays out, as Decision 23
+      says.
 
 ## Open questions
 

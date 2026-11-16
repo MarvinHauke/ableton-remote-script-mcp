@@ -4,8 +4,10 @@
   supported.
 - **Only Live's own scripts are indexed.** `outline` works on the Remote Scripts that ship with
   Live, not on scripts in your User Library.
-- **Every fact is `observed`.** Nothing has been checked yet by loading a script in Live, and no
-  secondary source is compared.
+- **Facts are `observed`, or `documented` from Structure Void.** Facts about Live's own
+  objects that only Structure Void's pages have are `documented`. Those pages come from one
+  unstated Live 12.x build, so a `documented` name may differ in your build. Nothing has been
+  checked yet by loading a script in Live.
 - **Signatures are as complete as the compiled files.** Default values that the compiled files
   don't keep are missing.
 - **Outlines read code, they don't run it.**

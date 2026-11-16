@@ -1,4 +1,4 @@
-"""Command line: `build-index`, `list builds`, `lookup class`, `search`, `outline`, `validate`, `install` and
+"""Command line: `build-index`, `import-structure-void`, `list builds`, `lookup class`, `search`, `outline`, `validate`, `install` and
 `log`."""
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ from .query import (
     search,
     validate_script,
 )
+from .structure_void import LICENCE, import_pages
 
 
 def _cmd_build_index(args: argparse.Namespace) -> int:
@@ -50,6 +51,16 @@ def _cmd_build_index(args: argparse.Namespace) -> int:
           else "no statement summaries (--no-statements): `outline` is not available for this build")
     for err in index["errors"]:
         print(f"  unreadable: {err['source']}: {err['error']}")
+    return 0
+
+
+def _cmd_import_structure_void(args: argparse.Namespace) -> int:
+    try:
+        import_pages(Path(args.index_dir), args.live, args.refresh)
+    except (OSError, ValueError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    print(f"facts from it are `documented` ({LICENCE}: they stay on this machine)")
     return 0
 
 
@@ -88,6 +99,15 @@ def _mro_entry(e: dict) -> str:
     return f"{e['name']} (unresolved in {e['in_module']}{'; ' + e['note'] if e.get('note') else ''})"
 
 
+def _format_documented(d: dict, title: str) -> list[str]:
+    lines = [f"{title}: {d['qualified_name']}  [{d['covers']}, documented; {d['source']}]"]
+    if d.get("bases"):
+        lines.append("    bases: " + ", ".join(d["bases"]))
+    for n, m in d["members"].items():
+        lines.append(f"    {m.get('signature') or n}  [{m['kind']}]")
+    return lines
+
+
 def _format_class(c: dict, own_only: bool) -> str:
     bases = ", ".join(
         b["expr"] if b["defined_in"] == b["expr"] and b["status"] != "unresolved"
@@ -117,6 +137,7 @@ def _format_class(c: dict, own_only: bool) -> str:
         text = _format_member(n, m) + (f"  (overrides {', '.join(m['overrides'])})" if m["overrides"] else "")
         by_origin.setdefault(m["origin"], []).append(text)
     own = by_origin.pop(c["qualified_name"], [])
+    lines += _format_documented(c["documented"], "  also on Structure Void's page") if c.get("documented") else []
     if own:
         lines.append(f"  own members ({len(own)}):")
         lines.extend(f"    {t}" for t in own)
@@ -136,6 +157,8 @@ def _cmd_lookup_class(args: argparse.Namespace) -> int:
             r = answer["resolved_from"]
             print(f"{r['name']} is a re-export: " + " -> ".join(r["via"][1:] + [answer["classes"][0]["qualified_name"]]))
         print("\n".join(_format_class(c, args.own) for c in answer["classes"]))
+        for d in answer.get("documented", []):
+            print("\n".join(_format_documented(d, f"not in the index of Live {answer['live_build']}; documented")))
     else:
         print(answer["message"])
     return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
@@ -146,10 +169,12 @@ def _cmd_search(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps(answer, indent=1))
     elif answer["status"] == "ok":
-        print(f"{answer['total']} matches in Live {answer['live_build']} (observed); best {len(answer['results'])}:")
+        print(f"{answer['total']} matches in Live {answer['live_build']} (observed, or documented as marked); "
+              f"best {len(answer['results'])}:")
         for r in answer["results"]:
             where = f"{r['source']}:{r['line']}" if r.get("line") else r["source"]
-            print(f"  {r['kind']:<12} {r['qualified_name']}  ({r['match']}; {where})")
+            mark = ", documented" if r["confidence"] == "documented" else ""
+            print(f"  {r['kind']:<12} {r['qualified_name']}  ({r['match']}{mark}; {where})")
     else:
         print(answer["message"])
     return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
@@ -431,6 +456,12 @@ def make_parser() -> argparse.ArgumentParser:
     lb = ls_sub.add_parser("builds", help="the indexed Live builds, and installed ones with no index")
     lb.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     lb.set_defaults(func=_cmd_list_builds)
+
+    sv = sub.add_parser("import-structure-void",
+                        help="fetch Structure Void's runtime pages of the Live module as a documented source")
+    sv.add_argument("--live", default="12", help="Live major version (default: 12)")
+    sv.add_argument("--refresh", action="store_true", help="fetch the pages again instead of reusing the local copies")
+    sv.set_defaults(func=_cmd_import_structure_void)
 
     lk = sub.add_parser("lookup", help="look something up in the index")
     lk_sub = lk.add_subparsers(dest="kind", required=True)

@@ -44,6 +44,10 @@ If a script says the command or the index is missing, tell the user the command 
 | `scripts/install.sh <folder>` | validates, then copies the script into the User Library (`--replace` for a new version) |
 | `scripts/log.sh --script <Folder>` | the tracebacks and messages of that script in Live's `Log.txt` since Live last started |
 
+Live's own objects (`lookup.sh class Live.Clip.Clip`) are partly known to the index. If the user
+ran `ableton-remote-script-mcp import-structure-void`, the lookup also shows members from
+Structure Void's pages, marked `documented`: say so when you use one.
+
 `lookup.sh class|search|outline`, `validate.sh` and `install.sh` take `--build <build>`, the index
 to ask (default: the newest indexed build); `log.sh --build` picks which Live build's log to read.
 Each script's header lists its options and exit codes.

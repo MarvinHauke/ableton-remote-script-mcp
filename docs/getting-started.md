@@ -30,6 +30,13 @@ such as a beta, name its app:
 uv run ableton-remote-script-mcp build-index --app "/Applications/Ableton Live 12 Beta.app"
 ```
 
+Optionally, add Structure Void's pages on Live's own objects (song, tracks, clips, devices),
+which the index knows only partly ([How it works](how-it-works.md#lives-own-objects)):
+
+```sh
+uv run ableton-remote-script-mcp import-structure-void
+```
+
 Check what you have:
 
 ```sh
