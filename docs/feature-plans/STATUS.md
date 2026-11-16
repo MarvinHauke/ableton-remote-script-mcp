@@ -100,10 +100,16 @@ _Last updated: 2026-11-16 (Structure Void's runtime pages as a documented source
   without a literal start). `uv run pytest` green (141 tests, 13 local-only).
 - Step 10's UC4 setup (2026-11-16, the user: "use a dump from the UC4 Editor, note which one"):
   the factory **SE17** (Ableton, tracks 1–8). Layout from `node tools/uc4-config.ts factory 17`
-  in `~/Development/web/UC4_Editor` (the editor's model of the factory `SndA`). To put it back
-  on the device: `dumps/2026-11-13-Sndc-SE17.syx` there, sent with the UC4 in `rEc`, or `rESc`
-  on SE17. Asked the UC4 architect (`uc4-editor-a2`) to confirm the file and LED/display
-  feedback; waiting.
+  in `~/Development/web/UC4_Editor` (the editor's model of the factory `SndA`). The UC4
+  architect confirmed (2026-11-16): the device's SE17 is factory, and
+  `dumps/2026-11-13-Sndc-SE17.syx` matches it byte for byte. **To put it back: the user runs
+  `rESc` on SE17** (setup mode, encoder 5 held until the bars run). Sending a dump to the UC4
+  has never been tested, and nothing is sent to it without the user's go and a fresh `SndA`
+  backup. Feedback on the same channel and number is in the manual (`Std` displays, `EXt` green
+  LEDs), but the velocity rule (> 0 on, 0 off) and whether an encoder's value follows an
+  incoming CC are untested: assumptions for the load test's checklist. Which Global control is
+  which printed function is unknown: the script's choice, told to the user. Global encoders use
+  the same channel and numbers (ch13, 56–63) as group 8's green buttons, as CC versus notes.
 - Next: re-run 9a after step 8 (0001 decision 42; needs the usage limit), then step 10.
 
 ## After grilling
