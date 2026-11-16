@@ -97,10 +97,15 @@ _Last updated: 2026-11-16 (0001 step 8 built: the validator's framework checks).
   tutorials): a possible `documented` source and, if its terms allow, generated scripts for the
   false-positive check (user's suggestion, 2026-11-16). Not looked at yet.
 
-- [needs-triage] Live object model names that the Push 3 helper's model lacks, so the index
-  doesn't have them: `Track.is_foldable`, `Song.song_length` and the `ticks` of a beat time.
-  The user's own cmdAbl Remote Script uses all three, and it runs in Live (12.4.25 beta). Found
-  with `eval_names.py` (2026-11-16). They could become `tested` facts, or come from another source.
+- [needs-triage] The `Live` module is thin in the index: the Push 3 helper's model of Live's
+  objects lacks many object model names. cmdAbl's Remote Script, which runs in Live, uses three
+  of them, and cmdAbl's architect session reports them working: `Track.is_foldable`,
+  `Song.song_length`, and the `ticks` of a beat time. The model also lacks `Track.fold_state`,
+  `Song.loop_start`, `loop_length` and `get_current_beats_song_time`, `Device.chains`,
+  `has_drum_pads`, a drum chain's `in_note` and the beat time class (2026-11-16, the same in every
+  indexed build). `eval_names.py` doesn't flag those, since other scripts use them ("used").
+  The index needs another source for the `Live` module (a runtime dump, kept local), and these
+  names could be `tested` facts.
 
 - [ready-for-agent] Run the skill's trigger check: 20 queries in
   `skills/ableton-remote-scripts/evals/trigger-eval.json`, one round of `/skill-creator`'s
