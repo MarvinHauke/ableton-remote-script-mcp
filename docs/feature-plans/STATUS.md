@@ -98,6 +98,12 @@ _Last updated: 2026-11-16 (Structure Void's runtime pages as a documented source
   script's `setattr` builds. Unknown names: Beatstep_Q 107 → 6, the APC40 mkII step sequencer
   13 → 0, Prism 2 → 0, cmdAbl 10 → 6 (the rest are Python's socket methods and setters built
   without a literal start). `uv run pytest` green (141 tests, 13 local-only).
+- Step 10's UC4 setup (2026-11-16, the user: "use a dump from the UC4 Editor, note which one"):
+  the factory **SE17** (Ableton, tracks 1–8). Layout from `node tools/uc4-config.ts factory 17`
+  in `~/Development/web/UC4_Editor` (the editor's model of the factory `SndA`). To put it back
+  on the device: `dumps/2026-11-13-Sndc-SE17.syx` there, sent with the UC4 in `rEc`, or `rESc`
+  on SE17. Asked the UC4 architect (`uc4-editor-a2`) to confirm the file and LED/display
+  feedback; waiting.
 - Next: re-run 9a after step 8 (0001 decision 42; needs the usage limit), then step 10.
 
 ## After grilling
