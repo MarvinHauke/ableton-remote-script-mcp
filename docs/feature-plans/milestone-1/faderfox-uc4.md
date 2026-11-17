@@ -116,6 +116,7 @@ Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
 | 5 Rack | passed: follows the selected device (racks, EQ Eight) |
 | 6 Track group | passed: volume, sends A–B, pan, track and device selection |
 | 7 Global encoders | passed: tempo coarse and fine, cue volume, scene selection, master volume and pan; encoder 5 added during the test (fix 3) |
+| 8 Global push buttons | passed: nudge, play, stop, stop all clips, scene start, record, view |
 
 Fixes found by the test:
 
