@@ -9,8 +9,8 @@ What each control does, by the groups printed on the panel (the device facts are
   parameters of the selected device's bank.
 - Encoder group Track, for the selected track: 1 volume, 2 send A, 3 send B, 4 select a track,
   5 select a device, 6 pan.
-- Encoder group Global: 1 tempo, 2 tempo fine, 3 cue volume, 4 select a scene, 6 master volume,
-  8 master pan; push buttons 1-8: nudge down, nudge up, play, stop, stop all clips, start the
+- Encoder group Global: 1 tempo, 2 tempo fine, 3 cue volume, 4 select a scene, 5 launch
+  quantization, 6 master volume, 8 master pan; push buttons 1-8: nudge down, nudge up, play, stop, stop all clips, start the
   selected scene, record, switch Session/Arrangement View.
 - Green button groups: Launch (the selected scene's clips), Stop (each track's clips), Active
   (lit: the track plays), Solo, Record (arm), Monitor (In or Auto; lit: In), Track (bank left
@@ -28,7 +28,12 @@ from ableton.v3.control_surface import (
     create_skin,
 )
 
-from .components import MonitorComponent, SceneLaunchComponent, SessionRingComponent
+from .components import (
+    MonitorComponent,
+    QuantizationComponent,
+    SceneLaunchComponent,
+    SessionRingComponent,
+)
 from .elements import Elements
 from .mappings import create_mappings
 from .skin import Skin
@@ -44,7 +49,11 @@ class Specification(ControlSurfaceSpecification):
     link_session_ring_to_scene_selection = True  # Launch plays the selected scene's row
     session_ring_component_type = SessionRingComponent  # on without an identity reply
     create_mappings_function = create_mappings
-    component_map = {"Monitor": MonitorComponent, "Scene_Launch": SceneLaunchComponent}
+    component_map = {
+        "Monitor": MonitorComponent,
+        "Scene_Launch": SceneLaunchComponent,
+        "Quantization": QuantizationComponent,
+    }
 
 
 def create_instance(c_instance):

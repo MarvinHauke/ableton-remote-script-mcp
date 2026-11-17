@@ -56,7 +56,8 @@ and push buttons are momentary (`btn`): the upper value on press, the lower on r
 - Track (the selected track): 1 volume, 2 send A, 3 send B, 4 select the previous or next track,
   5 select the previous or next device, 6 pan; 7 and 8 do nothing.
 - Global encoders: 1 tempo (coarse), 2 tempo (fine), 3 cue volume, 4 select the previous or next
-  scene, 6 master volume, 8 master pan; 5 and 7 do nothing (the printed `Quant` is not built).
+  scene, 5 launch quantization (the printed `Quant`, added during the test), 6 master volume,
+  8 master pan; 7 does nothing.
 - Global push buttons 1–8: nudge down, nudge up, play, stop, stop all clips, start the selected
   scene, record, switch between Session and Arrangement View.
 - Green buttons: Launch the clips of the ring's tracks in the selected scene; Stop each track's
@@ -114,6 +115,7 @@ Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
 | 4 Send and pan groups | passed; the displays show Live's values |
 | 5 Rack | passed: follows the selected device (racks, EQ Eight) |
 | 6 Track group | passed: volume, sends A–B, pan, track and device selection |
+| 7 Global encoders | passed: tempo coarse and fine, cue volume, scene selection, master volume and pan; encoder 5 added during the test (fix 3) |
 
 Fixes found by the test:
 
@@ -126,3 +128,9 @@ Fixes found by the test:
    `is_feedback_enabled=True` (default `False`, `observed`); FANTOM and Komplete Kontrol S mk3
    pass it. Now set on every fader and absolute encoder; the UC4 displays Live's values and
    picks up.
+3. **Quant on Global encoder 5** (the user's request): a component of our own steps
+   `Song.clip_trigger_quantization` with `StepEncoderControl.connect_property`, as the
+   framework's `TransportComponent` does for tempo. The first version passed a float, and every
+   turn raised `Boost.Python.ArgumentError … None(TPyHandle<ASong>, int)`; Live's properties take
+   the exact type. Also fixed: `log` dropped a record's lines without a timestamp, which held
+   that error's signature.

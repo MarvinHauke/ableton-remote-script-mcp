@@ -257,6 +257,11 @@ class SceneLaunchComponent(Component):
 - **Listeners.** `@listens("tracks")` on a method and `self.__on_x.subject = obj` listens to one
   object; `@listens_group("arm")` with `replace_subjects(tracks)` to several (both from
   `ableton.v3.base`). They are released with the component.
+- **Live's properties take the exact type.** Setting an int property to a float raises
+  `Boost.Python.ArgumentError … did not match C++ signature: None(TPyHandle<ASong>, int)` on
+  every use, and nothing changes in Live. `sign()` and division give floats: wrap them in
+  `int(…)` (`tested` with `Song.clip_trigger_quantization` in 12.4.16). Read the signature in
+  the error, or a `documented` member's signature in `lookup class`.
 - **Live's objects.** `self.song` is the `Live.Song.Song`; `liveobj_valid(obj)` from
   `ableton.v3.live` tells whether a Live object still exists. Live's own classes are only partly
   in the index; a member from Structure Void's pages is `documented`: say so.

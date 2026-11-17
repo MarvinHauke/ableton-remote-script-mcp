@@ -1,13 +1,22 @@
-"""Components of our own: the Monitor green buttons and the Global group's scene start button,
-which no framework component has, and a session ring that is on without an identity reply."""
+"""Components of our own: the Monitor green buttons, the Global group's scene start button and
+launch quantization, which no framework component has, and a session ring that is on without an
+identity reply."""
 
-from ableton.v3.base import depends, listens, listens_group
+from ableton.v3.base import clamp, depends, listens, listens_group, sign
 from ableton.v3.control_surface import Component
 from ableton.v3.control_surface.components import (
     SessionRingComponent as SessionRingComponentBase,
 )
-from ableton.v3.control_surface.controls import ButtonControl, control_list
+from ableton.v3.control_surface.controls import (
+    ButtonControl,
+    StepEncoderControl,
+    control_list,
+)
 from ableton.v3.live import liveobj_valid
+
+# Song.clip_trigger_quantization: 0 None, 1 8 Bars, ... 13 1/32 (documented: Structure Void's
+# Live.Song.Quantization has 14 values; numbers, since the value names differ between sources)
+LAST_QUANTIZATION = 13
 
 # values of a track's current_monitoring_state (Live.Track.Track.monitoring_states)
 MONITOR_IN = 0
@@ -84,3 +93,19 @@ class SceneLaunchComponent(Component):
     @launch_button.pressed
     def launch_button(self, _):
         self.song.view.selected_scene.fire()
+
+
+class QuantizationComponent(Component):
+    """A relative encoder that steps Live's launch quantization (the control bar's Quant)."""
+
+    quantization_encoder = StepEncoderControl(num_steps=64)
+
+    def __init__(self, name="Quantization", *a, **k):
+        super().__init__(*a, name=name, **k)
+        song = self.song
+        self.quantization_encoder.connect_property(
+            song,
+            "clip_trigger_quantization",
+            # Live takes an int only; sign() gives a float (ArgumentError, tested in 12.4.16)
+            transform=lambda x: int(clamp(song.clip_trigger_quantization + sign(x), 0, LAST_QUANTIZATION)),
+        )

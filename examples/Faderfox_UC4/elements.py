@@ -49,11 +49,12 @@ class Elements(ElementsBase):
         self.add_encoder(60, "Device_Select_Encoder", channel=CH14, map_mode=RELATIVE)
         self.add_encoder(61, "Track_Pan_Encoder", channel=CH14, **SHOWS_VALUE)
 
-        # encoder group 8 (Global), CC 56-63; encoders 5 and 7 are left free
+        # encoder group 8 (Global), CC 56-63; encoder 7 is left free
         self.add_encoder(56, "Tempo_Coarse_Encoder", map_mode=RELATIVE)
         self.add_encoder(57, "Tempo_Fine_Encoder", map_mode=RELATIVE)
         self.add_encoder(58, "Cue_Volume_Encoder", **SHOWS_VALUE)
         self.add_encoder(59, "Scene_Select_Encoder", map_mode=RELATIVE)
+        self.add_encoder(60, "Quantization_Encoder", map_mode=RELATIVE)
         self.add_encoder(61, "Master_Volume_Encoder", **SHOWS_VALUE)
         self.add_encoder(63, "Master_Pan_Encoder", **SHOWS_VALUE)
 

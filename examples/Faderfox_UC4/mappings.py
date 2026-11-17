@@ -60,5 +60,6 @@ def create_mappings(control_surface):
     mappings["View_Based_Recording"] = {"record_button": "record_button"}
     mappings["View_Toggle"] = {"main_view_toggle_button": "view_button"}
     mappings["Monitor"] = {"monitor_buttons": "monitor_buttons"}
+    mappings["Quantization"] = {"quantization_encoder": "quantization_encoder"}
     mappings["Scene_Launch"] = {"launch_button": "scene_launch_button"}
     return mappings

@@ -286,3 +286,24 @@ def test_install_resolves_the_folder_and_leaves_links_alone(tmp_path, index_dir,
     bad = write(tmp_path, CLEAN_FRAMEWORK, name="my-script")
     assert install(index_dir, library, bad, "--no-validate") == 2
     assert list((library / "Remote Scripts").glob(".*")) == []  # no staging folder left behind
+
+
+def test_log_keeps_the_lines_of_a_record_without_a_timestamp(tmp_path):
+    """Live writes a fragment that holds newlines as one record whose later lines have no
+    timestamp (a Boost.Python ArgumentError, 12.4.16); they belong to the traceback."""
+    path = tmp_path / "Log.txt"
+    path.write_text("\n".join([
+        record(1, "info", "Started: Live 12.4.16 Build: x"),
+        record(2, "error", "RemoteScriptError: Traceback (most recent call last):"), "",
+        record(3, "error", 'RemoteScriptError:   File "x/MIDI Remote Scripts/My_Script/a.py", line 1, in f'), "",
+        record(4, "error", "RemoteScriptError: ArgumentError"),
+        record(5, "error", "RemoteScriptError: : "),
+        record(6, "error", "RemoteScriptError: Python argument types in"),
+        "    None.None(Song, float)",
+        "did not match C++ signature:",
+        "    None(TPyHandle<ASong>, int)",
+        record(7, "error", "RemoteScriptError: "), "",
+    ]) + "\n")
+    text = read_log(path, "My_Script")["tracebacks"][0]["text"]
+    assert text.endswith("ArgumentError: Python argument types in\n    None.None(Song, float)\n"
+                         "did not match C++ signature:\n    None(TPyHandle<ASong>, int)")

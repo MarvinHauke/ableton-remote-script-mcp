@@ -59,14 +59,23 @@ def find_log(live_build: str | None = None, prefs: Path | None = None) -> Path |
 
 
 def _records(lines: list[str]):
-    """Yield (line number, level, text, ends_line) for each log record; a record whose text ended
-    with a newline is followed by an empty line in the file."""
-    for i, line in enumerate(lines):
-        m = RECORD.match(line)
+    """Yield (line number, level, text, ends_line) for each log record. A record whose text holds
+    newlines goes on over the next lines, which have no timestamp (a Boost.Python
+    `ArgumentError`, observed in 12.4.16); a record whose text ended with a newline is followed by
+    an empty line in the file."""
+    i = 0
+    while i < len(lines):
+        m = RECORD.match(lines[i])
         if not m:
+            i += 1
             continue
-        ends = i + 1 < len(lines) and lines[i + 1] == ""
-        yield i + 1, m.group(2), m.group(3), ends
+        start, text = i, m.group(3)
+        i += 1
+        while i < len(lines) and lines[i] != "" and not RECORD.match(lines[i]):
+            text += "\n" + lines[i]
+            i += 1
+        ends = i < len(lines) and lines[i] == ""
+        yield start + 1, m.group(2), text, ends
 
 
 def read_log(path: Path, script: str | None = None) -> dict:
