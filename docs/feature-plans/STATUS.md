@@ -110,6 +110,15 @@ _Last updated: 2026-11-17 (0001 step 10 in work: v3 references and the UC4 scrip
   incoming CC are untested: assumptions for the load test's checklist. Which Global control is
   which printed function is unknown: the script's choice, told to the user. Global encoders use
   the same channel and numbers (ch13, 56–63) as group 8's green buttons, as CC versus notes.
+- `reference/clyphx-live11` cloned (2026-11-17, user's link): ldrolez's ClyphX 2.7+ for Live
+  10–12 (last push 2026-11-02), LGPL-3.0: read it, don't copy its code into the MIT repos. A
+  large `_Framework` script (37 files) that drives Live through the object model and other
+  control surfaces. Against 12.4.16: 2 errors, both real (`InstantMappingMakeDoc.py` still has
+  Python 2 syntax, `lambda (k, v)`, and is imported without a dot; the import sits inside one
+  action, so the script loads and only that action fails) and 1 `disconnect-base` warning.
+  `eval_names.py` lists Push internals (private attributes), `Song.View`'s
+  `selected_parameter` listener (Structure Void has no members for the `View` classes) and
+  `offset_has_listener` on `_Framework`'s `SessionComponent`, which is a false unknown (below).
 - 0001 step 10 in work on `feat/0001-step-10-v3-uc4` (2026-11-17): the skill's
   `references/v3-script.md` and `assets/v3_template/`, and `examples/Faderfox_UC4/` for SE17
   (all encoder and green button groups mapped at once, two components of our own, the Global
@@ -128,6 +137,28 @@ _Last updated: 2026-11-17 (0001 step 10 in work: v3 references and the UC4 scrip
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [needs-grilling] **MCP server design ideas for step 11, from the user's sources (2026-11-17):**
+  Zhang, Kraska, Khattab, *Recursive Language Models* (arxiv.org/abs/2512.24601), Zhang's blog
+  post *The Mismanaged Geniuses Hypothesis* (alexzhang13.github.io/blog/2026/mgh/), and a video
+  on Claude Code's "code mode" (youtube.com/watch?v=DRNbxPk9Ab8, only its title read). Their
+  point for us: keep big reference data out of the agent's context and give it small
+  primitives it can combine, from code too, with bounded answers. The index already stays out
+  of context and answers are structured. Ideas:
+  1. a batch tool `check_names`: every class, member and keyword of a draft in one call, each
+     observed, documented or unknown (what `eval_names.py` does)
+  2. the query core documented as a small Python API, so an agent in code mode can loop over
+     lookups instead of one tool call each
+  3. size limits with "more available" on `outline` and `search` (a section, a next page)
+  4. a worked example in each tool description and a batch-check example in the skill
+  
+  Measure them in the 9a round and the step 13 benchmark (tool calls, tokens, invented names).
+  **The user wants a grilling session on these before step 11 is designed**; nothing is decided.
+
+- [needs-triage] `eval_names.py` (and a future attribute rule) misses listener methods the
+  framework makes at run time: `_Framework`'s `__subject_events__ = ('offset',)` gives
+  `add_offset_listener`, `remove_offset_listener`, `offset_has_listener` (ClyphX uses them on a
+  `SessionComponent`). Derive these names from `__subject_events__` (and v2's `__events__`).
 
 - [needs-triage] Validator rule for attribute names by class (for example a made-up
   `self.song().some_method()` outside the mappings); step 8 checks only v3 mappings by class
