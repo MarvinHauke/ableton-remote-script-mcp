@@ -121,6 +121,7 @@ Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
 | 10 Active, Solo, Record, Select | passed after fix 4: Active lit while the track plays; solo, arm and select with LEDs |
 | 11 Monitor | passed: In and Auto, lit while In; return tracks are outside the box (`include_returns` is `False`), group tracks not tried |
 | 12 Track buttons | passed: bank, track, scene and device moves; 1–6 lit while held, 7–8 lit while there is a device in that direction (Device_Navigation's own skin, kept) |
+| 13 LEDs per group | passed: each group shows its own state at once (the UC4 keeps the LED state per group). With a track soloed, Active lights only that track: the framework counts tracks silenced by a solo as muted (`muted_via_solo` in the 12.4.16 statements), unlike Live's Track Activator |
 
 Fixes found by the test:
 
