@@ -111,6 +111,9 @@ Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
 | 1 Loads | passed: `Faderfox UC4 (SE17) ready`, no traceback (also confirms how Live logs a v3 script) |
 | 2 Session ring | passed after fix 1; the box follows Global encoder 4 |
 | 3 Faders | passed after fix 2: volumes, pickup (`SnAP`), crossfader |
+| 4 Send and pan groups | passed; the displays show Live's values |
+| 5 Rack | passed: follows the selected device (racks, EQ Eight) |
+| 6 Track group | passed: volume, sends A–B, pan, track and device selection |
 
 Fixes found by the test:
 
