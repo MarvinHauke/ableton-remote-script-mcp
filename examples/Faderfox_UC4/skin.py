@@ -9,6 +9,10 @@ OFF = BasicColors.OFF  # velocity 0
 
 
 class Skin:
+    class Mixer:
+        MuteOn = OFF  # the panel's "Active": lit while the track plays, dark while muted
+        MuteOff = ON
+
     class Session:
         StopClip = ON  # a Stop button is lit while its track plays
         StopClipTriggered = ON

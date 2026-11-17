@@ -117,7 +117,8 @@ Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
 | 6 Track group | passed: volume, sends A–B, pan, track and device selection |
 | 7 Global encoders | passed: tempo coarse and fine, cue volume, scene selection, master volume and pan; encoder 5 added during the test (fix 3) |
 | 8 Global push buttons | passed: nudge, play, stop, stop all clips, scene start, record, view |
-| 9 Launch and Stop | passed: launch with LED, stop |
+| 9 Launch and Stop | passed: launch with LED, stop; a Stop LED is lit while its track plays |
+| 10 Active, Solo, Record, Select | passed after fix 4: solo, arm and select with LEDs |
 
 Fixes found by the test:
 
@@ -136,3 +137,6 @@ Fixes found by the test:
    turn raised `Boost.Python.ArgumentError … None(TPyHandle<ASong>, int)`; Live's properties take
    the exact type. Also fixed: `log` dropped a record's lines without a timestamp, which held
    that error's signature.
+4. **The Active LEDs were inverted:** lit while the track was muted. In 12.4.16 `Mixer.MuteOn`
+   is "muted" (the v3 page had said the opposite, from the decompiled 12.0 framework). The skin
+   now swaps `MuteOn` and `MuteOff`, as the panel's "Active" wants.

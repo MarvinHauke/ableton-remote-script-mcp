@@ -217,9 +217,10 @@ class Skin:
   `Transport.PlayOn`/`Off`, `StopOn`/`Off`, `LoopOn`/`Off`, `MetronomeOn`/`Off`;
   `Recording.ArrangementRecordOn`/`Off`, `SessionRecordOn`/`Off`/`Transition`;
   `ViewControl.Track`/`TrackPressed`; `Device.Navigation`/`NavigationPressed`.
-- **`Mixer.MuteOn` means the track plays.** The mute button is mapped to the track activator,
-  so "on" is the activator on, the track not muted (`documented`, decompiled 12.0 framework).
-  Put it on the checklist.
+- **`Mixer.MuteOn` means the track is muted.** The mute button's LED is "on" while the track
+  is muted (`tested` in 12.4.16 on the Faderfox UC4; the decompiled 12.0 framework maps it to
+  the track activator, which reads the other way round: trust the build's behaviour). For a
+  button labelled "Active" or "Track On", swap the values: `MuteOn = OFF`, `MuteOff = ON`.
 - **RGB pads.** A colour class of `SimpleColor(value)` per colour (`colors=Rgb`), or
   `RgbColor`/`create_rgb_color` from `ableton.v3.control_surface.elements`; `Launch_Control_XL_3`
   and `APC_mini_mk2` outlines show both. An entry such as `make_color_for_liveobj` (in
