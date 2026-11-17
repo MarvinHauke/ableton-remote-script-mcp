@@ -118,7 +118,8 @@ Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
 | 7 Global encoders | passed: tempo coarse and fine, cue volume, scene selection, master volume and pan; encoder 5 added during the test (fix 3) |
 | 8 Global push buttons | passed: nudge, play, stop, stop all clips, scene start, record, view |
 | 9 Launch and Stop | passed: launch with LED, stop; a Stop LED is lit while its track plays |
-| 10 Active, Solo, Record, Select | passed after fix 4: solo, arm and select with LEDs |
+| 10 Active, Solo, Record, Select | passed after fix 4: Active lit while the track plays; solo, arm and select with LEDs |
+| 11 Monitor | passed: In and Auto, lit while In; return tracks are outside the box (`include_returns` is `False`), group tracks not tried |
 
 Fixes found by the test:
 
