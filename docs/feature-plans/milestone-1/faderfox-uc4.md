@@ -120,6 +120,7 @@ Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
 | 9 Launch and Stop | passed: launch with LED, stop; a Stop LED is lit while its track plays |
 | 10 Active, Solo, Record, Select | passed after fix 4: Active lit while the track plays; solo, arm and select with LEDs |
 | 11 Monitor | passed: In and Auto, lit while In; return tracks are outside the box (`include_returns` is `False`), group tracks not tried |
+| 12 Track buttons | passed: bank, track, scene and device moves; 1–6 lit while held, 7–8 lit while there is a device in that direction (Device_Navigation's own skin, kept) |
 
 Fixes found by the test:
 
