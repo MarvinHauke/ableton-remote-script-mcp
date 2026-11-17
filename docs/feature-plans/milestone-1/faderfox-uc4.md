@@ -105,7 +105,8 @@ the UC4 on SE17 and its port as the Control Surface's input and output.
 
 ## Results
 
-Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
+Load test in Live 12.4.16, 2026-11-17 and 18, by the user: all 14 items pass, four after a fix
+found by the test. The log shows no traceback from the script.
 
 | Item | Result |
 |---|---|
@@ -122,6 +123,7 @@ Load test in Live 12.4.16, 2026-11-17, by the user (in progress).
 | 11 Monitor | passed: In and Auto, lit while In; return tracks are outside the box (`include_returns` is `False`), group tracks not tried |
 | 12 Track buttons | passed: bank, track, scene and device moves; 1–6 lit while held, 7–8 lit while there is a device in that direction (Device_Navigation's own skin, kept) |
 | 13 LEDs per group | passed: each group shows its own state at once (the UC4 keeps the LED state per group). With a track soloed, Active lights only that track: the framework counts tracks silenced by a solo as muted (`muted_via_solo` in the 12.4.16 statements), unlike Live's Track Activator |
+| 14 Disconnect | passed: choosing None turns every green LED off, in every group |
 
 Fixes found by the test:
 

@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-17 (0001 step 10 in work: v3 references and the UC4 script, decisions 46 and 47)._
+_Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round is next)._
 
 ## Now
 
@@ -127,8 +127,13 @@ _Last updated: 2026-11-17 (0001 step 10 in work: v3 references and the UC4 scrip
   now also reads a v3 script's Python `logging`. Facts and the 14-item checklist:
   [milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md). `uv run pytest` green
   (144 tests, 15 local-only).
-- Next: the user's UC4 load test in Live 12.4.16, then one 9a round (0001 decision 46: not one
-  after step 8 as well; needs the usage limit).
+- UC4 load test passed (2026-11-18, the user, Live 12.4.16): all 14 items, four after fixes that
+  went into the v3 reference and template as `tested` facts (session ring without identity
+  reply, value feedback, exact property types, `Mixer.MuteOn` = muted); Quant added on Global
+  encoder 5. Results in [milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md).
+  `uv run pytest` green (145 tests).
+- Next: one 9a round (0001 decision 46; needs the usage limit), which completes step 10 and
+  Milestone 1. Then a grilling session on the MCP design ideas (Small items) before step 11.
 
 ## After grilling
 

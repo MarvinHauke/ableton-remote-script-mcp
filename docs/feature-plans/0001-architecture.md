@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: step 10 (in work: the UC4 load test), then one 9a round (Decision 46)._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: step 10's last check, one 9a round (Decision 46); the UC4 load test passed 2026-11-18._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -863,8 +863,14 @@ Every step's checks include `uv run pytest` passing.
     - **In work** (2026-11-17): `references/v3-script.md`, `assets/v3_template/` and
       `examples/Faderfox_UC4/` (Decision 47) validate with no findings against 12.4.16; the
       device facts, what the script does and the 14-item checklist are in
-      [milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md). Next: the user's load test,
-      then the one 9a round (Decision 46).
+      [milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md).
+    - **Load test passed** (2026-11-18, the user, Live 12.4.16): all 14 items. Four fixes came
+      from it and went into the skill as `tested` facts: a session ring that enables itself
+      without an identity reply, `is_feedback_enabled=True` for controls that show values, exact
+      types for Live's properties (an int, not a float), and `Mixer.MuteOn` meaning "muted" (the
+      12.0 reading had it the other way round). Quant was added on Global encoder 5 at the
+      user's request. `log` also reads v3 logging and a record's lines without a timestamp.
+      Left for Milestone 1: the one 9a round (Decision 46).
 11. **MCP server v1**
     - **Blocked by:** 4, 6, 10
     - **Delivers:** the tools `search_api`, `get_class`, `outline_reference_script`, `diff_builds`,
