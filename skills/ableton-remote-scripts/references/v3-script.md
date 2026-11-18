@@ -222,13 +222,15 @@ class Skin:
   `Transport.PlayOn`/`Off`, `StopOn`/`Off`, `LoopOn`/`Off`, `MetronomeOn`/`Off`;
   `Recording.ArrangementRecordOn`/`Off`, `SessionRecordOn`/`Off`/`Transition`;
   `ViewControl.Track`/`TrackPressed`; `Device.Navigation`/`NavigationPressed`.
-- **`Mixer.MuteOn` means the track is muted.** The mute button's LED is "on" while the track
-  is muted, and also while another track's solo silences it (`muted_via_solo`; both `tested` in
-  12.4.16 on the Faderfox UC4). In the decompiled 12.0 framework the button was mapped to the
-  track activator, where "on" meant playing: the behaviour changed between 12.0 and 12.4.16,
-  so trust the build's. For a button labelled "Active" or "Track On", swap the values:
-  `MuteOn = OFF`, `MuteOff = ON`; it then goes dark for tracks a solo silences, unlike Live's
-  Track Activator.
+- **`Mixer.MuteOn`: the mute LED is "on" for a muted track.** It is also "on" for a track that
+  another track's solo silences, although that track is not muted (its Track Activator stays
+  on in Live). Both `tested` in 12.4.16 with the framework's own `ChannelStripComponent`, through
+  the Faderfox UC4 script, which changes only the skin's values. A script that keeps that class
+  gets the same LED logic in that build; one with a channel strip of its own may not. In the
+  decompiled 12.0 framework the button was mapped to the track activator, where "on" meant
+  playing: the behaviour changed between 12.0 and 12.4.16, so trust the build's. For a button
+  labelled "Active" or "Track On", swap the values (`MuteOn = OFF`, `MuteOff = ON`); it then
+  also goes dark for tracks a solo silences, unlike Live's Track Activator.
 - **RGB pads.** A colour class of `SimpleColor(value)` per colour (`colors=Rgb`), or
   `RgbColor`/`create_rgb_color` from `ableton.v3.control_surface.elements`; `Launch_Control_XL_3`
   and `APC_mini_mk2` outlines show both. An entry such as `make_color_for_liveobj` (in

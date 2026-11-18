@@ -148,6 +148,14 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
 
 ## Small items
 
+- [ready-for-agent] **Extractor bug: statement values lose part of an expression.** A store of
+  `a or b`, `a and b` or `a if x else b` is recorded with only its last part
+  (`self.mute_button.is_on = self._track.mute or self._track.muted_via_solo` shows as
+  `… = self._track.muted_via_solo`; reproduced with `extractor.read_code`, 2026-11-18). Every
+  `outline` value and statement built from such a store can mislead. Fix: record the whole
+  expression, or `…` when it can't be rebuilt from the bytecode; a test per form. Found while
+  checking a claim on the v3 page; the page no longer rests on that summary.
+
 - [needs-grilling] **MCP server design ideas for step 11, from the user's sources (2026-11-17):**
   Zhang, Kraska, Khattab, *Recursive Language Models* (arxiv.org/abs/2512.24601), Zhang's blog
   post *The Mismanaged Geniuses Hypothesis* (alexzhang13.github.io/blog/2026/mgh/), and a video
