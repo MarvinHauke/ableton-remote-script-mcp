@@ -15,3 +15,4 @@ __pycache__/
 # Skill eval results (generated scripts, transcripts, reports)
 /skills/*-workspace/
 /skills/*/evals/results/
+Ableton_Examples/

@@ -142,3 +142,23 @@ candidate for an invented name, to be read before it counts as one.
 For a member a class has, the class along its MRO that defines it: the class itself or the base
 it inherits the member from. A member that hides one of the same name further along the MRO
 overrides it.
+
+### The test rig (plan 0002)
+
+**Test rig**:
+The driver that plays a controller to a Remote Script over a virtual MIDI port, records what
+Live sends back and reads the log, with its optional web panel. The driver is in charge; the
+panel is a parallel view for the user.
+_Avoid_: simulator, emulator, virtual device
+
+**Check file**:
+A script's `checks.yaml`: the steps the test rig runs (what to send, which replies, events and
+log state to expect, which steps to ask the user about).
+
+**Device profile**:
+What the test rig knows about one controller beyond its elements: its layout for the panel, its
+identity reply, display hints.
+
+**Test Set**:
+The Set open in Live that the test rig may change (from the user's `devSetup` template); it is
+never saved by the rig.

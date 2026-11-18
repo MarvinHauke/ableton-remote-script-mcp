@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: draft (2026-11-18) — to be grilled before anything is built; after 0001's Milestone 1._
+_Stage: grilled (2026-11-18, Decisions 1–25) — spec and steps next, when the user chooses._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -41,49 +41,82 @@ hardware test; it doesn't replace it.
 
 ## Decisions
 
-None yet.
+All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's recommendations.
+
+1. **Who may send MIDI into Live** (Q1): the user starts Live, opens the test Set and picks the
+   rig's virtual port as a Control Surface's input and output. After that the agent may send
+   MIDI only to that virtual port, never to the user's hardware ports, and says so before each
+   automated run; the user can stop it at any time. Restarting Live, choosing control surfaces
+   and connecting hardware stay the user's. A dated exception to CLAUDE.md's "only the user
+   operates Live", for the test rig only.
+2. **AbletonMCP is an optional local aid** (Q2): the rig works from MIDI replies and `Log.txt`
+   alone and uses AbletonMCP when it runs. 0001 Decision 10 stays for the skill and the MCP
+   server: neither mentions it.
+3. **Both a driver and a web panel** (Q3), in one Python package in this repo; the driver first.
+   Both build on one model of the controller read from `outline`.
+4. **Published** (Q4) with the repo (our own code, MIT); AbletonMCP support documented as an
+   optional local aid.
+5. **First use** (Q5): the UC4 script, whose 14 results are known, then the APC mini drum
+   sequencer.
+6. **AbletonMCP commands** (Q6, Q16): reading `get_session_info`, `get_track_info`,
+   `get_device_parameters` and `drain_passive_events` (its listeners' buffered changes: the main
+   state evidence, read after each step); preparing and the Live → controller direction
+   `create_midi_track`, `create_audio_track`, `create_clip`, `set_tempo`,
+   `set_device_parameter`, `fire_clip`, `stop_clip`, `start_playback`, `stop_playback`. A command
+   is on the rig's "tested" list only after reading back a state the user set by hand. Reads
+   run off Live's main thread in AbletonMCP 1.7.1 and are repeated until two agree (a first read
+   after the user reopened Live failed with `Boost.Python.ArgumentError … None(Song)`, the next
+   one worked; 2026-11-18). Never: its rating, dataset-consent or browser commands; its
+   `user_prompt` telemetry argument stays empty. Mute, solo, arm and volume can't be set
+   through it: those are checked controller → Live only.
+7. **Port** (Q7, Q17): the rig creates its own named virtual ports with `rtmidi2` (1.5.0,
+   2026-10, MIT, macOS arm64 wheels for Python 3.10–3.14), `pylibremidi` as the fallback library,
+   the IAC Driver as the fallback port. Step 1 is a spike: does Live see a port that appears
+   while it runs?
+8. **Check file** (Q8): `checks.yaml` beside each example script; steps send MIDI and expect
+   replies (or none), a clean log and, through AbletonMCP, state; steps no machine can see are
+   "ask the user". The milestone pages' prose checklists stay for the user.
+9. **The panel is a client** (Q9): the driver owns the ports; the panel is a local web page that
+   talks to it over a WebSocket (no Web MIDI). The page says plainly that it is a parallel view
+   for the user and that the driver is in charge.
+10. **Layout** (Q10): a plain layout from `outline`'s elements by default; optional layout files
+    in a device profile (UC4, APC mini), written from their facts pages.
+11. **Identity** (Q11, Q18): no identity reply by default; a device profile may give the reply
+    its script expects; an identity of the rig's own uses the non-commercial manufacturer ID
+    `7D`, never a real manufacturer's.
+12. **Commands** (Q12): `ableton-remote-script-mcp rig run <checks.yaml>` and
+    `ableton-remote-script-mcp rig panel <script folder>`.
+13. **Test Set** (Q13, Q19): the Set Live opens from the user's `devSetup.als` template (on
+    2026-11-18: 8 tracks, 7 MIDI and 1 audio with one-shot samples, racks on every track, 2
+    returns, 8 scenes, no group tracks). The rig may create what a check file needs in that open
+    Set, never saves, and before a run checks the Set has what the checks need, stopping with a
+    list otherwise.
+14. **Saving test Sets** (Q20): the user saves (AbletonMCP has no save command), into
+    `Ableton_Examples/` in this repo, git-ignored by default: an `.als` stores absolute sample
+    paths, with the user's name. A Set with only MIDI clips and Live's built-in devices may be
+    published after a path check.
+15. **What the test Set can't give** (Q21): group tracks and a muted, soloed or armed starting
+    state are "ask the user" steps; the rig may still mute or solo through the script under
+    test.
+16. **Testing the rig** (Q22): its tests use an in-memory fake port and a fake AbletonMCP socket;
+    one local-only test runs the UC4's check file against real Live and passes only when it
+    reproduces the user's 14 results.
+17. **Glossary** (Q23): Test rig, Check file, Device profile, Test Set (added 2026-11-18).
+18. **Reports** (Q24): per step passed, failed or ask the user, with what was sent and what came
+    back (MIDI, AbletonMCP events, a traceback); a short printed report and the full result as
+    JSON beside the check file. A failure doesn't stop the run; steps that depend on it are
+    skipped. The agent still writes the milestone results, citing the run.
+19. **Docs** (Q25): each step updates the `docs/` pages it touches; the rig gets its own guide
+    once the driver works.
+20. **The skill** (Q14) mentions the rig only after it is proven on the UC4 and the sequencer.
+21. **Driver reaches AbletonMCP through its socket** (Q15), localhost:9877, version checked
+    with `get_script_info` (1.7.1, protocol 1), commands from an allow-list only; with an
+    unknown version or no socket the rig runs without it. The agent may use the matching MCP
+    tools by hand.
 
 ## Open questions
 
-Recommended answers, for the grilling.
-
-1. **"Only the user operates Live" (CLAUDE.md).** Claude sending MIDI into Live, or changing a
-   Set through AbletonMCP, is operating Live. Recommended boundary: the user picks the virtual
-   port as a Control Surface and opens a test Set; after that Claude may send MIDI only to that
-   virtual port, never to the user's hardware, and may change only that test Set. Selecting a
-   control surface, restarting Live and connecting hardware stay the user's.
-2. **AbletonMCP and Decision 10 of 0001** ("independent of AbletonMCP; the skill doesn't
-   mention it"). Recommended: the rig is a local development aid. It may use AbletonMCP when it
-   is there, and works without it from MIDI replies and the log. The skill and the MCP server
-   keep not mentioning it.
-3. **Which AbletonMCP tools.** Checked 2026-11-18 against 12.4.16:
-   - The validator gives no findings. `eval_names.py` finds two real bugs: the
-     `get_browser_categories` and `get_browser_items` commands call methods the file doesn't
-     define, so they always fail. Everything else unknown is Python's socket, queue and thread
-     methods, or guarded by `hasattr`.
-   - It runs writes on Live's main thread (`schedule_message`), but reads
-     (`get_session_info`, `get_track_info`, `get_device_parameters`, `get_session_snapshot`, …)
-     straight from its socket thread. Live's API is not meant to be used outside its main thread
-     (`documented`, community knowledge; not tested by us), so a read taken while a value
-     changes may be stale.
-   - Recommended: only `get_session_info`, `get_track_info` and `get_device_parameters` for
-     reading, and only creating tracks and clips and setting the tempo for preparing a test Set.
-     Each tool goes on a "tested" list only after reading back a state the user set by hand.
-     Reads are repeated until two agree. MIDI replies and the log are the main evidence.
-     Never call its rating, dataset-consent or browser tools, and leave its `user_prompt`
-     telemetry argument empty.
-4. **Web app and driver: one tool or two?** Recommended: one Python package in this repo (the
-   driver, the port, the panel model from `outline`) with a small web page served locally for
-   the user. The page uses Web MIDI, so it needs Chrome and a local server.
-5. **Where the checklist lives.** Recommended: the milestone pages' checklists stay prose for
-   the user; the rig gets a data file per script next to the example (`checks.yaml`) that names
-   each step and the expected reply.
-6. **Hardware layouts.** Recommended: a grid of the elements by name by default. Optional
-   layout files for the devices we test (UC4, APC mini) come from their facts pages.
-7. **Published or local?** Recommended: published with the repo (our own code, MIT), like the
-   validator. AbletonMCP support stays optional and documented as a local aid.
-8. **First use.** Recommended: the APC mini drum sequencer (the user's plan), so its LED-heavy
-   checks don't depend on the mk1's dropped presses.
+None: grilling closed 2026-11-18 (user confirmed).
 
 ## Steps
 
