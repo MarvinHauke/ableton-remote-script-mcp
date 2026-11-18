@@ -17,6 +17,7 @@ from ableton_remote_script_mcp.rig.panel import (
     NOTICE,
     PanelServer,
     accept_key,
+    local_origin,
     midi_event,
     panel_model,
     play,
@@ -112,11 +113,12 @@ def _masked(text: str, opcode: int = 0x1) -> bytes:
 class _Page:
     """A browser's side of the WebSocket."""
 
-    def __init__(self, address):
+    def __init__(self, address, origin=None):
         self.sock = socket.create_connection(address, timeout=2)
         key = base64.b64encode(os.urandom(16)).decode()
+        extra = f"Origin: {origin}\r\n" if origin else ""
         self.sock.sendall((f"GET /ws HTTP/1.1\r\nHost: x\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
-                           f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n").encode())
+                           f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n{extra}\r\n").encode())
         self.file = self.sock.makefile("rb")
         head = b""
         while not head.endswith(b"\r\n\r\n"):
@@ -181,6 +183,12 @@ def test_page_plays_through_rig_serve_and_sees_live_and_the_driver(rig):
     assert replayed == {("faders[0]", "out"): 90, ("faders[0]", "in"): 90, ("play_button", "out"): 127}
     late.close()
 
+    page.sock.sendall(_masked(json.dumps({"op": "send", "message": [0xBC, 41, 33]})))
+    raw = page.next(lambda e: e.get("dir") == "out" and e["message"] == [0xBC, 41, 33])
+    assert raw["by"] == "panel" and raw["elements"] == ["faders[1]"]
+    page.sock.sendall(_masked(json.dumps({"op": "send", "message": [300]})))
+    assert "not a MIDI message" in page.next(lambda e: e["type"] == "error")["text"]
+
     page.play("nothing", 1)
     assert "no element `nothing`" in page.next(lambda e: e["type"] == "error")["text"]
     page.close()
@@ -233,3 +241,13 @@ def test_panel_reconnects_when_rig_serve_is_restarted(ctl):
         for s in second:
             s.shutdown()
             s.server_close()
+
+
+def test_only_pages_from_this_machine_may_connect(rig):
+    assert local_origin(None) and local_origin("http://localhost:5173") and local_origin("http://127.0.0.1:9879")
+    assert local_origin("http://[::1]:5173") and local_origin("http://uc4.localhost:5173")
+    assert not local_origin("https://example.com") and not local_origin("http://localhost.example.com")
+    _, _, panel = rig
+    assert _Page(panel.server_address, origin="http://localhost:5173").next()["type"] == "model"
+    with pytest.raises(AssertionError):
+        _Page(panel.server_address, origin="https://example.com")

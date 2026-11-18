@@ -7,6 +7,8 @@ page as it happens, and the user's moves on the page go to the same port.
 
     page -> panel   {"op": "play", "element": name, "value": n}     n: 0-127, or steps for a relative
                                                                     encoder, or "press"
+                    {"op": "send", "message": [bytes]}              one raw MIDI message (a client that
+                                                                    knows the device, not the script)
     panel -> page   {"type": "model", ...}                          once, on connecting, then the last
                                                                     "midi" event per element and dir
                                                                     with "replay": true
@@ -17,7 +19,9 @@ page as it happens, and the user's moves on the page go to the same port.
 
 `dir` is seen from the controller: `in` is what Live sent to it (LEDs, values), `out` what was
 played into Live. The WebSocket is a minimal RFC 6455 server (text frames, ping, close) so the
-rig needs no further dependency.
+rig needs no further dependency. Only pages served from this machine may connect: a browser
+sends the page's `Origin`, and one from another host (any website open in the browser) is
+refused, so no website can play into Live. Clients outside a browser send no `Origin`.
 """
 
 from __future__ import annotations
@@ -29,6 +33,7 @@ import struct
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
+from urllib.parse import urlsplit
 
 from .checks import CheckFileError, _key, encode
 from .controller import Controller
@@ -39,6 +44,15 @@ NOTICE = ("Parallel view: the test rig's driver is in charge. What `rig run` pla
           "what you play here goes to the same port. Live is never saved.")
 ROW = 8  # elements per row in the plain layout
 _WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def local_origin(origin: str | None) -> bool:
+    """True for no `Origin` (not a browser) or a page served from this machine."""
+    if origin is None:
+        return True
+    host = urlsplit(origin).hostname or ""
+    return host in LOCAL_HOSTS or host.endswith(".localhost")
 
 
 # --- the model the page draws --------------------------------------------------------------------
@@ -224,7 +238,15 @@ class PanelServer(ThreadingHTTPServer):
                 self.clients = [c for c in self.clients if c not in gone]
 
     def play(self, name: str, value) -> list[list[int]]:
-        messages = play(self.ctl, name, value)
+        return self.send([*play(self.ctl, name, value)])
+
+    def send_raw(self, message) -> list[list[int]]:
+        if not (isinstance(message, list) and message
+                and all(isinstance(b, int) and not isinstance(b, bool) and 0 <= b <= 255 for b in message)):
+            raise CheckFileError(f"not a MIDI message: {message!r}")
+        return self.send([message])
+
+    def send(self, messages: list[list[int]]) -> list[list[int]]:
         with self.lock:
             for m in messages:
                 self.port.send(m)
@@ -259,6 +281,9 @@ class _PanelHandler(BaseHTTPRequestHandler):
         self.wfile.write(page)
 
     def _websocket(self) -> None:
+        if not local_origin(self.headers.get("Origin")):
+            self.send_error(403, "only pages served from this machine may connect")
+            return
         self.send_response(101, "Switching Protocols")
         self.send_header("Upgrade", "websocket")
         self.send_header("Connection", "Upgrade")
@@ -286,9 +311,12 @@ class _PanelHandler(BaseHTTPRequestHandler):
                     continue
                 try:
                     request = json.loads(data)
-                    if request.get("op") != "play":
+                    if request.get("op") == "play":
+                        self.server.play(str(request["element"]), request["value"])
+                    elif request.get("op") == "send":
+                        self.server.send_raw(request["message"])
+                    else:
                         raise CheckFileError(f"unknown op {request.get('op')!r}")
-                    self.server.play(str(request["element"]), request["value"])
                 except (ValueError, KeyError, TypeError, CheckFileError) as e:
                     client.send({"type": "error", "text": str(e)})
                 except (OSError, ConnectionError) as e:

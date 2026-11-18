@@ -357,7 +357,15 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      - In Live 12.4.16 with `Rig_Identity` on `ARS Test Rig`: a fader dragged on the page went
        to Live, and Live's echo came back to the page. During `rig run`, the page showed the
        driver's sends and Live's reply. The page was checked in Chrome. 191 tests.
-     - Not yet: the user playing the UC4 script from the panel (this step's check).
+     - Only pages served from this machine may open the WebSocket: the browser's `Origin` must
+       be localhost, 127.0.0.1, ::1 or a `.localhost` name, so no website open in the browser
+       can play into Live. Besides `play` by element name, the WebSocket takes `send` with one
+       raw MIDI message, for a client that knows the device rather than the script.
+     - The user played the UC4 script from the panel (2026-11-18): the controls tried reached
+       Live. The mute buttons seemed to need two clicks. Checked: each press toggled track 1's
+       mute (AbletonMCP read True, False, True), and the page ended on Live's value. Live
+       answers a press with a quick 0/127 pair and then the settled value about 40 ms later.
+       The user then saw it working after the servers were restarted.
 6. **The APC mini drum sequencer's checks** — blocked by: 3, and the sequencer's own plan.
    - **Delivers:** its check file and device profile; the skill mentions the rig (Decision 20)
      once the sequencer's checks pass.

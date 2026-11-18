@@ -168,7 +168,8 @@ uv run ableton-remote-script-mcp rig panel path/to/My_Script --open
 ```
 
 It needs `rig serve` running and plays through its port. The page is at
-`http://127.0.0.1:9879/`, on your machine only.
+`http://127.0.0.1:9879/`, on your machine only. Only pages served from your machine can connect
+to it. A website open in your browser can't play into Live.
 
 - **Buttons** are pads. They send 127 while you hold them and 0 when you let go, and light up
   with the value Live sends back.
