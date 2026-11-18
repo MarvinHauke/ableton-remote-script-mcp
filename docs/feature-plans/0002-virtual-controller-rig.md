@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; step 2 built, its Live run pending. Frontier: step 2's Live run._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; step 2 built and run in Live 2026-11-18. Frontier: step 3 (AbletonMCP), or 4._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -234,8 +234,13 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      `ARS Test Rig` and `Faderfox_UC4`; the script logged `ready`, the port stayed open, and the
      check file passed again (24 passed). So after a script change: keep `rig serve` running,
      restart Live, run the checks.
-   - **Still to do in step 2:** Live started while no `rig serve` holds the port: does the slot
-     keep `ARS Test Rig` and reconnect once `rig serve` starts?
+   - **Live started while no `rig serve` held the port** (the user, 2026-11-18): slot 1 kept
+     `ARS Test Rig` as its input and output, greyed and not offered in the list. Once `rig serve`
+     started, the slot reconnected by itself: the script sent its start-up state within 3 s, and
+     the check file passed (24 passed). So the order doesn't matter: the port can come before or
+     after Live.
+   - **Step 2 done** (2026-11-18). The 5 `ask_user` steps were answered in the user's load test;
+     the group LED step needs the UC4 itself.
    - **Found on the way:** the extractor's statement summary loses the keywords of a call that
      also passes `**k`. That is an `outline` gap for every script, recorded for 0001.
 3. **AbletonMCP** — blocked by: 2.
