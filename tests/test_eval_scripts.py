@@ -157,3 +157,18 @@ def test_script_graders_get_the_computed_verdict():
            "scripts": [{"validator_findings": [], "unknown_names": ["x.py:3 a.b"]}]}
     eval_score._overwrite_script_graders(out)
     assert out["judge"] == {"06-validator-clean": True, "07-no-unknown-names": False, "01-launch": True}
+
+
+def test_listener_methods_come_from_event_lists():
+    """`_Framework`'s `__subject_events__` and v2/v3's `__events__` make listener methods at run
+    time; they are known names, not invented ones (ClyphX's `offset_has_listener`)."""
+    members = {
+        "__subject_events__": {"kind": "attribute", "value": "('offset',)", "value_literal": True},
+        "__events__": {"kind": "attribute", "value": "(SubjectEvent(name='x'), 'enabled')",
+                       "value_literal": False},
+    }
+    assert eval_names.event_methods(members) == {
+        "add_offset_listener", "remove_offset_listener", "offset_has_listener", "notify_offset"}
+    index = {"classes": {"S.S": {"name": "S.S", "members": members}}, "modules": {}}
+    defined, _ = eval_names.known_names(index, None)
+    assert "offset_has_listener" in defined

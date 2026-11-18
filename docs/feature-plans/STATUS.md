@@ -126,12 +126,17 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   12.4.16 (14 keys of the mixer's name patterns not checked, looked up by hand). `log --script`
   now also reads a v3 script's Python `logging`. Facts and the 14-item checklist:
   [milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md). `uv run pytest` green
-  (144 tests, 15 local-only).
+  (144 tests then).
 - UC4 load test passed (2026-11-18, the user, Live 12.4.16): all 14 items, four after fixes that
   went into the v3 reference and template as `tested` facts (session ring without identity
   reply, value feedback, exact property types, `Mixer.MuteOn` = muted); Quant added on Global
   encoder 5. Results in [milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md).
-  `uv run pytest` green (145 tests).
+  
+- Before the round (0001 decision 48, 2026-11-18): the `session-ring` validator warning, two new
+  graders on `uc4-mixer-v3`, listener names from `__subject_events__`/`__events__` in
+  `eval_names.py`, a reviewer pass on step 10 and its fixes. `uv run pytest` green (148 tests,
+  16 local-only).
+- Plan 0002 drafted (2026-11-18): a virtual controller test rig, to grill before anything is built.
 - Next: one 9a round (0001 decision 46; needs the usage limit), which completes step 10 and
   Milestone 1. Then a grilling session on the MCP design ideas (Small items) before step 11.
 
@@ -160,10 +165,6 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   Measure them in the 9a round and the step 13 benchmark (tool calls, tokens, invented names).
   **The user wants a grilling session on these before step 11 is designed**; nothing is decided.
 
-- [needs-triage] `eval_names.py` (and a future attribute rule) misses listener methods the
-  framework makes at run time: `_Framework`'s `__subject_events__ = ('offset',)` gives
-  `add_offset_listener`, `remove_offset_listener`, `offset_has_listener` (ClyphX uses them on a
-  `SessionComponent`). Derive these names from `__subject_events__` (and v2's `__events__`).
 
 - [needs-triage] Validator rule for attribute names by class (for example a made-up
   `self.song().some_method()` outside the mappings); step 8 checks only v3 mappings by class

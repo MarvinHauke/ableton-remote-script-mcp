@@ -171,7 +171,7 @@ def test_live_python_and_a_clean_script_in_12_4_16(index_dir, index, tmp_path):
         "from ableton.v3.control_surface import ControlSurface, ControlSurfaceSpecification\n"
         "from _Framework.ButtonElement import ButtonElement\n"
         "import Live\n\n\n"
-        "class Specification(ControlSurfaceSpecification):\n    pass\n\n\n"
+        "class Specification(ControlSurfaceSpecification):\n    identity_response_id_bytes = (0, 32, 41)\n\n\n"
         "def create_instance(c_instance):\n    return ControlSurface(specification=Specification, c_instance=c_instance)\n")
     answer = validate_script(folder, index_dir, "12.4.16")
     assert answer["findings"] == [] and [n["what"] for n in answer["not_checked"] if n["rule"] == "unresolved-import"] == ["import Live"]
@@ -196,3 +196,15 @@ def test_example_is_clean_in_12_4_16(index_dir, name):
     folder = Path(__file__).parent.parent / "examples" / name
     answer = validate_script(folder, index_dir, "12.4.16")
     assert answer["status"] == "ok" and answer["findings"] == [], answer["findings"]
+
+
+@pytest.mark.local_live
+def test_session_ring_warning_without_identity_in_12_4_16(index_dir, tmp_path):
+    """The UC4 load test's first bug: no identity reply and the framework's ring, so no box."""
+    folder = tmp_path / "Faderfox_UC4"
+    shutil.copytree(Path(__file__).parent.parent / "examples/Faderfox_UC4", folder)
+    init = folder / "__init__.py"
+    init.write_text(init.read_text().replace(
+        "    session_ring_component_type = SessionRingComponent", "    pass"))
+    findings = validate_script(folder, index_dir, "12.4.16")["findings"]
+    assert [(f["rule"], f["severity"]) for f in findings] == [("session-ring", "warning")]

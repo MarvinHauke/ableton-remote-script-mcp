@@ -88,13 +88,12 @@ def test_log_reads_the_last_session(log):
     assert [(m["script"], m["text"]) for m in answer["messages"]] == [
         ("Other_Script", "Initializing..."), ("My_Script", "ready"),
         ("My_V3_Script", "Faderfox UC4 script ready"),
-        ("My_V3_Script", "WARNING: two elements share a number"),
-        ("ableton", "WARNING: Got unknown message")]
+        ("My_V3_Script", "WARNING: two elements share a number")]
 
 
 def test_log_reads_python_logging_of_a_v3_script(log):
     """A v3 script logs with `logging.getLogger(__name__)`; Live writes it as
-    `Python: <LEVEL>:<module>:<line> - <text>`. `_Framework`'s own copy of a `log_message` is
+    `Python: <LEVEL>:<logger>:<ms> - <text>`. Live's own loggers (`ableton…`) are left out. `_Framework`'s own copy of a `log_message` is
     left out, since the `RemoteScriptMessage` record already holds it."""
     answer = read_log(log, "My_V3_Script")
     assert [m["text"] for m in answer["messages"]] == [
@@ -307,3 +306,17 @@ def test_log_keeps_the_lines_of_a_record_without_a_timestamp(tmp_path):
     text = read_log(path, "My_Script")["tracebacks"][0]["text"]
     assert text.endswith("ArgumentError: Python argument types in\n    None.None(Song, float)\n"
                          "did not match C++ signature:\n    None(TPyHandle<ASong>, int)")
+
+
+def test_log_keeps_messages_over_several_lines(tmp_path):
+    """A message whose text holds newlines (a v3 script's logger.exception) keeps all of it."""
+    path = tmp_path / "Log.txt"
+    path.write_text("\n".join([
+        record(1, "info", "Started: Live 12.4.16 Build: x"),
+        record(2, "info", "RemoteScriptMessage: (My_Script) first"), "second",
+        record(3, "info", "Python: ERROR:My_V3_Script:123 - failed"), "Traceback (most recent call last):",
+        "ValueError: x",
+    ]) + "\n")
+    assert [(m["script"], m["text"]) for m in read_log(path)["messages"]] == [
+        ("My_Script", "first\nsecond"),
+        ("My_V3_Script", "ERROR: failed\nTraceback (most recent call last):\nValueError: x")]

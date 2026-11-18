@@ -18,8 +18,8 @@ The project has three parts. The first two work today:
   into your User Library and read Live's log for its errors.
 - **Skill.** Guidance that walks a coding agent through writing a script from those facts:
   collect the controller's MIDI numbers, look up every framework name, check the script, install
-  it, and read Live's log once you have loaded it. Its first version covers `_Framework`
-  scripts; the `ableton.v3` guidance comes next.
+  it, and read Live's log once you have loaded it. It covers `_Framework` and
+  `ableton.v3` scripts, each with a template and a reference page.
 - **MCP server.** The same lookups as tools an agent can call. Not built yet.
 
 Every answer names the Live build it comes from and how sure it is (its *fact confidence*), so

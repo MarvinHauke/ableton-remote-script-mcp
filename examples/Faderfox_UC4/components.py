@@ -18,7 +18,8 @@ from ableton.v3.live import liveobj_valid
 # Live.Song.Quantization has 14 values; numbers, since the value names differ between sources)
 LAST_QUANTIZATION = 13
 
-# values of a track's current_monitoring_state (Live.Track.Track.monitoring_states)
+# values of a track's current_monitoring_state (Live.Track.Track.monitoring_states; tested in
+# 12.4.16 with this component, load test item 11)
 MONITOR_IN = 0
 MONITOR_AUTO = 1
 

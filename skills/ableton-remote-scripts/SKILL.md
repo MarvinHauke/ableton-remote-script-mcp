@@ -99,6 +99,7 @@ Each script's header lists its options and exit codes.
    - overridden framework methods' signatures
    - components built outside `component_guard`
    - `disconnect` overrides
+   - a v3 session ring that Live never enables (no identity reply)
 
    An `error` is proven wrong by the index; a `warning` is likely wrong. Read the "not checked"
    list too: those names (keys of a component that answers names by pattern, such as v3's

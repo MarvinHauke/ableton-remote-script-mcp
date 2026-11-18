@@ -629,7 +629,8 @@ meant to do, and uses only API names that exist in the Live build they target.
     - The pages come from one unstated Live 12.x build. A runtime probe stays out, as Decision 23
       says.
 46. **One 9a round after step 10, not one after step 8 as well** (agent proposed 2026-11-16; the
-    user went ahead with step 10 without objecting, 2026-11-17). Decision 42 planned a re-run
+    user went ahead with step 10 without objecting, 2026-11-17; explicit confirmation asked
+    2026-11-18). Decision 42 planned a re-run
     after step 8 and another after step 10. A round costs much of the user's usage limit, and the
     v3 cases (the UC4 mixer, the port to v3) need the v3 references of step 10 to show a
     difference. So one round runs after step 10, with step 8's checks and the v3 pages in place.
@@ -650,11 +651,33 @@ meant to do, and uses only API names that exist in the Live build they target.
       checklist.
     - **`log --script` also reads Python's `logging`.** v3 has no `log_message`; Ableton's v3
       scripts log with `logging.getLogger(__name__)`, which Live writes as
-      `Python: <LEVEL>:<module>:<line> - <text>`. `_Framework`'s copy of a `log_message` is skipped.
+      `Python: <LEVEL>:<logger>:<ms> - <text>`. `_Framework`'s copy of a `log_message` is skipped.
     - **The v3 pages** are one reference, `references/v3-script.md`, and `assets/v3_template/`,
       both written from the 12.4.16 index and outlines of Ableton's v3 scripts. The facts the
       index can't show (what a skin does with a missing name, what `Mixer.MuteOn` means) are
       marked `documented`, read in the decompiled 12.0 framework.
+    - **Changed by the load test** (the user, 2026-11-18): Quant is built, on Global encoder 5,
+      at the user's request. `Mixer.MuteOn` means "muted", `tested` in 12.4.16, replacing the
+      12.0 reading; the script's skin swaps it for the panel's "Active". `log`'s format line
+      reads `<logger>:<ms>`, not `<module>:<line>` (the reviewer, from the 12.4.16 log).
+48. **Before the 9a round: a review, two graders, a validator warning, listener names** (user
+    agreed, 2026-11-18, step 10, after the UC4 load test). So that the round measures what the load
+    test taught:
+    - The reviewer agent reviews step 10.
+    - The `uc4-mixer-v3` case gets two graders, the session box without an identity reply and
+      values sent back for the UC4's display, and its prompt the two device facts they rest on
+      (the display shows values sent to it; whether the UC4 answers an identity request is not
+      known). Their scores can't be compared with the baseline round; the two arms of the new
+      round can.
+    - The validator gets `session-ring` (warning): a v3 Specification without
+      `identity_response_id_bytes` or `custom_identity_response` and without a ring class of its
+      own. It runs only when the build's Specification has the identity field. Gluon's v3
+      scripts give no such warning against 12.4.16.
+    - `eval_names.py` derives `add_<e>_listener`, `remove_<e>_listener`, `<e>_has_listener` and
+      `notify_<e>` from a class's `__subject_events__` or `__events__` (`documented`, decompiled
+      12.0 framework), found with ClyphX's `offset_has_listener`.
+    - Not a rule: Live's property types (an int, not a float); the index has them only for some
+      members.
 
 ## Open questions
 

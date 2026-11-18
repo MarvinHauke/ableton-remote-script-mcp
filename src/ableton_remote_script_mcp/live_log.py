@@ -6,8 +6,10 @@ an empty line in the file, and a repeated fragment becomes `Last message repeate
 Joining the fragments gives the traceback back as Python printed it. A `_Framework` script's
 `log_message` appears as `<time>: info: RemoteScriptMessage: (<Script>) <text>`. A v3 script
 logs with Python's `logging` (`logging.getLogger(__name__)`, as Ableton's v3 scripts do), which
-Live writes as `<time>: info: Python: <LEVEL>:<module>:<line> - <text>`; the script is the
-module's first part (observed in 12.4.16 logs for `_Framework`'s own logger).
+Live writes as `<time>: info: Python: <LEVEL>:<logger>:<ms> - <text>` (the number is the
+milliseconds of the record's time); the script is the logger name's first part (observed in
+12.4.16 logs, for `_Framework`'s logger and the UC4 script's own). Loggers of Live's shared
+packages and of Live itself (`licensing`) are left out.
 
 Only the user runs Live; this module only reads the file.
 """
@@ -21,8 +23,9 @@ from pathlib import Path
 RECORD = re.compile(r"^(\d{4}-\d\d-\d\dT[\d:.]+): (\w+): (.*)$")
 REPEATED = re.compile(r"^Last message repeated (\d+) time\(s\): (.*)$")
 STARTED = re.compile(r"^Started: Live (\S+)")
-MESSAGE = re.compile(r"^\((.+?)\) (.*)$")
-PYTHON_LOG = re.compile(r"^Python: (DEBUG|INFO|WARNING|ERROR|CRITICAL):([\w.]+):\d+ - (.*)$")
+MESSAGE = re.compile(r"^\((.+?)\) (.*)\Z", re.DOTALL)
+PYTHON_LOG = re.compile(r"^Python: (DEBUG|INFO|WARNING|ERROR|CRITICAL):([\w.]+):\d+ - (.*)\Z", re.DOTALL)
+NOT_SCRIPTS = {"licensing"}  # Live's own Python loggers that are not Remote Scripts
 SCRIPT_PATH = re.compile(r"Remote Scripts/([^/\"]+)/")
 IMPORT_LINE = re.compile(r"^\s*import (\S+)\s*$", re.MULTILINE)  # Live's `import <folder>` when the name breaks it
 ERROR_TAG = "RemoteScriptError: "
@@ -116,9 +119,12 @@ def read_log(path: Path, script: str | None = None) -> dict:
         current = None
         if text.startswith(MESSAGE_TAG) and (m := MESSAGE.match(text[len(MESSAGE_TAG):])):
             messages.append({"line": start + n, "script": m.group(1), "text": m.group(2)})
-        elif (p := PYTHON_LOG.match(text)) and not p.group(2).startswith("_Framework."):
-            level, module, said = p.groups()  # _Framework's copy of a RemoteScriptMessage is skipped
-            messages.append({"line": start + n, "script": module.split(".")[0],
+        elif (p := PYTHON_LOG.match(text)):
+            level, logger, said = p.groups()
+            first = logger.split(".")[0]
+            if is_framework(first) or first in NOT_SCRIPTS:
+                continue  # Live's own; _Framework's copy of a RemoteScriptMessage among them
+            messages.append({"line": start + n, "script": first,
                              "text": said if level == "INFO" else f"{level}: {said}"})
     for t in tracebacks:
         t["text"] = "".join(t.pop("parts")).strip("\n")

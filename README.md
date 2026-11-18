@@ -26,8 +26,8 @@ of function bodies that only `outline` reads. `--no-statements` leaves the secon
 including the Python modules Live ships.
 
 The skill, `skills/ableton-remote-scripts/` (open Agent Skills format), walks a coding agent
-through writing a script with these commands: device facts, lookups, the `_Framework` template,
-validate, install, and reading the log after you loaded the script in Live.
+through writing a script with these commands: device facts, lookups, the `_Framework` and `ableton.v3`
+templates and reference pages, validate, install, and reading the log after you loaded the script in Live.
 
 Every answer names the Live build and the fact's confidence (`observed` = present in that build's
 index).

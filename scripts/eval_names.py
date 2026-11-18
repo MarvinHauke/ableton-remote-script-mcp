@@ -65,6 +65,7 @@ def known_names(index: dict, statements: dict | None) -> tuple[set[str], set[str
             defined.update(fact.get("members", {}))
             for member in fact.get("members", {}).values():
                 defined.update(p["name"] for p in member.get("params", []))
+            defined.update(event_methods(fact.get("members", {})))
     used: set[str] = set()
     for table in (statements or {}).get("classes", {}), (statements or {}).get("modules", {}):
         for functions in table.values():
@@ -74,6 +75,30 @@ def known_names(index: dict, statements: dict | None) -> tuple[set[str], set[str
                                      *map(str, call.get("kwargs", {}).values()), call.get("target", "")])
                     used.update(_ATTR_IN_TEXT.findall(text))
     return defined, used - defined
+
+
+EVENT_LISTS = ("__subject_events__", "__events__")
+
+
+def event_methods(members: dict) -> set[str]:
+    """The listener methods the framework makes at run time from a class's event list:
+    `__subject_events__ = ('offset',)` (`_Framework`) or `__events__` (v2, v3) gives
+    `add_offset_listener`, `remove_offset_listener`, `offset_has_listener` and `notify_offset`
+    (documented, decompiled 12.0 framework). Only events written as plain strings are read."""
+    names: set[str] = set()
+    for key in EVENT_LISTS:
+        member = members.get(key)
+        if not member or not member.get("value_literal"):
+            continue
+        try:
+            events = ast.literal_eval(member["value"])
+        except (ValueError, SyntaxError):
+            continue
+        for event in events if isinstance(events, tuple | list) else ():
+            if isinstance(event, str):
+                names |= {f"add_{event}_listener", f"remove_{event}_listener",
+                          f"{event}_has_listener", f"notify_{event}"}
+    return names
 
 
 def own_names(trees: list[ast.Module]) -> set[str]:

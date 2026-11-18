@@ -74,10 +74,12 @@ class SessionRingComponent(SessionRingBase):
         self.set_enabled(True)   # no identity reply will enable it
 ```
 
-and set `session_ring_component_type = SessionRingComponent` in the Specification.
-`link_session_ring_to_scene_selection` (and `…_track_selection`) moves the box only for
-selections made through the script's `View_Control` (`scene_encoder`, `prev_scene_button`, …),
-not for clicks in Live (`observed`, `tested`).
+and set `session_ring_component_type = SessionRingComponent` in the Specification. The validator
+warns when a Specification has neither (`session-ring`).
+`link_session_ring_to_scene_selection` moves the box only for selections made through the
+script's `View_Control` (`scene_encoder`, `prev_scene_button`, …), not for clicks in Live
+(`observed` in 12.4.16's `SessionRingSelectionLinking`, `tested` on the UC4).
+`…_track_selection` is built the same way (`observed`; not tested).
 
 The validator reports a field the base class doesn't have (`specification-field`). A typo
 otherwise only makes a new class attribute that nothing reads.
@@ -111,7 +113,9 @@ checks every name in the mappings against what `Elements` builds (`element-name`
 
 **Relative encoders.** `MapMode` (`ableton.v3.control_surface.MapMode`) names the
 `Live.MidiMap.MapMode` values: `Absolute`, `LinearTwoCompliment` (1 up, 127 down, smooth),
-`AccelTwoCompliment`, `LinearBinaryOffset` (65 up, 63 down), `LinearSignedBit`, and more. Which
+`AccelTwoCompliment`, `LinearBinaryOffset` (65 up, 63 down), `LinearSignedBit`, and more.
+What "smooth" and the binary-offset values mean is `documented` (Ableton's custom MIDI mapping
+help); `LinearTwoCompliment` with 1 and 127 is `tested` on the Faderfox UC4. Which
 one the device sends is a device fact.
 
 **Values back to the controller.** An encoder element sends a mapped parameter's value back
@@ -187,7 +191,8 @@ mappings["Fader_Modes"] = dict(
 )
 ```
 
-Modes keep the dict's order, and the first one is selected at start (`documented`). Ableton's `APC_mini_mk2`
+Modes keep the dict's order, and the first one is selected at start (`documented`, decompiled
+12.0 framework). Ableton's `APC_mini_mk2`
 and `Launch_Control_XL_3` outlines show Shift as a `MomentaryBehaviour` mode with several
 parts.
 
@@ -218,9 +223,12 @@ class Skin:
   `Recording.ArrangementRecordOn`/`Off`, `SessionRecordOn`/`Off`/`Transition`;
   `ViewControl.Track`/`TrackPressed`; `Device.Navigation`/`NavigationPressed`.
 - **`Mixer.MuteOn` means the track is muted.** The mute button's LED is "on" while the track
-  is muted (`tested` in 12.4.16 on the Faderfox UC4; the decompiled 12.0 framework maps it to
-  the track activator, which reads the other way round: trust the build's behaviour). For a
-  button labelled "Active" or "Track On", swap the values: `MuteOn = OFF`, `MuteOff = ON`.
+  is muted, and also while another track's solo silences it (`muted_via_solo`; both `tested` in
+  12.4.16 on the Faderfox UC4). In the decompiled 12.0 framework the button was mapped to the
+  track activator, where "on" meant playing: the behaviour changed between 12.0 and 12.4.16,
+  so trust the build's. For a button labelled "Active" or "Track On", swap the values:
+  `MuteOn = OFF`, `MuteOff = ON`; it then goes dark for tracks a solo silences, unlike Live's
+  Track Activator.
 - **RGB pads.** A colour class of `SimpleColor(value)` per colour (`colors=Rgb`), or
   `RgbColor`/`create_rgb_color` from `ableton.v3.control_surface.elements`; `Launch_Control_XL_3`
   and `APC_mini_mk2` outlines show both. An entry such as `make_color_for_liveobj` (in
@@ -251,7 +259,7 @@ class SceneLaunchComponent(Component):
   `StepEncoderControl(num_steps=)`, `control_list(ButtonControl, control_count=8)` for a row. A
   mapping key is the control's name. The decorator `@<control>.pressed` (also `released`,
   `value`, `double_clicked`) names the handler; in a list the handler gets the button, whose
-  `index` is its place (`documented`). Set `button.color = "My.SkinName"` to light it.
+  `index` is its place (`tested` with the UC4's Monitor buttons in 12.4.16). Set `button.color = "My.SkinName"` to light it.
 - **Dependencies.** `@depends(session_ring=None)` on `__init__` gets the session ring (its
   `tracks`, `track_offset`), `@depends(target_track=None)` the target track; the framework
   passes them in (`observed` in `MixerComponent` and `ViewControlComponent`).
@@ -284,7 +292,8 @@ class SceneLaunchComponent(Component):
 
 v3 has no `log_message`. Ableton's v3 scripts use Python's `logging`:
 `logger = logging.getLogger(__name__)` and `logger.info(…)`. Live writes it to `Log.txt` as
-`Python: INFO:<module>:<line> - <text>` (the format is `observed` for `_Framework`'s own logger
-in 12.4.16 logs). The module name starts with the folder name, so `scripts/log.sh --script
-<Folder>` shows these messages. The template logs `ready` from `setup()`: when that line is
+`Python: INFO:<logger>:<ms> - <text>`; the number is the milliseconds of the record's time.
+With `getLogger(__name__)` the logger's name starts with the folder name, so `scripts/log.sh
+--script <Folder>` shows these messages (`tested` with the Faderfox UC4 script in 12.4.16).
+`logger.exception(…)` keeps its traceback lines in the message. The template logs `ready` from `setup()`: when that line is
 there, the whole Specification was built.

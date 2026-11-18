@@ -22,6 +22,10 @@ Rules, with their severity:
   outside `with self.component_guard():`, also through a method `__init__` calls (one level);
   v3's `setup()` and the Elements class are exempt, the framework runs both inside the guard.
 - `disconnect-base` (warning): a `disconnect` override that does not call the one it overrides.
+- `session-ring` (warning): a v3 Specification with neither `identity_response_id_bytes` nor
+  `custom_identity_response` and the framework's own session ring: the framework enables the
+  ring only when the controller answers the identity request, so Live draws no session box
+  (observed in 12.4.16's `ControlSurface`, tested on the Faderfox UC4; plan 0001 step 10).
 
 What a rule cannot decide is listed in `not_checked` with the reason.
 """
@@ -222,6 +226,7 @@ class _Checker:
                 "the framework never reads it" + _close(f["name"], self.o.lineage(base).members),
                 f"look the fields up with `lookup class {base} --build {self.build}`; correct the name or remove it",
                 severity="warning"))
+        self.check_session_ring(spec, info)
         found = self.o.mapping_sections(spec)
         if found is None:
             return
@@ -267,6 +272,27 @@ class _Checker:
             self.layer(modes_cls, controls, where, f"modes component {name}", _mode_buttons(kwargs))
             for mode, text in modes.items():
                 self.mode(mode, text, where, cmap, cmap_complete, modes_sections, sections, found["module"])
+
+    def check_session_ring(self, spec: str, info: dict) -> None:
+        base = info["framework_class"]
+        if not base or "identity_response_id_bytes" not in self.o.lineage(base).members:
+            return  # a framework without identification: nothing to wait for
+        own = {f["name"]: f for f in info["fields"]}
+        if any(own.get(name, {}).get("value") not in (None, "None")
+               for name in ("identity_response_id_bytes", "custom_identity_response",
+                            "session_ring_component_type")):
+            return  # identified (the framework enables the ring), or a ring class of the script's own
+        if str(own.get("num_tracks", {}).get("value")) == "0" or str(own.get("num_scenes", {}).get("value")) == "0":
+            return  # no ring to draw
+        fact = self.overlay["classes"][spec]
+        self.findings.append(_finding(
+            "session-ring", self.file_of(fact["module"]), fact.get("line"),
+            f"{self.short(spec)} sets no identity_response_id_bytes: the framework enables the session ring "
+            "only when the controller answers the identity request, so Live draws no session box (the "
+            "mappings still work)",
+            "set identity_response_id_bytes when the controller answers the identity request; otherwise set "
+            "session_ring_component_type to a SessionRingComponent subclass that calls self.set_enabled(True) "
+            "in __init__", severity="warning"))
 
     def _component_map_complete(self, spec: str) -> bool:
         field = self.o.lineage(spec).members.get("component_map")

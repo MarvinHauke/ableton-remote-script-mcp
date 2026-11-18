@@ -7,7 +7,7 @@ the device facts, the behaviour checklist (Decision 29) and the results. The scr
 
 ## Device facts
 
-Source: the UC4 Editor (the user's own project, `~/Development/web/UC4_Editor`): its model of the
+Source: the UC4 Editor (the user's own project): its model of the
 factory SE17 (`node tools/uc4-config.ts factory 17`) and its device page
 (`docs/reference/uc4-device.md`, from Faderfox's manual, the factory `SndA` dump and the user's
 panel photo). The UC4 architect (the UC4 Editor's agent) confirmed on 2026-11-16 that the

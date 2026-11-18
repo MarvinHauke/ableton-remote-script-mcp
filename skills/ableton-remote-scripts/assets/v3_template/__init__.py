@@ -19,7 +19,7 @@ from .elements import Elements
 from .mappings import create_mappings
 from .skin import Skin
 
-logger = logging.getLogger(__name__)  # Live writes it to Log.txt as `Python: INFO:<Folder>:…`
+logger = logging.getLogger(__name__)  # in Log.txt as `Python: INFO:<Folder>:<ms> - …`
 
 
 class SessionRingComponent(SessionRingBase):
@@ -46,7 +46,7 @@ def create_instance(c_instance):
     return Surface(specification=Specification, c_instance=c_instance)
 
 
-class Surface(ControlSurface):  # rename like the folder: tracebacks and the log name it
+class Surface(ControlSurface):  # name it like the folder, as Ableton's scripts do
     def setup(self):
         super().setup()  # builds the elements, the components and the mappings
         logger.info("ready")
