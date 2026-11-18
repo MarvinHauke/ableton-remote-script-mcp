@@ -630,7 +630,7 @@ meant to do, and uses only API names that exist in the Live build they target.
       says.
 46. **One 9a round after step 10, not one after step 8 as well** (agent proposed 2026-11-16; the
     user went ahead with step 10 without objecting, 2026-11-17; explicit confirmation asked
-    2026-11-18). Decision 42 planned a re-run
+    2026-11-18; the user confirmed and asked to start the round, 2026-11-18). Decision 42 planned a re-run
     after step 8 and another after step 10. A round costs much of the user's usage limit, and the
     v3 cases (the UC4 mixer, the port to v3) need the v3 references of step 10 to show a
     difference. So one round runs after step 10, with step 8's checks and the v3 pages in place.
