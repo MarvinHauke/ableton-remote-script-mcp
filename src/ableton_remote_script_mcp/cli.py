@@ -1,5 +1,8 @@
-"""Command line: `build-index`, `import-structure-void`, `list builds`, `lookup class`, `search`, `outline`, `validate`, `install` and
-`log`."""
+"""Command line: `build-index`, `import-structure-void`, `list builds`, `lookup class`, `search`, `outline`,
+`validate`, `check-names`, `diff`, `install`, `log`, `mcp` and `rig`.
+
+The lookup commands print the same answers as the Python API (`api.py`) and the MCP tools;
+`--json` prints them as they are, capped at about 4,000 tokens unless `--full`."""
 
 from __future__ import annotations
 
@@ -8,18 +11,12 @@ import json
 import sys
 from pathlib import Path
 
+from . import api
 from .index_store import build_index, default_index_dir, write_index
 from .install import default_user_library, install_script
 from .live_install import default_install, find_installs, read_install
 from .live_log import find_log, read_log
-from .query import (
-    SEARCH_KINDS,
-    get_class,
-    list_builds,
-    outline_script,
-    search,
-    validate_script,
-)
+from .query import SEARCH_KINDS, validate_script
 from .structure_void import LICENCE, import_pages
 
 
@@ -203,8 +200,23 @@ def _format_class(c: dict, own_only: bool) -> str:
     return "\n".join(lines)
 
 
+def _cut_note(answer: dict) -> str:
+    """What a capped answer left out, for the text output."""
+    cut = answer.get("cut")
+    if not cut:
+        return ""
+    fields = ", ".join(f"{f['field']} {f['kept']} of {f['total']}" for f in cut["fields"])
+    return f"(cut to about {cut['max_tokens']} tokens: kept {fields}; {cut['how']})"
+
+
+def _print_cut(answer: dict) -> None:
+    if note := _cut_note(answer):
+        print(note)
+
+
 def _cmd_lookup_class(args: argparse.Namespace) -> int:
-    answer = get_class(args.name, Path(args.index_dir), args.build)
+    answer = api.lookup(args.name, args.build, own=args.own, members=args.member, full=args.full,
+                        index_dir=args.index_dir)
     if args.json:
         print(json.dumps(answer, indent=1))
     elif answer["status"] == "ok":
@@ -214,13 +226,19 @@ def _cmd_lookup_class(args: argparse.Namespace) -> int:
         print("\n".join(_format_class(c, args.own) for c in answer["classes"]))
         for d in answer.get("documented", []):
             print("\n".join(_format_documented(d, f"not in the index of Live {answer['live_build']}; documented")))
+        for c in answer["classes"]:
+            if c.get("missing_members"):
+                print(f"{c['qualified_name']} has no member " + ", ".join(c["missing_members"])
+                      + f" in Live {answer['live_build']}")
+        _print_cut(answer)
     else:
         print(answer["message"])
     return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
 
 
 def _cmd_search(args: argparse.Namespace) -> int:
-    answer = search(" ".join(args.query), Path(args.index_dir), args.build, args.kind, args.limit)
+    answer = api.search(" ".join(args.query), args.build, kind=args.kind, limit=args.limit, offset=args.offset,
+                        full=args.full, index_dir=args.index_dir)
     if args.json:
         print(json.dumps(answer, indent=1))
     elif answer["status"] == "ok":
@@ -230,6 +248,9 @@ def _cmd_search(args: argparse.Namespace) -> int:
             where = f"{r['source']}:{r['line']}" if r.get("line") else r["source"]
             mark = ", documented" if r["confidence"] == "documented" else ""
             print(f"  {r['kind']:<12} {r['qualified_name']}  ({r['match']}{mark}; {where})")
+        if answer.get("next_offset") is not None and not answer.get("cut"):
+            print(f"(more: --offset {answer['next_offset']})")
+        _print_cut(answer)
     else:
         print(answer["message"])
     return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
@@ -238,10 +259,11 @@ def _cmd_search(args: argparse.Namespace) -> int:
 def _cmd_diff(args: argparse.Namespace) -> int:
     from .diff import diff_builds
 
-    answer = diff_builds(args.from_build, args.to_build, Path(args.index_dir), args.under)
     if args.json:
+        answer = api.diff(args.from_build, args.to_build, under=args.under, full=args.full, index_dir=args.index_dir)
         print(json.dumps(answer, indent=1))
         return {"ok": 0, "index_missing": 3}[answer["status"]]
+    answer = diff_builds(args.from_build, args.to_build, Path(args.index_dir), args.under)  # the text counts it all
     if answer["status"] != "ok":
         print(answer["message"])
         return 3
@@ -332,14 +354,24 @@ def _format_mode(value) -> str:
 
 
 def format_outline(o: dict, all_components: bool = False) -> str:
+    """The outline as text; a section the answer left out (one section asked for, or cut) is
+    not shown, and the cut note says so."""
+    left_out = {f["field"] for f in o.get("cut", {}).get("fields", []) if f["kept"] == 0}
+    o = {k: v for k, v in o.items() if k not in left_out}
+    defaults = {"modules": [], "create_instance": [], "classes": [], "specification": None, "component_map": [],
+                "mappings": None, "unknown_components": [], "elements": [], "components": [], "layers": []}
+    has = {k for k in defaults if k in o}
+    o = {**defaults, **o}
     what = "Remote Script" if o["kind"] == "script" else o["kind"]
     lines = [f"{o['script']}: {what} on {o['framework'] or 'no framework'}  [Live {o['live_build']}, {o['confidence']}]",
-             f"  source:  {o['source']}",
-             f"  modules: {', '.join(o['modules'])}",
-             f"  uses:    {', '.join(o['uses']) or '-'}"]
+             f"  source:  {o['source']}"]
+    if "modules" in has:
+        lines.append(f"  modules: {', '.join(o['modules'])}")
+    lines.append(f"  uses:    {', '.join(o['uses']) or '-'}")
     for text in o["create_instance"]:
         lines.append(f"  create_instance: {_short(text)}")
-    lines.append(f"\nclasses ({len(o['classes'])}):")
+    if "classes" in has:
+        lines.append(f"\nclasses ({len(o['classes'])}):")
     for c in o["classes"]:
         bases = ", ".join(b["expr"] if b["defined_in"] == b["expr"] else f"{b['expr']} = {b['defined_in']}"
                           for b in c["bases"]) or "-"
@@ -352,12 +384,13 @@ def format_outline(o: dict, all_components: bool = False) -> str:
                 text = f"{kind}{m['name']}{format_signature(m.get('params', []))}"
             lines.append(f"      {text}" + (f"  (overrides {m['overrides']})" if m.get("overrides") else ""))
     spec = o["specification"]
-    if spec:
+    if spec and "specification" in has:
         lines.append(f"\nspecification: {spec['class']} (fields it sets; framework default after #)")
         for f in spec["fields"]:
             note = f"  # {_short(f.get('default'), 50)}" if f["known"] else "  # not a framework field"
             origin = "" if f["set_in"] == spec["class"] else f"  (set in {f['set_in']})"
             lines.append(f"  {f['name']} = {_short(f['value'], 70)}{note}{origin}")
+    if "component_map" in has and (spec or o.get("section") == "component_map"):
         shown = [e for e in o["component_map"] if all_components or e["used_by_mappings"] or e["from"] == "script"]
         hidden = len(o["component_map"]) - len(shown)
         lines.append(f"\ncomponent map ({len(shown)} of {len(o['component_map'])}"
@@ -367,51 +400,57 @@ def format_outline(o: dict, all_components: bool = False) -> str:
             if e.get("replaces_default"):
                 src += f", replaces {e['replaces_default']}"
             lines.append(f"  {e['name']}: {_short(e['component'], 60)}  -> {e['defined_in'] or '(not resolved)'}  ({src})")
-        if o["unknown_components"]:
-            lines.append("  not in the component map, but named by the mappings: " + ", ".join(o["unknown_components"]))
-        m = o["mappings"]
-        if m:
-            lines.append(f"\nmappings ({m['function']}):")
-            for entry in m["mappings"]:
-                head = f"  {entry['name']}" + (" [modes]" if entry["kind"] == "modes" else "")
-                if entry["kind"] == "component" and not entry.get("in_component_map"):
-                    head += "  (not in the component map)"
-                lines.append(head + ":")
-                for control, element in entry["controls"].items():
-                    lines.append(f"      {control} <- {element}")
-                for mode, value in entry["modes"].items():
-                    lines.append(f"      mode {mode}: {_short(_format_mode(value), 100)}")
-                for k, v in entry["options"].items():
-                    lines.append(f"      {k} = {_short(v, 100)}")
-    lines.append(f"\nelements ({len(o['elements'])}):")
-    for e in o["elements"]:
-        made = e["defined_by"].rsplit(".", 1)[-1] if e.get("defined_by") else (
-            f"{e['via']} -> {e['class'].rsplit('.', 1)[-1]}" if e.get("via") else e["class"].rsplit(".", 1)[-1])
-        name = e.get("name") or e.get("target") or "(unnamed)"
-        target = f"  -> {e['target']}" if e.get("target") and e.get("name") else ""
-        lines.append(f"  {_short(name, 40)}: {made}({_short(_arguments(e['arguments']), 70)}){target}  [{_where(e)}]"
-                     + _condition(e))
-    lines.append(f"\ncomponents ({len(o['components'])}):")
-    for e in o["components"]:
-        name = e.get("name") or e.get("target") or "(unnamed)"
-        args = {k: v for k, v in e["arguments"].items() if k != "layer"}
-        target = f"  -> {e['target']}" if e.get("target") and e.get("name") else ""
-        lines.append(f"  {_short(name, 40)}: {e['class']}({_short(_arguments(args), 60)}){target}  [{_where(e)}]"
-                     + _condition(e))
-    lines.append(f"\nlayers ({len(o['layers'])}):")
-    for e in o["layers"]:
-        owner = e.get("target") or (f"{e['within']}(…)" if e.get("within") else "(not stored)")
-        prio = f", priority={e['priority']}" if e.get("priority") else ""
-        lines.append(f"  {owner}: {_short(_arguments(e['controls']) + prio, 100)}  [{_where(e)}]" + _condition(e))
+    if o["unknown_components"]:
+        lines.append("  not in the component map, but named by the mappings: " + ", ".join(o["unknown_components"]))
+    m = o["mappings"]
+    if m:
+        lines.append(f"\nmappings ({m['function']}):")
+        for entry in m["mappings"]:
+            head = f"  {entry['name']}" + (" [modes]" if entry["kind"] == "modes" else "")
+            if entry["kind"] == "component" and not entry.get("in_component_map"):
+                head += "  (not in the component map)"
+            lines.append(head + ":")
+            for control, element in entry["controls"].items():
+                lines.append(f"      {control} <- {element}")
+            for mode, value in entry["modes"].items():
+                lines.append(f"      mode {mode}: {_short(_format_mode(value), 100)}")
+            for k, v in entry["options"].items():
+                lines.append(f"      {k} = {_short(v, 100)}")
+    for section in ("elements", "components", "layers"):
+        if section in has:
+            lines += _outline_part(o, section)
     return "\n".join(lines)
 
 
+def _outline_part(o: dict, section: str) -> list[str]:
+    lines = [f"\n{section} ({len(o[section])}):"]
+    for e in o[section]:
+        name = e.get("name") or e.get("target") or "(unnamed)"
+        target = f"  -> {e['target']}" if e.get("target") and e.get("name") else ""
+        if section == "elements":
+            made = e["defined_by"].rsplit(".", 1)[-1] if e.get("defined_by") else (
+                f"{e['via']} -> {e['class'].rsplit('.', 1)[-1]}" if e.get("via") else e["class"].rsplit(".", 1)[-1])
+            lines.append(f"  {_short(name, 40)}: {made}({_short(_arguments(e['arguments']), 70)}){target}"
+                         f"  [{_where(e)}]" + _condition(e))
+        elif section == "components":
+            args = {k: v for k, v in e["arguments"].items() if k != "layer"}
+            lines.append(f"  {_short(name, 40)}: {e['class']}({_short(_arguments(args), 60)}){target}  [{_where(e)}]"
+                         + _condition(e))
+        else:
+            owner = e.get("target") or (f"{e['within']}(…)" if e.get("within") else "(not stored)")
+            prio = f", priority={e['priority']}" if e.get("priority") else ""
+            lines.append(f"  {owner}: {_short(_arguments(e['controls']) + prio, 100)}  [{_where(e)}]" + _condition(e))
+    return lines
+
+
 def _cmd_outline(args: argparse.Namespace) -> int:
-    answer = outline_script(args.script, Path(args.index_dir), args.build)
+    answer = api.outline(args.script, args.build, section=args.section, offset=args.offset, full=args.full,
+                         index_dir=args.index_dir)
     if args.json:
         print(json.dumps(answer, indent=1, ensure_ascii=False))
     elif answer["status"] == "ok":
         print(format_outline(answer, args.all_components))
+        _print_cut(answer)
     else:
         print(answer["message"])
     return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
@@ -419,7 +458,8 @@ def _cmd_outline(args: argparse.Namespace) -> int:
 
 def format_findings(answer: dict) -> str:
     findings = answer["findings"]
-    count = f"{len(findings)} finding{'s' * (len(findings) != 1)} in {answer['files']} file{'s' * (answer['files'] != 1)}"
+    n = answer.get("counts", {}).get("findings", len(findings))
+    count = f"{n} finding{'s' * (n != 1)} in {answer['files']} file{'s' * (answer['files'] != 1)}"
     lines = [f"{answer['script']}  [Live {answer['live_build']}, {answer['confidence']}]  {count}"]
     for f in findings:
         where = f["file"] + (f":{f['line']}" if f["line"] else "")
@@ -432,16 +472,69 @@ def format_findings(answer: dict) -> str:
 
 
 def _cmd_validate(args: argparse.Namespace) -> int:
-    answer = validate_script(Path(args.folder), Path(args.index_dir), args.build)
+    answer = api.validate(args.folder, args.build, full=args.full, index_dir=args.index_dir)
     if args.json:
         print(json.dumps(answer, indent=1, ensure_ascii=False))
     elif answer["status"] == "ok":
         print(format_findings(answer))
+        _print_cut(answer)
     else:
         print(answer["message"])
     if answer["status"] == "ok":
-        return 1 if answer["findings"] else 0
+        return 1 if answer["counts"]["findings"] else 0
     return {"not_found": 2, "index_missing": 3}[answer["status"]]
+
+
+def format_names(answer: dict) -> str:
+    if "names" in answer:
+        lines = [f"{len(answer['names'])} names in Live {answer['live_build']}: "
+                 + ", ".join(f"{k} {v}" for k, v in answer["counts"].items())]
+        for r in answer["names"]:
+            if r["known"] == "not_a_member":
+                lines.append(f"  {r['name']}: not a member ({r['message']})")
+            elif r["kind"] == "class":
+                lines.append(f"  {r['name']}: class, observed ({', '.join(r['classes'])})")
+            elif r["kind"] == "name":
+                where = f" (in {', '.join(r['in'])})" if r.get("in") else ""
+                lines.append(f"  {r['name']}: {r['known']}" + (f", {r['confidence']}" if r["confidence"] else "")
+                             + where)
+            else:
+                via = f", from {r['origin']}" if r.get("origin") else ""
+                proxy = f"; the Push 3 helper's model of {r['proxy_of']}" if r.get("proxy_of") else ""
+                lines.append(f"  {r['name']}: {r['kind']} of {r['class']}, {r['confidence']}{via}{proxy}")
+        return "\n".join(lines)
+    lines = [f"{answer['folder']} against Live {answer['live_build']}: {answer['invented_candidates']} unknown names",
+             "  attributes: " + ", ".join(f"{k} {v}" for k, v in answer["attribute_counts"].items())]
+    lines += [f"  {u['file']}:{u['line']}: unknown attribute {u['name']} in {u['expr']}" for u in answer["unknown"]]
+    lines += [f"  {k['file']}:{k['line']}: {k['class']} takes no keyword {k['keyword']}"
+              for k in answer["kwargs_unknown"]]
+    lines += [f"  {b['file']}: not parsed ({b['error']})" for b in answer["broken"]]
+    return "\n".join(lines)
+
+
+def _cmd_check_names(args: argparse.Namespace) -> int:
+    if (args.folder is None) == (args.names is None):
+        print("check-names takes a script folder or --names, not both", file=sys.stderr)
+        return 2
+    answer = api.check_names(args.folder, args.names, args.build, full=args.full, index_dir=args.index_dir)
+    if args.json:
+        print(json.dumps(answer, indent=1, ensure_ascii=False))
+    elif answer["status"] == "ok":
+        print(format_names(answer))
+        _print_cut(answer)
+    else:
+        print(answer["message"])
+    if answer["status"] != "ok":
+        return {"not_found": 2, "index_missing": 3}[answer["status"]]
+    unknown = answer["unknown"] if "names" in answer else answer["invented_candidates"] + len(answer["broken"])
+    return 1 if unknown else 0
+
+
+def _cmd_mcp(args: argparse.Namespace) -> int:  # pragma: no cover - serves stdio until the client closes it
+    from .mcp_server import make_server
+
+    make_server(Path(args.index_dir)).run("stdio")
+    return 0
 
 
 def _cmd_install(args: argparse.Namespace) -> int:
@@ -525,7 +618,7 @@ def _cmd_log(args: argparse.Namespace) -> int:
 
 
 def _cmd_list_builds(args: argparse.Namespace) -> int:
-    answer = list_builds(Path(args.index_dir), find_installs())
+    answer = api.list_builds(full=args.full, index_dir=args.index_dir, installs=find_installs())
     if args.json:
         print(json.dumps(answer, indent=1))
         return 0 if answer["status"] == "ok" else 3
@@ -569,6 +662,7 @@ def make_parser() -> argparse.ArgumentParser:
     ls_sub = ls.add_subparsers(dest="kind", required=True)
     lb = ls_sub.add_parser("builds", help="the indexed Live builds, and installed ones with no index")
     lb.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
+    lb.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
     lb.set_defaults(func=_cmd_list_builds)
 
     sv = sub.add_parser("import-structure-void",
@@ -591,6 +685,9 @@ def make_parser() -> argparse.ArgumentParser:
     lc.add_argument("name", help="the class: short (Component), qualified or re-exported name")
     lc.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
     lc.add_argument("--own", action="store_true", help="only the class's own members, not inherited ones")
+    lc.add_argument("--member", action="append", metavar="NAME",
+                    help="only this member (repeatable): whether the class has it, own or inherited")
+    lc.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
     lc.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     lc.set_defaults(func=_cmd_lookup_class)
 
@@ -598,6 +695,8 @@ def make_parser() -> argparse.ArgumentParser:
     se.add_argument("query", nargs="+", help="a name (SessionRing) or words (session ring)")
     se.add_argument("--kind", choices=SEARCH_KINDS, help="only this kind (member = any class member)")
     se.add_argument("--limit", type=int, default=20, help="how many results to show (default: %(default)s)")
+    se.add_argument("--offset", type=int, default=0, help="skip this many results: the next page")
+    se.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
     se.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
     se.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     se.set_defaults(func=_cmd_search)
@@ -608,6 +707,8 @@ def make_parser() -> argparse.ArgumentParser:
     df.add_argument("to_build", metavar="to", help="the newer build, e.g. 12.4.25b1")
     df.add_argument("--under", help="only this package or module and what is in it, e.g. ableton.v3 or APC_mini "
                     "(without it: counts per package)")
+    df.add_argument("--full", action="store_true", help="with --json: the whole answer, not capped at about "
+                    "4,000 tokens")
     df.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     df.set_defaults(func=_cmd_diff)
 
@@ -616,6 +717,9 @@ def make_parser() -> argparse.ArgumentParser:
     ol.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
     ol.add_argument("--all-components", action="store_true",
                     help="list every name in the v3 component map, not only those the mappings use")
+    ol.add_argument("--section", choices=api.OUTLINE_SECTIONS, help="only this section of the outline")
+    ol.add_argument("--offset", type=int, default=0, help="with --section: skip this many items of a long section")
+    ol.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
     ol.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     ol.set_defaults(func=_cmd_outline)
 
@@ -623,7 +727,21 @@ def make_parser() -> argparse.ArgumentParser:
     va.add_argument("folder", help="the Remote Script's folder (its __init__.py defines create_instance)")
     va.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
     va.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
+    va.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
     va.set_defaults(func=_cmd_validate)
+
+    cn = sub.add_parser("check-names", help="where each API name a script folder uses, or each name given, is known "
+                        "in a Live build: observed, documented, or unknown")
+    cn.add_argument("folder", nargs="?", help="a Remote Script folder (or give --names)")
+    cn.add_argument("--names", nargs="+", metavar="NAME",
+                    help="names to check instead of a folder: Class, Class.member or a bare name")
+    cn.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
+    cn.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
+    cn.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
+    cn.set_defaults(func=_cmd_check_names)
+
+    mc = sub.add_parser("mcp", help="run the MCP server over stdio (the lookup commands as tools)")
+    mc.set_defaults(func=_cmd_mcp)
 
     ins = sub.add_parser("install", help="validate a Remote Script folder, then copy it into the User Library")
     ins.add_argument("folder", help="the Remote Script's folder")

@@ -6,7 +6,9 @@ readme = "README.md"
 license = "MIT"
 # Live's Remote Scripts are CPython 3.11 bytecode; marshal can only read them with 3.11.
 requires-python = ">=3.11,<3.12"
-dependencies = []
+dependencies = [
+    "mcp>=1.10",
+]
 
 [project.optional-dependencies]
 # the test rig (plan 0002): virtual MIDI ports, check files

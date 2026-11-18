@@ -34,12 +34,13 @@ List what the index holds.
 The indexed Live builds, and installed ones with no index.
 
 ```text
-ableton-remote-script-mcp list builds [--json]
+ableton-remote-script-mcp list builds [--json] [--full]
 ```
 
 | Argument | What it does |
 | --- | --- |
 | `--json` | Print the query core's answer as JSON. |
+| `--full` | The whole answer, not capped at about 4,000 tokens. |
 
 ## `import-structure-void`
 
@@ -77,7 +78,7 @@ Look something up in the index.
 A class by short, qualified or re-exported name, with inherited members.
 
 ```text
-ableton-remote-script-mcp lookup class [--build BUILD] [--own] [--json] name
+ableton-remote-script-mcp lookup class [--build BUILD] [--own] [--member NAME] [--full] [--json] name
 ```
 
 | Argument | What it does |
@@ -85,6 +86,8 @@ ableton-remote-script-mcp lookup class [--build BUILD] [--own] [--json] name
 | `name` | The class: short (Component), qualified or re-exported name. |
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
 | `--own` | Only the class's own members, not inherited ones. |
+| `--member NAME` | Only this member (repeatable): whether the class has it, own or inherited. |
+| `--full` | The whole answer, not capped at about 4,000 tokens. |
 | `--json` | Print the query core's answer as JSON. |
 
 ## `search`
@@ -92,7 +95,7 @@ ableton-remote-script-mcp lookup class [--build BUILD] [--own] [--json] name
 Classes, modules and members by name or words.
 
 ```text
-ableton-remote-script-mcp search [--kind KIND] [--limit LIMIT] [--build BUILD] [--json] query …
+ableton-remote-script-mcp search [--kind KIND] [--limit LIMIT] [--offset OFFSET] [--full] [--build BUILD] [--json] query …
 ```
 
 | Argument | What it does |
@@ -100,6 +103,8 @@ ableton-remote-script-mcp search [--kind KIND] [--limit LIMIT] [--build BUILD] [
 | `query …` | A name (SessionRing) or words (session ring). |
 | `--kind KIND` | Only this kind (member = any class member). One of: `class`, `module`, `member`, `method`, `property`, `classmethod`, `staticmethod`, `function`, `attribute`. |
 | `--limit LIMIT` | How many results to show (default: 20). |
+| `--offset OFFSET` | Skip this many results: the next page. |
+| `--full` | The whole answer, not capped at about 4,000 tokens. |
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
 | `--json` | Print the query core's answer as JSON. |
 
@@ -108,7 +113,7 @@ ableton-remote-script-mcp search [--kind KIND] [--limit LIMIT] [--build BUILD] [
 What changed between two Live builds: packages, modules, classes and members added, removed or changed.
 
 ```text
-ableton-remote-script-mcp diff [--under UNDER] [--json] from to
+ableton-remote-script-mcp diff [--under UNDER] [--full] [--json] from to
 ```
 
 | Argument | What it does |
@@ -116,6 +121,7 @@ ableton-remote-script-mcp diff [--under UNDER] [--json] from to
 | `from` | The older build, e.g. 12.4.16. |
 | `to` | The newer build, e.g. 12.4.25b1. |
 | `--under UNDER` | Only this package or module and what is in it, e.g. ableton.v3 or APC_mini (without it: counts per package). |
+| `--full` | With --json: the whole answer, not capped at about 4,000 tokens. |
 | `--json` | Print the query core's answer as JSON. |
 
 ## `outline`
@@ -123,7 +129,7 @@ ableton-remote-script-mcp diff [--under UNDER] [--json] from to
 A Remote Script's classes, Specification, component map, mappings and elements.
 
 ```text
-ableton-remote-script-mcp outline [--build BUILD] [--all-components] [--json] script
+ableton-remote-script-mcp outline [--build BUILD] [--all-components] [--section SECTION] [--offset OFFSET] [--full] [--json] script
 ```
 
 | Argument | What it does |
@@ -131,6 +137,9 @@ ableton-remote-script-mcp outline [--build BUILD] [--all-components] [--json] sc
 | `script` | The Remote Script's folder name, e.g. APC_mini_mk2. |
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
 | `--all-components` | List every name in the v3 component map, not only those the mappings use. |
+| `--section SECTION` | Only this section of the outline. One of: `modules`, `create_instance`, `classes`, `specification`, `component_map`, `mappings`, `unknown_components`, `elements`, `components`, `layers`. |
+| `--offset OFFSET` | With --section: skip this many items of a long section. |
+| `--full` | The whole answer, not capped at about 4,000 tokens. |
 | `--json` | Print the query core's answer as JSON. |
 
 ## `validate`
@@ -138,7 +147,7 @@ ableton-remote-script-mcp outline [--build BUILD] [--all-components] [--json] sc
 Check a Remote Script folder against a Live build's API index.
 
 ```text
-ableton-remote-script-mcp validate [--build BUILD] [--json] folder
+ableton-remote-script-mcp validate [--build BUILD] [--json] [--full] folder
 ```
 
 | Argument | What it does |
@@ -146,6 +155,31 @@ ableton-remote-script-mcp validate [--build BUILD] [--json] folder
 | `folder` | The Remote Script's folder (its __init__.py defines create_instance). |
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
 | `--json` | Print the query core's answer as JSON. |
+| `--full` | The whole answer, not capped at about 4,000 tokens. |
+
+## `check-names`
+
+Where each API name a script folder uses, or each name given, is known in a Live build: observed, documented, or unknown.
+
+```text
+ableton-remote-script-mcp check-names [--names NAME] [--build BUILD] [--json] [--full] folder
+```
+
+| Argument | What it does |
+| --- | --- |
+| `folder` | A Remote Script folder (or give --names). |
+| `--names NAME` | Names to check instead of a folder: Class, Class.member or a bare name. |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--json` | Print the query core's answer as JSON. |
+| `--full` | The whole answer, not capped at about 4,000 tokens. |
+
+## `mcp`
+
+Run the MCP server over stdio (the lookup commands as tools).
+
+```text
+ableton-remote-script-mcp mcp
+```
 
 ## `install`
 

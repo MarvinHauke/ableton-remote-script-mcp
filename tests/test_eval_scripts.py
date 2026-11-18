@@ -172,3 +172,24 @@ def test_listener_methods_come_from_event_lists():
     index = {"classes": {"S.S": {"name": "S.S", "members": members}}, "modules": {}}
     defined, _ = eval_names.known_names(index, None)
     assert "offset_has_listener" in defined
+
+
+def test_trace_usage_counts_tool_calls_tokens_and_cost(tmp_path):
+    from eval_score import trace_usage
+
+    call = {"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": "lookup.sh class X"}}
+    lines = [
+        {"type": "assistant", "message": {"id": "m1", "content": [call]}},
+        {"type": "assistant", "message": {"id": "m1", "content": [call]}},  # the same call streamed twice
+        {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "t1", "content": "x" * 50}]}},
+        {"type": "assistant", "message": {"id": "m2", "content": [
+            {"type": "tool_use", "id": "t2", "name": "mcp__arsm__get_class", "input": {}}]}},
+        {"type": "result", "total_cost_usd": 0.5, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 100,
+                                                            "cache_read_input_tokens": 1000, "output_tokens": 5}},
+    ]
+    trace = tmp_path / "trace.jsonl"
+    trace.write_text("\n".join(json.dumps(x) for x in lines) + "\nnot json\n")
+    usage = trace_usage(trace)
+    assert usage["tool_calls"] == 2 and usage["tool_calls_by_name"] == {"Bash": 1, "mcp__arsm__get_class": 1}
+    assert usage["tool_result_chars"] == 50 and usage["total_tokens"] == 1115 and usage["cost_usd"] == 0.5
+    assert trace_usage(tmp_path / "missing.jsonl") == {}

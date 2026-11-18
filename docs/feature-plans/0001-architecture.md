@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); next step 11._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); next `build-stubs`, then step 12._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -770,6 +770,42 @@ meant to do, and uses only API names that exist in the Live build they target.
       new bases), not gaps in the extractor.
     - Only release builds are named in the repo; a check against a beta prints only.
 
+52. **How step 11 is built** (agent, 2026-11-18, step 11; carries out Decisions 17 and 49).
+    - **The SDK:** the official `mcp` package, 2.3. In 2.x FastMCP is called `MCPServer`
+      (`mcp.server.mcpserver`); Decision 17's FastMCP is that class. The server is the CLI's
+      `mcp` command (`uvx --from <repo> ableton-remote-script-mcp mcp`), so it needs no second
+      entry point.
+    - **One answer core:** `api.py` holds the stable functions (`lookup`, `search`, `outline`,
+      `validate`, `check_names`, `list_builds`, plus `diff`). The CLI's lookup commands and
+      the MCP tools call them. Each answer carries `answer_version` (1). `docs/answers.md` is
+      the change note.
+    - **The cap** (`answers.py`): about 4,000 tokens, estimated as compact JSON / 4.
+      - The largest list or map keeps its first items until the answer fits. `cut` names each
+        one with `kept`, `total` and `how`.
+      - `search` pages with `offset` and `next_offset`. `outline` keeps the sections that fit,
+        and answers `section` (plus `offset`). `lookup` takes `members` and `own`.
+      - The CLI's text is printed from the capped answer, with the cut note as its last line.
+        `--full` gives the whole answer, and with `--full` the text matches the old output
+        (checked on four outlines).
+    - **`check_names`:** `eval_names.py` moved into the package (`names.py`). The old script
+      stays as a thin wrapper for the eval graders.
+      - A list of names takes `Class`, `Class.member` (own or inherited, with its origin) or a
+        bare name.
+      - A short class name stands for every class of that name, the framework's newest
+        generation first. Members of the Push 3 helper's models are marked `proxy_of`.
+    - **The tools:** `search_api`, `get_class`, `check_names`, `outline_reference_script`,
+      `validate_script`, `diff_builds` and `list_builds`.
+      - All are read-only, each with one worked example, checked against 12.4.16.
+      - Each returns the answer as structured content, and as compact JSON in its text.
+      - `not_found` and `index_missing` are answers, not tool errors.
+      - No extras yet (Decision 49 Q10 allows them).
+    - **The index stays loaded:** the query core keeps the last two loaded copies, keyed by
+      file, modification time and size. A copy with statement summaries is kept separately, so
+      `lookup` answers don't carry them. Over stdio a lookup takes 0.01–0.1 s once the build is
+      loaded.
+    - **`eval_score.py`** reads each run's tool calls (by tool), the characters of the tool
+      results, and the tokens and cost from the run's result event (Decision 49 Q7).
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -1013,6 +1049,12 @@ Every step's checks include `uv run pytest` passing.
       extras); default size caps with `--full`, `outline` by section, "more available" with a
       next page; a worked example per tool; `eval_score.py` counting tool calls and tokens.
       After the step: `build-stubs` for editor completion (local only).
+    - **Built** (2026-11-18, Decision 52): `api.py`, `answers.py`, `names.py`, `mcp_server.py`;
+      `check-names` and `mcp`; `--full`, `--offset`, `--section` and `--member`. The skill's
+      `lookup.sh names`, and SKILL.md runs it on each draft. `docs/answers.md`.
+      - Checks: in-memory client tests, a tool against `lookup.sh` for four questions, a stdio
+        start with `uvx --from .` against 12.4.16 (213 tests).
+      - Not done yet: the step-13 comparison run, and a 9a round with the MCP tools.
 12. **Plugin and publishing**
     - **Blocked by:** 11
     - **Delivers:**

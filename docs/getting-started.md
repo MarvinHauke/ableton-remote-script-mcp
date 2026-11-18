@@ -99,6 +99,16 @@ My_Script  [Live 12.4.16, observed]  1 finding in 2 files
 The command exits with 0 when there are no findings and 1 when there are. [How it
 works](how-it-works.md#checking-a-script) lists the rules.
 
+`check-names` then lists every attribute and keyword the script uses that the build doesn't
+know. It also takes a list of names, so you can check a draft's names in one call:
+
+```sh
+uv run ableton-remote-script-mcp check-names --build 12.4.16 --names SessionRingComponent.set_offsets Song.tracks
+```
+
+[Answers, API and MCP server](answers.md) explains its answer, and how the same lookups work
+from Python and as MCP tools.
+
 ## Install it and read the log
 
 `install` checks the folder first and copies it into your User Library only when there are no
