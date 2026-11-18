@@ -11,6 +11,11 @@ name = "ableton-remote-script-mcp"
 version = "0.1.0"
 source = { editable = "." }
 
+[package.optional-dependencies]
+rig = [
+    { name = "rtmidi2" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
@@ -18,6 +23,8 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "rtmidi2", marker = "extra == 'rig'", specifier = ">=1.5" }]
+provides-extras = ["rig"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -195,6 +202,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f2/6a/b627b4e0c1dd03718543519ffb2f1deea4a1e6d42fbab8021936a4d22589/pyyaml-6.0.3-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:37503bfbfc9d2c40b344d06b2199cf0e96e97957ab1c1b546fd4f87e53e5d3e4", size = 794986, upload-time = "2025-09-25T21:32:07.367Z" },
     { url = "https://files.pythonhosted.org/packages/45/91/47a6e1c42d9ee337c4839208f30d9f09caa9f720ec7582917b264defc875/pyyaml-6.0.3-cp311-cp311-win32.whl", hash = "sha256:8098f252adfa6c80ab48096053f512f2321f0b998f98150cea9bd23d83e1467b", size = 142543, upload-time = "2025-09-25T21:32:08.95Z" },
     { url = "https://files.pythonhosted.org/packages/da/e3/ea007450a105ae919a72393cb06f122f288ef60bba2dc64b26e2646fa315/pyyaml-6.0.3-cp311-cp311-win_amd64.whl", hash = "sha256:9f3bfb4965eb874431221a3ff3fdcddc7e74e3b07799e0e84ca4a0f867d449bf", size = 158763, upload-time = "2025-09-25T21:32:09.96Z" },
+]
+
+[[package]]
+name = "rtmidi2"
+version = "1.5.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/48/73/d4eb28713431d6e36d498686e71cf90f877f8d50cd84ac9ceed462bce07b/rtmidi2-1.5.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ae4148ac1ec9a51fa1c4d40e033d94b8ba3dfad78d59ac1a23d6710579df5b54", size = 180693, upload-time = "2026-10-07T13:28:57.081Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/09/c81bd3078f7503a5caf383c1e7f03778f6ef46006d5b82329c908880acb2/rtmidi2-1.5.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:3b3f0463e9d80749cf6e473f0d74cec00f9484067629420202d3a0ff489adb84", size = 172315, upload-time = "2026-10-07T13:28:58.031Z" },
+    { url = "https://files.pythonhosted.org/packages/08/bf/a28b8ea7af2129e0c02cca24b552159d204e1a96d995e803ffb9db795741/rtmidi2-1.5.0-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0b04eab0d87096e7ed4d75ff5bd253d17157990158d4f35bc92b767fe2a68755", size = 4428194, upload-time = "2026-10-07T13:27:23.711Z" },
+    { url = "https://files.pythonhosted.org/packages/54/15/d4664e3a6a02faa51b993c94ad8dcbf88b1c8d46b744aad6c1e0d617ca65/rtmidi2-1.5.0-cp311-cp311-win32.whl", hash = "sha256:b49c5c9dae4152e06f1bb833b438e361505ffae9b31924fccc07ff82ed7a4bdc", size = 314291, upload-time = "2026-10-07T13:30:56.322Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/31/7b22f6200adf486f38306e3bc20b463c5a05d5f133417de74e00aa6ed6ba/rtmidi2-1.5.0-cp311-cp311-win_amd64.whl", hash = "sha256:d56e9e1aabbec2ab2076639529e5d847a2259bdec7b8f255d8d671eba72ab57c", size = 329574, upload-time = "2026-10-07T13:30:57.241Z" },
 ]
 
 [[package]]

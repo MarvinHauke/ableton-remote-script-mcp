@@ -8,6 +8,10 @@ license = "MIT"
 requires-python = ">=3.11,<3.12"
 dependencies = []
 
+[project.optional-dependencies]
+# the test rig (plan 0002): virtual MIDI ports
+rig = ["rtmidi2>=1.5"]
+
 [project.scripts]
 ableton-remote-script-mcp = "ableton_remote_script_mcp.cli:main"
 

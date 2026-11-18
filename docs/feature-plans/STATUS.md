@@ -142,8 +142,10 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   indexes are rebuilt; the step-8 reference check still gives no framework error (134 of gluon's
   Live 12 folders). Found while checking the mute LED fact, which now cites
   `track.mute or track.muted_via_solo`. `uv run pytest` green (152 tests, 16 local-only).
-- Plan 0002 grilled (2026-11-18, Decisions 1–21 from Q1–Q25): the virtual controller test rig.
-  Spec and steps next, when the user chooses; it doesn't block 0001's 9a round.
+- Plan 0002 grilled (2026-11-18, Decisions 1–21), steps approved; step 1 built on
+  `feat/0002-step-1-port-spike`: `rig ports`, `rig probe`; a fader message reached Live through
+  `ARS Test Rig` and came back, and AbletonMCP saw the volume change. `uv run pytest` green
+  (155 tests). Next: step 2 (driver and check files). It doesn't block 0001's 9a round.
 - Next: one 9a round (0001 decision 46; needs the usage limit), which completes step 10 and
   Milestone 1. Then a grilling session on the MCP design ideas (Small items) before step 11.
 

@@ -12,7 +12,7 @@ Stages: **draft** → **grilled** → **decided** (spec + steps) → **in work**
 | # | Plan | Stage |
 |---|---|---|
 | [0001](0001-architecture.md) | Architecture: API index, skill, MCP server, phases | in work |
-| [0002](0002-virtual-controller-rig.md) | Virtual controller test rig | grilled |
+| [0002](0002-virtual-controller-rig.md) | Virtual controller test rig | in work |
 
 ## Next, in dependency order
 

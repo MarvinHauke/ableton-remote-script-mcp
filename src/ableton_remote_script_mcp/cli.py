@@ -511,7 +511,69 @@ def make_parser() -> argparse.ArgumentParser:
                     "~/Library/Preferences/Ableton)")
     lg.add_argument("--json", action="store_true", help="print the answer as JSON")
     lg.set_defaults(func=_cmd_log)
+
+    rg = sub.add_parser("rig", help="the test rig: play a controller to a Remote Script over a virtual MIDI port "
+                        "(needs the `rig` extra)")
+    rg_sub = rg.add_subparsers(dest="rig_command", required=True)
+    rp = rg_sub.add_parser("ports", help="the MIDI ports the system shows now")
+    rp.add_argument("--json", action="store_true", help="print the answer as JSON")
+    rp.set_defaults(func=_cmd_rig_ports)
+    pr = rg_sub.add_parser("probe", help="open the rig's virtual port, wait until Live sends on it, send one "
+                           "message and show the replies")
+    pr.add_argument("--name", default=None, help="the virtual port's name (default: ARS Test Rig)")
+    pr.add_argument("--wait", type=float, default=120.0, help="seconds to wait for Live to connect (default: 120)")
+    pr.add_argument("--send", default="cc 13 40 100",
+                    help="the message to send: `cc|note|noteoff <channel 1-16> <number> <value>` or hex bytes "
+                    "(default: cc 13 40 100, the Faderfox UC4's fader 1 in SE17)")
+    pr.add_argument("--json", action="store_true", help="print the answer as JSON")
+    pr.set_defaults(func=_cmd_rig_probe)
     return p
+
+
+def _cmd_rig_ports(args: argparse.Namespace) -> int:
+    from .rig.ports import RigUnavailable, list_ports
+
+    try:
+        ports = list_ports()
+    except RigUnavailable as e:
+        print(e, file=sys.stderr)
+        return 3
+    if args.json:
+        print(json.dumps(ports, indent=2))
+    else:
+        for kind in ("inputs", "outputs"):
+            print(f"{kind}: " + (", ".join(ports[kind]) or "none"))
+    return 0
+
+
+def _cmd_rig_probe(args: argparse.Namespace) -> int:
+    """Exit 0: Live connected and replied on the sent control; 1: connected, no such reply;
+    2: Live sent nothing on the port; 3: the rig extra is missing; 4: a bad --send."""
+    from .rig.ports import DEFAULT_NAME, RigUnavailable, parse_message
+    from .rig.probe import run_probe
+
+    try:
+        message = parse_message(args.send)
+    except ValueError as e:
+        print(e, file=sys.stderr)
+        return 4
+    log = (lambda *_: None) if args.json else (lambda text: print(text, flush=True))
+    try:
+        result = run_probe(args.name or DEFAULT_NAME, args.wait, message, log=log)
+    except RigUnavailable as e:
+        print(e, file=sys.stderr)
+        return 3
+    if args.json:
+        print(json.dumps(result, indent=2))
+    elif not result["connected"]:
+        print(f"Live sent nothing on `{result['port']}` within {args.wait:.0f} s: is it picked as a Control "
+              "Surface's Input and Output, with a script that sends at start?")
+    else:
+        print("first from Live: " + "; ".join(result["first"][:8]) + (" …" if len(result["first"]) > 8 else ""))
+        print("replies: " + ("; ".join(result["replies"]) or "none"))
+    if not result["connected"]:
+        return 2
+    return 0 if result["echo"] else 1
 
 
 def main(argv: list[str] | None = None) -> int:

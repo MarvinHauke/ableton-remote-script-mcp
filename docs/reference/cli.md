@@ -148,3 +148,34 @@ ableton-remote-script-mcp log [--script SCRIPT] [--build BUILD] [--log LOG] [--j
 | `--build BUILD` | Read the log of this Live build (default: the most recently written log). |
 | `--log LOG` | Path to a Log.txt (default: found under $ABLETON_PREFERENCES, else ~/Library/Preferences/Ableton). |
 | `--json` | Print the answer as JSON. |
+
+## `rig`
+
+The test rig: play a controller to a Remote Script over a virtual MIDI port (needs the `rig` extra).
+
+### `rig ports`
+
+The MIDI ports the system shows now.
+
+```text
+ableton-remote-script-mcp rig ports [--json]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--json` | Print the answer as JSON. |
+
+### `rig probe`
+
+Open the rig's virtual port, wait until Live sends on it, send one message and show the replies.
+
+```text
+ableton-remote-script-mcp rig probe [--name NAME] [--wait WAIT] [--send SEND] [--json]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--name NAME` | The virtual port's name (default: ARS Test Rig). |
+| `--wait WAIT` | Seconds to wait for Live to connect (default: 120). |
+| `--send SEND` | The message to send: `cc\|note\|noteoff <channel 1-16> <number> <value>` or hex bytes (default: cc 13 40 100, the Faderfox UC4's fader 1 in SE17). |
+| `--json` | Print the answer as JSON. |

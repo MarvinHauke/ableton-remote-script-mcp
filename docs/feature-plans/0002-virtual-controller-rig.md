@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: grilled (2026-11-18, Decisions 1–21); spec and steps written 2026-11-18, for the user's approval._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18. Frontier: step 2._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -172,6 +172,14 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      (CC 40, channel 13) and receives Live's value back (the feedback the load test fixed); with
      AbletonMCP, track 1's volume changed. If Live needs a restart or the port misbehaves, try
      `pylibremidi`, then the IAC Driver (Decision 7), and record which.
+   - **Built** (2026-11-18): `rig ports`, `rig probe`, `rtmidi2` as the `[rig]` extra; seam C
+     tests over `MemoryPort`. Run against Live 12.4.16 with `Faderfox_UC4` on `ARS Test Rig`:
+     Live connected and sent the script's start-up state (every fader and encoder value, then
+     every green LED); `CC 40 = 100, channel 13` came back as `CC 40 = 100`, and AbletonMCP read
+     track 1's volume 0.787 (100/127; before: 0.693 = 88/127, the value Live had sent at start).
+     For step 2: the start-up state comes in more than one burst (a full resend about a second
+     later), so the driver waits for quiet before the first step and compares a control's last
+     reply only. Whether the port showed up without restarting Live: the user's answer below.
 2. **Driver and check files, MIDI and log only** — blocked by: 1.
    - **Delivers:** the controller model from `outline`, the check file format, `rig run` with
      send/expect by element name, quiet-period waiting, `log: clean`, `ask_user`, `depends_on`,
