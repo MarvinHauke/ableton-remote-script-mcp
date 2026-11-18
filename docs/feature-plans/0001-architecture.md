@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: step 10's last check, one 9a round (Decision 46); the UC4 load test passed 2026-11-18._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); next step 4 (order 4 → 6 → 11; the grilling session on the MCP design ideas comes before step 11)._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -634,6 +634,9 @@ meant to do, and uses only API names that exist in the Live build they target.
     after step 8 and another after step 10. A round costs much of the user's usage limit, and the
     v3 cases (the UC4 mixer, the port to v3) need the v3 references of step 10 to show a
     difference. So one round runs after step 10, with step 8's checks and the v3 pages in place.
+    Run 2026-11-18 (results in [milestone-1/skill-evals.md](milestone-1/skill-evals.md)). With the
+    skill: 100% of the behaviour graders in all three cases, no validator findings, and faster and
+    cheaper runs. Without it: no v3 script got the session box or the UC4's value feedback.
 47. **How step 10's UC4 script is built** (agent, 2026-11-17, step 10).
     - **Target:** the UC4's factory setup SE17 (the user: "use a dump from the UC4 Editor, note
       which one"). The device facts come from the UC4 Editor's model of SE17 and its device
@@ -897,7 +900,8 @@ Every step's checks include `uv run pytest` passing.
       types for Live's properties (an int, not a float), and `Mixer.MuteOn` meaning "muted" (the
       12.0 reading had it the other way round). Quant was added on Global encoder 5 at the
       user's request. `log` also reads v3 logging and a record's lines without a timestamp.
-      Left for Milestone 1: the one 9a round (Decision 46).
+      The 9a round ran 2026-11-18 (Decision 46): with the skill, every behaviour grader passed and
+      no script had a validator finding. **Step 10 is done, and with it Milestone 1.**
 11. **MCP server v1**
     - **Blocked by:** 4, 6, 10
     - **Delivers:** the tools `search_api`, `get_class`, `outline_reference_script`, `diff_builds`,

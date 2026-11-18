@@ -153,11 +153,14 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   reads tested by hand), `state`/`events`/`do`/`requires` in check files, `rig abletonmcp`, the
   guide page `docs/test-rig.md`. The UC4 check file in Live: 34 passed, 0 failed, 4 to ask
   (172 tests). Next: step 4 (device profiles and identity).
-- The 0001 step 10 eval round runs (user confirmed Decision 46, 2026-11-18).
+- The 0001 step 10 eval round ran (user confirmed Decision 46, 2026-11-18). With the skill:
+  100% of the graders in all three cases, 0 findings. Without it: no v3 script got the session box
+  or the UC4's value feedback. The login expired partway through, so the v3 cases ran a second
+  time. **Milestone 1 is complete.** Next for 0001: step 4 (order 4 → 6 → 11); the grilling session
+  on the MCP design ideas comes before step 11.
   Found: the statement summary drops a call's keywords next to `**k` (an `outline` gap).
   None of this blocks 0001's 9a round.
-- Next: one 9a round (0001 decision 46; needs the usage limit), which completes step 10 and
-  Milestone 1. Then a grilling session on the MCP design ideas (Small items) before step 11.
+- Next: a grilling session on the MCP design ideas (Small items) before step 11.
 
 ## After grilling
 

@@ -1,4 +1,4 @@
-# Skill evals: the baseline round
+# Skill evals: the baseline round and the step 10 round
 
 Plan 0001 step 9a, run 2026-11-16 against Live 12.4.16. Each case ran three times with the skill
 v1 and three times without it, with `/skill-creator`'s case format and `claude plugin eval`. This
@@ -102,10 +102,57 @@ again once it had reset.
    yet (they come with step 10), so its v3 runs spend tokens on lookups the baseline makes by
    reading files.
 
+## The step 10 round (2026-11-18)
+
+The same three cases, three runs per arm, against Live 12.4.16. This round had the skill's v3
+references, step 8's validator rules and Decision 48's additions: the `session-ring` warning, and
+two new UC4 graders, `08-session-box` and `09-value-feedback`, with the two device facts they rest
+on in the prompt. The two new graders and the changed prompt mean the UC4 scores can't be compared
+with the baseline's. The two arms of this round can be compared.
+
+The login expired partway through the first attempt (`OAuth token revoked`, then `Not logged in`
+for every later run). The APC case finished in that attempt, apart from one timed-out run without
+the skill. Both v3 cases were run again after the user logged in again
+(`iteration-2` and `iteration-2-v3` in the git-ignored workspace). The skill was the same in both.
+
+| Case | Arm | Scripts | Behaviour graders | Validator findings | Unknown names | Time per run | Cost per run |
+|---|---|---|---|---|---|---|---|
+| APC mini mk1 | with | 3 of 3 | 100% | 0 | 0 | ~3 min | $0.76 |
+| | without | 2 of 3 (1 timed out at 25 min) | 50% | 0.5 | 0 | ~12 min | $0.78 |
+| UC4 mixer v3 | with | 3 of 3 | 100% | 0 | 0 | ~2½ min | $0.53 |
+| | without | 3 of 3 | 57% | 1 | 0 | ~4 min | $0.72 |
+| Port v2 → v3 | with | 3 of 3 | 100% | 0 | 0 | ~3 min | $0.71 |
+| | without | 3 of 3 | 100% of the judge's, but the validator grader failed in all 3 | 1 | 0 | ~4 min | $1.07 |
+
+What failed without the skill:
+- **The session box, in every v3 script** (all six v3 runs and one APC run): each set no identity
+  reply and used the framework's own session ring. That ring stays disabled until the controller
+  answers an identity request, so Live draws no box. This is the UC4 load test's first bug
+  (fix 1), now the validator's `session-ring` warning.
+- **Values sent back for the UC4's display, in all three UC4 runs:** no element was built with
+  `is_feedback_enabled=True`, so the display and the pickup get no values (the load test's
+  second bug).
+- **UC4:** two runs assumed the green LEDs show the mute state, which the prompt says is not
+  known; one run did not use `ableton.v3`.
+- **APC mini:** one grid was upside down; neither finished answer said that Live must be
+  restarted to load the script; one run took almost 19 minutes, another timed out.
+
+What the round means:
+1. **The load test's lessons now reach the scripts.** With the skill, every v3 script got the
+   session box and the value feedback right. Without it, none did. The skill's `tested` facts
+   from the load test made that difference, and the validator would have caught the session ring
+   in every script without the skill.
+2. **The v3 cases are now faster and cheaper with the skill.** This reverses the baseline's
+   point 3: the v3 references replace the lookups the runs without the skill made by reading files.
+3. **"Fewer invented names" is still not shown: neither arm had any unknown names.** The name
+   check now also sees v3 mappings (step 8). The difference between the arms shows up in
+   behaviour and validator findings instead.
+4. **Cost of the round:** $4.34 for the first attempt (with the failed and timed-out runs) and
+   $9.10 for the v3 cases again, at API prices.
+
 ## Not covered yet
 
 - **The trigger check** (the skill fires for Remote Script prompts and stays quiet for close
   misses): the 20 queries are written (`skills/ableton-remote-scripts/evals/trigger-eval.json`, 10
   that should fire it and 10 close misses), but not run, to stay inside the usage limit.
-- **Re-runs:** after step 8 (names in v3 mappings checked) and after step 10 (the v3 references),
-  with the same cases and the same scripts.
+- **Re-runs:** done once, after step 10 (Decision 46 replaced the re-run after step 8).
