@@ -121,7 +121,7 @@ def _run(tmp_path, controller, text, log=None, port=None):
     checks = load_check_file(_write(tmp_path, text))
     assert not check_names(checks, controller)
     port = port or MemoryPort(reply=live)
-    return run_checks(checks, controller, port, log, quiet_wait=lambda p, q, t: wait_quiet(p, 0.01, 0.2),
+    return run_checks(checks, controller, port, log, quiet_wait=lambda p, q, t, **k: wait_quiet(p, 0.01, 0.2),
                       sleep=lambda _: None, say=lambda *_: None), port
 
 

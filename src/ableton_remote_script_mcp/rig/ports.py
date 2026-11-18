@@ -127,9 +127,10 @@ def wait_for(port, seconds: float, until_any: bool = False, quiet: float | None 
     return got + port.drain()
 
 
-def wait_quiet(port, quiet: float, limit: float, sleep=time.sleep, clock=time.monotonic) -> list[Received]:
-    """Collect until nothing has arrived for `quiet` seconds (counted from the start too), or
-    `limit` seconds have passed."""
+def wait_quiet(port, quiet: float, limit: float, sleep=time.sleep, clock=time.monotonic,
+               at_least: float = 0.0) -> list[Received]:
+    """Collect until nothing has arrived for `quiet` seconds (counted from the start too), but
+    not before `at_least` seconds, or until `limit` seconds have passed."""
     got: list[Received] = []
     start = last = clock()
     while clock() - start < limit:
@@ -137,7 +138,7 @@ def wait_quiet(port, quiet: float, limit: float, sleep=time.sleep, clock=time.mo
         if new:
             got += new
             last = clock()
-        elif clock() - last >= quiet:
+        elif clock() - last >= quiet and clock() - start >= at_least:
             break
         sleep(0.005)
     return got + port.drain()

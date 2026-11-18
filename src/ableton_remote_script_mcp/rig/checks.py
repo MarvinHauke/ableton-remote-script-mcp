@@ -7,6 +7,7 @@ A check file sits beside (or names) the script folder:
     build: 12.4.16       # the Live build whose index reads the script (default: newest indexed)
     settle: 1.5          # seconds without MIDI before the first step (the script's start-up state)
     quiet: 0.15          # seconds without MIDI that end a step (default for every step)
+    wait: 0.5            # the least a step listens (Live's value feedback comes late)
     timeout: 3.0         # the longest a step waits for Live to go quiet
     steps:
       - id: fader-1
@@ -39,9 +40,11 @@ from pathlib import Path
 from .controller import Controller, Element
 from .ports import describe, parse_message, wait_quiet
 
-STEP_KEYS = {"id", "description", "send", "expect", "log", "depends_on", "ask_user", "quiet", "timeout"}
-FILE_KEYS = {"script", "build", "settle", "quiet", "timeout", "steps"}
-DEFAULTS = {"settle": 1.5, "quiet": 0.15, "timeout": 3.0}
+STEP_KEYS = {"id", "description", "send", "expect", "log", "depends_on", "ask_user", "quiet", "timeout", "wait"}
+FILE_KEYS = {"script", "build", "settle", "quiet", "timeout", "wait", "steps"}
+# wait: Live sends a value back to an element later than 150 ms after it arrives (12.4.16, the
+# UC4 run of 2026-11-18: each echo came in the next step), so a step listens at least this long
+DEFAULTS = {"settle": 1.5, "quiet": 0.15, "timeout": 3.0, "wait": 0.5}
 RESULT_NAME = "checks.result.json"
 PRESS_GAP = 0.02  # seconds between a press's 127 and 0
 
@@ -61,6 +64,7 @@ class Step:
     ask_user: str | None = None
     quiet: float = DEFAULTS["quiet"]
     timeout: float = DEFAULTS["timeout"]
+    wait: float = DEFAULTS["wait"]
 
 
 @dataclass
@@ -111,7 +115,7 @@ def load_check_file(path: Path) -> CheckFile:
             id=sid, description=str(raw.get("description", "")), send=_sends(raw.get("send"), where),
             expect={str(k): v for k, v in expect.items()}, log_clean=log == "clean", depends_on=deps,
             ask_user=raw.get("ask_user"), quiet=float(raw.get("quiet", opts["quiet"])),
-            timeout=float(raw.get("timeout", opts["timeout"]))))
+            timeout=float(raw.get("timeout", opts["timeout"])), wait=float(raw.get("wait", opts["wait"]))))
     folder = (path.parent / str(data.get("script", "."))).resolve()
     return CheckFile(path, folder, data.get("build") and str(data["build"]), opts["settle"], steps)
 
@@ -253,7 +257,7 @@ def _run_step(step: Step, ctl: Controller, port, log: LogWatch | None, sleep, qu
                 sleep(PRESS_GAP)
             port.send(m)
             sent.append(m)
-    replies = quiet_wait(port, step.quiet, step.timeout) if (sent or step.expect) else []
+    replies = quiet_wait(port, step.quiet, step.timeout, at_least=step.wait) if (sent or step.expect) else []
     by_key: dict[tuple[int, int], list[int]] = {}
     for r in replies:
         k = _key(r.message)

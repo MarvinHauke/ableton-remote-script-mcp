@@ -4,6 +4,9 @@
 # Set (devSetup.als: 8 tracks, none muted, soloed or armed at the start); it changes the Set and
 # turns toggles back, and never saves.
 #
+# Live sends a value back only when it changes (12.4.16, the second run of 2026-11-18: the same
+# values again got no reply), so each value step first sends one below it.
+#
 # Item 1 (loads) is the run's start: Live sends the start-up state on the rig's port.
 # Items 2, 5's device follow, 9, 12 and 13 need eyes on Live: they are `ask_user` steps.
 # Item 14 (disconnect) is the user's action in Live and stays in the milestone checklist.
@@ -19,21 +22,24 @@ steps:
   - id: fader-1
     description: "3: fader 1 sets track 1's volume and Live sends the value back (feedback, fix 2)"
     send:
-      faders[0]: 100
+      - faders[0]: 99
+      - faders[0]: 100
     expect:
       faders[0]: 100
     log: clean
   - id: fader-8
     description: "3: fader 8 sets track 8's volume"
     send:
-      faders[7]: 50
+      - faders[7]: 49
+      - faders[7]: 50
     expect:
       faders[7]: 50
     log: clean
   - id: crossfader
     description: "3: fader 9 sets the crossfader"
     send:
-      crossfader: 64
+      - crossfader: 63
+      - crossfader: 64
     expect:
       crossfader: 64
     log: clean
@@ -41,21 +47,24 @@ steps:
   - id: send-a
     description: "4: Send 1 encoder 1 sets track 1's send A"
     send:
-      send_a_encoders[0]: 30
+      - send_a_encoders[0]: 29
+      - send_a_encoders[0]: 30
     expect:
       send_a_encoders[0]: 30
     log: clean
-  - id: send-d
-    description: "4: Send 4 encoder 8 sets track 8's send D"
+  - id: send-b
+    description: "4: Send 2 encoder 8 sets track 8's send B (the test Set has 2 returns: no send C or D)"
     send:
-      send_d_encoders[7]: 30
+      - send_b_encoders[7]: 29
+      - send_b_encoders[7]: 30
     expect:
-      send_d_encoders[7]: 30
+      send_b_encoders[7]: 30
     log: clean
   - id: pan
     description: "4: Pan encoder 1 sets track 1's pan"
     send:
-      pan_encoders[0]: 40
+      - pan_encoders[0]: 39
+      - pan_encoders[0]: 40
     expect:
       pan_encoders[0]: 40
     log: clean
@@ -71,7 +80,8 @@ steps:
     depends_on: select-track-1
     description: "5: Rack encoder 1 sets the selected track's device parameter 1 (the test Set has a rack on every track)"
     send:
-      rack_encoders[0]: 20
+      - rack_encoders[0]: 19
+      - rack_encoders[0]: 20
     expect:
       rack_encoders[0]: 20
     log: clean
@@ -79,7 +89,8 @@ steps:
     depends_on: select-track-1
     description: "6: Track encoder 1 sets the selected track's volume; fader 1 follows"
     send:
-      track_volume_encoder: 90
+      - track_volume_encoder: 89
+      - track_volume_encoder: 90
     expect:
       track_volume_encoder: 90
       faders[0]: 90
@@ -88,7 +99,8 @@ steps:
     depends_on: select-track-1
     description: "6: Track encoder 6 sets the selected track's pan; Pan encoder 1 follows"
     send:
-      track_pan_encoder: 70
+      - track_pan_encoder: 69
+      - track_pan_encoder: 70
     expect:
       track_pan_encoder: 70
       pan_encoders[0]: 70
@@ -112,14 +124,16 @@ steps:
   - id: cue-volume
     description: "7: Global encoder 3 sets the cue volume"
     send:
-      cue_volume_encoder: 80
+      - cue_volume_encoder: 79
+      - cue_volume_encoder: 80
     expect:
       cue_volume_encoder: 80
     log: clean
   - id: master-volume
     description: "7: Global encoder 6 sets the master volume"
     send:
-      master_volume_encoder: 100
+      - master_volume_encoder: 99
+      - master_volume_encoder: 100
     expect:
       master_volume_encoder: 100
     log: clean

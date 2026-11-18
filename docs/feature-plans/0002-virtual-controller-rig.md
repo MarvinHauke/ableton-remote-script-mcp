@@ -221,8 +221,17 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      - PyYAML joins the `rig` extra. 165 tests pass (seam C over `MemoryPort`, including a
        served port; 3 new local-only tests: the folder outline, the UC4 model and its check
        file's names).
-   - **Still to do in step 2:** run the UC4 check file in Live (the user's Set must be the test
-     Set), compare it with the 14 results, and do the two restart checks above.
+   - **Run in Live** (12.4.16, the test Set, over `rig serve`; 2026-11-18): 24 passed, 0 failed,
+     5 to ask the user, which agrees with the user's 14 results. Three runs to get there:
+     - Live sends a value back later than 150 ms after it arrives: each echo turned up in the next
+       step. A step now listens at least `wait` (default 0.5 s).
+     - Live sends a value back only when it changes: the same values a second time got no reply.
+       Each value step in the check file first sends one below its value.
+     - The test Set has 2 returns, so send D has nothing to set: the step uses send B.
+     - When `rig serve` opened the port while Live was running, the slot (picked in step 1)
+       reconnected and the script sent its start-up state (228 messages) without a restart.
+   - **Still to do in step 2:** the restart check with `rig serve` running (does slot 1 keep
+     `ARS Test Rig` and the script?).
    - **Found on the way:** the extractor's statement summary loses the keywords of a call that
      also passes `**k`. That is an `outline` gap for every script, recorded for 0001.
 3. **AbletonMCP** — blocked by: 2.
