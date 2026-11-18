@@ -154,6 +154,14 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     with `get_script_info` (1.7.1, protocol 1), commands from an allow-list only; with an
     unknown version or no socket the rig runs without it. The agent may use the matching MCP
     tools by hand.
+22. **The agent may capture Live's window to decide visual checks** (agent proposed, user agreed,
+    2026-11-18, after step 4). For an `ask_user` step about what Live shows (the session box, the
+    selection, a clip's state), the agent may capture Live's main window, and only that window,
+    by its window id (`screencapture -l`). This works with Live behind other windows: on
+    2026-11-18 it showed step 4's box around tracks 1-4. The images stay in the agent's scratchpad
+    and are deleted after reading. What only the hardware shows (a display, LEDs it keeps per
+    group) stays with the user. Restarting Live is a separate question, open until the cmdAbl
+    session says how it does it.
 
 ## Open questions
 
