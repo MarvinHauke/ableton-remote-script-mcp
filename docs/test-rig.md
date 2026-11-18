@@ -158,6 +158,32 @@ steps:
 
 Without AbletonMCP, `do` steps are skipped, and their state and events are listed as not checked.
 
+## Play it from a web page
+
+`rig panel` shows the script's controller as a web page, so you can play the script without the
+hardware:
+
+```sh
+uv run ableton-remote-script-mcp rig panel path/to/My_Script --open
+```
+
+It needs `rig serve` running and plays through its port. The page is at
+`http://127.0.0.1:9879/`, on your machine only.
+
+- **Buttons** are pads. They send 127 while you hold them and 0 when you let go, and light up
+  with the value Live sends back.
+- **Encoders** are sliders. A bipolar one shows its value from the centre. A relative one has −
+  and + buttons; hold Shift for steps of 10.
+- **Each control** shows the last value played into Live (↑) and the last value Live sent
+  back (↓).
+- **The log** at the bottom lists every message on the port, with the element it belongs to.
+
+The page is a parallel view, and the rig's driver is in charge. While `rig run` plays a check
+file, its messages show up on the page, marked "driver". A `device.yaml` in the script's folder
+sets the rows (`layout`) and how values show (`display`). Without one, the page shows one row
+per matrix, then the single elements. If you restart `rig serve`, the panel connects again by
+itself.
+
 ## What the rig can't see
 
 The rig sees MIDI, the log and, with AbletonMCP, Live's state. It can't see Live's screen (the

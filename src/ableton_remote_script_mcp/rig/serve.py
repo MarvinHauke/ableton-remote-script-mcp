@@ -7,9 +7,11 @@ over a local socket: one JSON object per line, on 127.0.0.1 only.
     {"op": "hello"}                      -> {"ok": true, "port": name, "received": n, "last": s | null,
                                              "identity_reply": hex | null, "identity_answered": n}
     {"op": "send", "messages": [[...]]}  -> {"ok": true}
-    {"op": "drain"}                      -> {"ok": true, "messages": [[seconds, [bytes]], ...]}
+    {"op": "drain"}                      -> {"ok": true, "messages": [[seconds, [bytes]], ...],
+                                             "sent": [[seconds, [bytes]], ...]}
 
-Each connection has its own inbox: what Live sends goes to every client connected at that time.
+Each connection has its own inbox: what Live sends goes to every client connected at that time,
+and what one client sends goes to the others' `sent` (so the panel shows what `rig run` plays).
 The server sends only to its own virtual port (plan 0002 Decision 1).
 """
 
@@ -34,6 +36,7 @@ class RigServer(socketserver.ThreadingTCPServer):
     def __init__(self, port, address=("127.0.0.1", DEFAULT_PORT), poll=0.002):
         self.midi = port
         self.inboxes: list[_Inbox] = []
+        self.sent: dict[int, _Inbox] = {}  # id(inbox) -> what the other clients sent
         self.lock = threading.Lock()
         self.received = 0
         self.last: float | None = None
@@ -67,6 +70,7 @@ class _Handler(socketserver.StreamRequestHandler):
         inbox = _Inbox()
         with server.lock:
             server.inboxes.append(inbox)
+            server.sent[id(inbox)] = _Inbox(start=inbox.start)
         try:
             for line in self.rfile:
                 try:
@@ -77,6 +81,7 @@ class _Handler(socketserver.StreamRequestHandler):
         finally:
             with server.lock:
                 server.inboxes.remove(inbox)
+                server.sent.pop(id(inbox), None)
 
     @staticmethod
     def _answer(server: RigServer, inbox: _Inbox, request: dict) -> dict:
@@ -93,9 +98,14 @@ class _Handler(socketserver.StreamRequestHandler):
                 if not (isinstance(m, list) and m and all(isinstance(b, int) and 0 <= b <= 255 for b in m)):
                     raise ValueError(f"not a MIDI message: {m!r}")
                 server.midi.send(m)
+                with server.lock:
+                    for other in server.inboxes:
+                        if other is not inbox:
+                            server.sent[id(other)].put(m)
             return {"ok": True}
         if op == "drain":
-            return {"ok": True, "messages": [[r.time, r.message] for r in inbox.drain()]}
+            return {"ok": True, "messages": [[r.time, r.message] for r in inbox.drain()],
+                    "sent": [[r.time, r.message] for r in server.sent[id(inbox)].drain()]}
         raise ValueError(f"unknown op {op!r}")
 
 
@@ -127,7 +137,13 @@ class ServedPort:
         self._ask({"op": "send", "messages": [list(message)]})
 
     def drain(self) -> list[Received]:
-        return [Received(t, m) for t, m in self._ask({"op": "drain"})["messages"]]
+        return self.drain_both()[0]
+
+    def drain_both(self) -> tuple[list[Received], list[Received]]:
+        """(what Live sent, what the other clients sent) since the last drain."""
+        answer = self._ask({"op": "drain"})
+        return ([Received(t, m) for t, m in answer["messages"]],
+                [Received(t, m) for t, m in answer.get("sent", [])])
 
     def close(self) -> None:
         try:

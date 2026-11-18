@@ -227,6 +227,23 @@ ableton-remote-script-mcp rig run [--build BUILD] [--name NAME] [--port PORT] [-
 | `--no-abletonmcp` | Don't use AbletonMCP even when it runs (state, events and do steps are not checked). |
 | `--json` | Print the result as JSON. |
 
+### `rig panel`
+
+A web page of the controller on 127.0.0.1, played through `rig serve` (a parallel view: the driver is in charge).
+
+```text
+ableton-remote-script-mcp rig panel [--build BUILD] [--profile PROFILE] [--port PORT] [--http HTTP] [--open] folder
+```
+
+| Argument | What it does |
+| --- | --- |
+| `folder` | The Remote Script's folder (a device.yaml beside it gives the layout). |
+| `--build BUILD` | Live build whose index reads the script (default: newest indexed). |
+| `--profile PROFILE` | The device.yaml to use (default: the one in the script folder, if any). |
+| `--port PORT` | The local TCP port of `rig serve` (default: 9878). |
+| `--http HTTP` | The panel's local port (default: 9879). |
+| `--open` | Open the page in the browser. |
+
 ### `rig restart-live`
 
 Quit Live without saving and start it again (only when Live shows just the unsaved test Set; needs the terminal's Accessibility permission).

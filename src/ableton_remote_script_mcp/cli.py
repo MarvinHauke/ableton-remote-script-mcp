@@ -554,6 +554,15 @@ def make_parser() -> argparse.ArgumentParser:
                     help="don't use AbletonMCP even when it runs (state, events and do steps are not checked)")
     rr.add_argument("--json", action="store_true", help="print the result as JSON")
     rr.set_defaults(func=_cmd_rig_run)
+    pn = rg_sub.add_parser("panel", help="a web page of the controller on 127.0.0.1, played through `rig serve` "
+                           "(a parallel view: the driver is in charge)")
+    pn.add_argument("folder", help="the Remote Script's folder (a device.yaml beside it gives the layout)")
+    pn.add_argument("--build", help="Live build whose index reads the script (default: newest indexed)")
+    pn.add_argument("--profile", help="the device.yaml to use (default: the one in the script folder, if any)")
+    pn.add_argument("--port", type=int, default=None, help="the local TCP port of `rig serve` (default: 9878)")
+    pn.add_argument("--http", type=int, default=None, help="the panel's local port (default: 9879)")
+    pn.add_argument("--open", action="store_true", help="open the page in the browser")
+    pn.set_defaults(func=_cmd_rig_panel)
     rl = rg_sub.add_parser("restart-live", help="quit Live without saving and start it again (only when Live shows "
                            "just the unsaved test Set; needs the terminal's Accessibility permission)")
     rl.add_argument("--app", default="/Applications/Ableton Live 12 Suite.app", help="the Live app (default: %(default)s)")
@@ -710,6 +719,61 @@ def _cmd_rig_serve(args: argparse.Namespace) -> int:  # pragma: no cover - needs
     except OSError as e:
         print(f"rig serve: {e} (is another `rig serve` running?)", file=sys.stderr)
         return 2
+    return 0
+
+
+def _cmd_rig_panel(args: argparse.Namespace) -> int:  # pragma: no cover - serves until Ctrl-C
+    """Exit 2: no `rig serve` (it owns the port, Decision 9); 4: the script or its profile can't be read."""
+    from .rig.controller import controller_for_folder
+    from .rig.panel import DEFAULT_PORT as PANEL_PORT
+    from .rig.panel import PanelServer
+    from .rig.profile import (
+        ProfileError,
+        check_profile_names,
+        load_profile,
+        profile_beside,
+    )
+    from .rig.serve import DEFAULT_PORT, connect
+
+    ctl, why = controller_for_folder(Path(args.folder), Path(args.index_dir), args.build)
+    if ctl is None:
+        print(why, file=sys.stderr)
+        return 4
+    try:
+        profile = load_profile(Path(args.profile)) if args.profile else profile_beside(Path(args.folder))
+    except (ProfileError, ImportError) as e:
+        print(e, file=sys.stderr)
+        return 4
+    problems = check_profile_names(profile, ctl) if profile else []
+    if problems:
+        print("\n".join(problems), file=sys.stderr)
+        return 4
+    port = connect(port=args.port or DEFAULT_PORT)
+    if port is None:
+        print("no `rig serve` is running: start it first (`ableton-remote-script-mcp rig serve`); the panel plays "
+              "through it", file=sys.stderr)
+        return 2
+    try:
+        server = PanelServer(ctl, port, profile, ("127.0.0.1", args.http or PANEL_PORT),
+                             reconnect=lambda: connect(port=args.port or DEFAULT_PORT))
+    except OSError as e:
+        port.close()
+        print(f"rig panel: {e} (is another `rig panel` running?)", file=sys.stderr)
+        return 2
+    url = f"http://127.0.0.1:{server.server_address[1]}/"
+    print(f"rig panel: {ctl.script} ({len(ctl.elements)} elements) on {url}, playing through `{port.name}`. "
+          "Stop with Ctrl-C.", flush=True)
+    if args.open:
+        import webbrowser
+
+        webbrowser.open(url)
+    try:
+        server.serve_forever(poll_interval=0.2)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+        port.close()
     return 0
 
 

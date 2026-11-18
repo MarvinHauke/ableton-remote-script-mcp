@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18. Frontier: step 5 (web panel)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 built 2026-11-18, the UC4 check from the panel open. Frontier: step 5's check, then step 6._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -340,6 +340,24 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      notice, live values both ways.
    - **Checks:** the panel's WebSocket protocol over the fake port (tests); the user plays the
      UC4 script from the panel in Live.
+   - **Built** (2026-11-18, `feat/0002-step-5-web-panel`):
+     - `rig/panel.py` and `rig/panel.html`: `rig panel <script folder>` serves one page and a
+       WebSocket on 127.0.0.1:9879 (a minimal RFC 6455 server in the standard library, so no
+       new dependency). The panel is a client of `rig serve` (Decision 9) and refuses to start
+       without it. When `rig serve` is restarted, it connects again by itself.
+     - The page draws the `device.yaml` layout, or one row per matrix and then the single
+       elements, eight to a row (Decision 10). An element the layout leaves out is added at the
+       end, so none is hidden. Buttons are pads (127 pressed, 0 let go) with an LED lit by
+       Live's value. Absolute encoders are sliders, bipolar ones show the value from the
+       centre, relative ones step −/+ (Shift: 10). Each cell shows the last value played (↑)
+       and the last value Live sent (↓). A log lists every message with its element.
+     - `rig serve` passes each client's sends to the other clients (`drain` gains `sent`), so
+       the page shows what `rig run` plays, marked "driver" (the notice: the driver is in
+       charge). A page that connects later gets the last values seen.
+     - In Live 12.4.16 with `Rig_Identity` on `ARS Test Rig`: a fader dragged on the page went
+       to Live, and Live's echo came back to the page. During `rig run`, the page showed the
+       driver's sends and Live's reply. The page was checked in Chrome. 191 tests.
+     - Not yet: the user playing the UC4 script from the panel (this step's check).
 6. **The APC mini drum sequencer's checks** — blocked by: 3, and the sequencer's own plan.
    - **Delivers:** its check file and device profile; the skill mentions the rig (Decision 20)
      once the sequencer's checks pass.

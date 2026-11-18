@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Rig Panel</title>
+<style>
+:root {
+  --bg: #f4f3ef; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6a65; --line: #dcdad3;
+  --accent: #d9661f; --led: #f2a33a; --in: #2f7d5b; --out: #3a5fb0; --warn-bg: #fff4d6; --warn-ink: #6b4b00;
+  --error: #b3261e;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --panel: #222220; --ink: #ecebe6; --muted: #9b9a93; --line: #383733;
+    --accent: #f07a33; --led: #ffb347; --in: #5fc499; --out: #86a6ef; --warn-bg: #3a3014; --warn-ink: #f3dc9c;
+    --error: #ff8a80;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --panel: #222220; --ink: #ecebe6; --muted: #9b9a93; --line: #383733;
+  --accent: #f07a33; --led: #ffb347; --in: #5fc499; --out: #86a6ef; --warn-bg: #3a3014; --warn-ink: #f3dc9c;
+  --error: #ff8a80;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+header { padding: 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; }
+h1 { font-size: 18px; margin: 0; }
+.meta { color: var(--muted); font-size: 13px; }
+#state { margin-left: auto; font-size: 13px; }
+#state.ok { color: var(--in); } #state.bad { color: var(--error); }
+.notice { margin: 12px 16px 0; padding: 8px 12px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-ink); font-size: 13px; }
+#error { margin: 8px 16px 0; color: var(--error); font-size: 13px; min-height: 1em; }
+main { padding: 12px 16px 24px; display: grid; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; }
+.group { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px 10px; min-width: 0; max-width: 100%; }
+.group h2 { font-size: 12px; font-weight: 600; margin: 0 0 6px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+.cells { display: flex; flex-wrap: wrap; gap: 6px; }
+.cell { width: 76px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; }
+.cell .name { font-family: ui-monospace, Menlo, monospace; color: var(--muted); max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vals { font-family: ui-monospace, Menlo, monospace; display: flex; gap: 6px; }
+.vals .o { color: var(--out); } .vals .i { color: var(--in); }
+.pad { width: 52px; height: 40px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); cursor: pointer; position: relative; touch-action: none; }
+.pad .led { position: absolute; inset: 6px; border-radius: 4px; background: var(--led); opacity: 0; transition: opacity .08s; }
+.pad.down { outline: 2px solid var(--accent); }
+input[type=range] { width: 72px; accent-color: var(--accent); }
+.bipolar input[type=range] { background: linear-gradient(90deg, transparent 49%, var(--muted) 49%, var(--muted) 51%, transparent 51%); }
+.steps { display: flex; gap: 4px; }
+.steps button { width: 32px; height: 26px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); color: var(--ink); cursor: pointer; font-size: 14px; }
+.steps button:active { outline: 2px solid var(--accent); }
+.flash { animation: flash .4s; }
+@keyframes flash { from { background: color-mix(in srgb, var(--in) 25%, transparent); } to { background: transparent; } }
+section.log { margin: 0 16px 24px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+section.log h2 { font-size: 13px; margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+#log { list-style: none; margin: 0; padding: 4px 12px 8px; max-height: 240px; overflow: auto; font: 12px/1.6 ui-monospace, Menlo, monospace; }
+#log .in { color: var(--in); } #log .out { color: var(--out); }
+.unresolved { color: var(--muted); font-size: 12px; margin: 0 16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="script">Test rig panel</h1>
+  <span class="meta" id="profile"></span>
+  <span id="state">connecting…</span>
+</header>
+<div class="notice" id="notice">Parallel view: the test rig's driver is in charge.</div>
+<div id="error" role="status"></div>
+<main id="rows"></main>
+<p class="unresolved" id="unresolved"></p>
+<section class="log">
+  <h2>MIDI on the rig's port <span class="meta">(↑ played into Live, ↓ sent by Live)</span></h2>
+  <ul id="log"></ul>
+</section>
+<script>
+"use strict";
+const cells = new Map();   // element name -> {el, kind, display, setOut, setIn}
+let ws;
+
+function send(element, value) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ op: "play", element, value }));
+}
+
+function shown(display, v) { return v == null ? "–" : display === "bipolar" ? String(v - 64) : String(v); }
+
+function cell(e, group) {
+  const box = document.createElement("div");
+  box.className = "cell" + (e.display === "bipolar" ? " bipolar" : "");
+  box.title = `${e.name}: ${e.midi} (${e.kind}, ${e.display})`;
+  const vals = document.createElement("div");
+  vals.className = "vals";
+  const o = Object.assign(document.createElement("span"), { className: "o", textContent: "↑–" });
+  const i = Object.assign(document.createElement("span"), { className: "i", textContent: "↓–" });
+  vals.append(o, i);
+  let control, onIn = () => {};
+  if (e.kind === "button") {
+    control = document.createElement("div");
+    control.className = "pad";
+    control.setAttribute("role", "button");
+    const led = Object.assign(document.createElement("div"), { className: "led" });
+    control.append(led);
+    const down = ev => { ev.preventDefault(); control.setPointerCapture?.(ev.pointerId); control.classList.add("down"); send(e.name, 127); };
+    const up = () => { if (!control.classList.contains("down")) return; control.classList.remove("down"); send(e.name, 0); };
+    control.addEventListener("pointerdown", down);
+    control.addEventListener("pointerup", up);
+    control.addEventListener("pointercancel", up);
+    onIn = v => { led.style.opacity = v > 0 ? String(0.35 + 0.65 * v / 127) : "0"; };
+  } else if (e.display === "relative") {
+    control = document.createElement("div");
+    control.className = "steps";
+    for (const [label, step] of [["−", -1], ["+", 1]]) {
+      const b = Object.assign(document.createElement("button"), { textContent: label, type: "button" });
+      b.addEventListener("click", ev => send(e.name, ev.shiftKey ? step * 10 : step));
+      control.append(b);
+    }
+  } else {
+    control = Object.assign(document.createElement("input"), { type: "range", min: 0, max: 127, value: e.display === "bipolar" ? 64 : 0 });
+    let last = null, dragging = false;
+    control.addEventListener("pointerdown", () => { dragging = true; });
+    control.addEventListener("pointerup", () => { dragging = false; });
+    control.addEventListener("input", () => { const v = Number(control.value); if (v !== last) { last = v; send(e.name, v); } });
+    onIn = v => { if (!dragging) { control.value = v; last = v; } };
+  }
+  const label = e.name.startsWith(group + "[") ? e.name.slice(group.length) : e.name;  // a matrix's cells: [i]
+  const name = Object.assign(document.createElement("div"), { className: "name", textContent: label });
+  box.append(control, vals, name);
+  cells.set(e.name, {
+    setOut: v => { o.textContent = "↑" + shown(e.display, v); },
+    setIn: v => { i.textContent = "↓" + shown(e.display, v); onIn(v); box.classList.remove("flash"); void box.offsetWidth; box.classList.add("flash"); },
+  });
+  return box;
+}
+
+function draw(model) {
+  document.getElementById("script").textContent = model.script;
+  document.getElementById("profile").textContent = model.profile ? `device profile: ${model.profile}` : "plain layout (no device.yaml)";
+  document.getElementById("notice").textContent = model.notice;
+  const rows = document.getElementById("rows");
+  rows.replaceChildren();
+  cells.clear();
+  for (const row of model.rows) {
+    const r = Object.assign(document.createElement("div"), { className: "row" });
+    for (const g of row) {
+      const group = Object.assign(document.createElement("div"), { className: "group" });
+      const h = Object.assign(document.createElement("h2"), { textContent: g.name });
+      const c = Object.assign(document.createElement("div"), { className: "cells" });
+      g.elements.forEach(e => c.append(cell(e, g.name)));
+      group.append(h, c);
+      r.append(group);
+    }
+    rows.append(r);
+  }
+  document.getElementById("unresolved").textContent = model.unresolved.length
+    ? `Not on the panel (the rig couldn't read them): ${model.unresolved.map(u => `line ${u.line}: ${u.reason}`).join("; ")}` : "";
+}
+
+function log(ev) {
+  const li = document.createElement("li");
+  li.className = ev.dir;
+  const who = ev.dir === "in" ? "↓ Live" : ev.by === "driver" ? "↑ driver" : "↑ panel";
+  li.textContent = `${who}  ${ev.text}${ev.elements.length ? "  → " + ev.elements.join(", ") : ""}`;
+  const list = document.getElementById("log");
+  list.prepend(li);
+  while (list.children.length > 200) list.lastChild.remove();
+}
+
+function connect() {
+  const state = document.getElementById("state");
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { state.textContent = "connected"; state.className = "ok"; };
+  ws.onclose = () => { state.textContent = "disconnected – retrying"; state.className = "bad"; setTimeout(connect, 1500); };
+  ws.onmessage = m => {
+    const ev = JSON.parse(m.data);
+    if (ev.type === "model") draw(ev);
+    else if (ev.type === "error") document.getElementById("error").textContent = ev.text;
+    else if (ev.type === "status") document.getElementById("error").textContent = "";
+    else if (ev.type === "midi") {
+      if (!ev.replay) log(ev);
+      if (ev.value == null) return;
+      for (const n of ev.elements) {
+        const c = cells.get(n);
+        if (c) (ev.dir === "in" ? c.setIn : c.setOut)(ev.value);
+      }
+    }
+  };
+}
+connect();
+</script>
+</body>
+</html>

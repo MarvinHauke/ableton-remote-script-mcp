@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round is next)._
+_Last updated: 2026-11-18 (0002 step 5: `rig panel` built and played in Live; the UC4 from the panel is the user's check)._
 
 ## Now
 
@@ -152,7 +152,14 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   on `feat/0002-step-3-abletonmcp`: the AbletonMCP client (allow-list, repeated reads, three
   reads tested by hand), `state`/`events`/`do`/`requires` in check files, `rig abletonmcp`, the
   guide page `docs/test-rig.md`. The UC4 check file in Live: 34 passed, 0 failed, 4 to ask
-  (172 tests). Next: step 4 (device profiles and identity).
+  (172 tests). Step 4 merged: device profiles (`device.yaml`), the rig's identity reply
+  (`examples/Rig_Identity`, identified in Live, v3's session box drawn), window captures for
+  visual checks (Decision 22) and `rig restart-live` (Decision 23) (183 tests). Step 5 built on
+  `feat/0002-step-5-web-panel`: `rig panel <script folder>`, a page on 127.0.0.1:9879 that plays
+  through `rig serve`; `rig serve` now passes each client's sends to the others, so the page
+  shows what `rig run` plays. In Live with Rig_Identity: a fader dragged on the page reached
+  Live and came back, `rig run`'s sends showed up on the page (191 tests). Left for step 5's
+  check: the user plays the UC4 script from the panel.
 - The 0001 step 10 eval round ran (user confirmed Decision 46, 2026-11-18). With the skill:
   100% of the graders in all three cases, 0 findings. Without it: no v3 script got the session box
   or the UC4's value feedback. The login expired partway through, so the v3 cases ran a second
@@ -160,7 +167,7 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   on the MCP design ideas comes before step 11.
   Found: the statement summary drops a call's keywords next to `**k` (an `outline` gap).
   None of this blocks 0001's 9a round.
-- Next: a grilling session on the MCP design ideas (Small items) before step 11.
+- The MCP design ideas are grilled (0001 Decision 49, 2026-11-18) and are part of step 11.
 
 ## After grilling
 
