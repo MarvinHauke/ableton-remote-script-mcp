@@ -287,6 +287,25 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      when Live asks; the UC4 profile.
    - **Checks:** seam C: a script that waits for identity starts only with the reply; local: a
      v3 sample script with `identity_response_id_bytes` starts with the rig's reply (`7D`).
+   - **Built** (2026-11-18, agent; branch `feat/0002-step-4-device-profiles`):
+     - `rig/profile.py`: `device.yaml` with the identity request and reply, the layout and the
+       display hints. The reply is `none` by default, `rig` for the rig's own identity
+       (manufacturer `7D`), or the device's message in hex.
+     - `rig serve --profile` answers the request with no client connected. `rig run` uses the
+       `device.yaml` beside the check file, checks its names, and warns when `rig serve` runs
+       without the reply.
+     - `examples/Rig_Identity` (a v3 script with the rig's identity bytes and the framework's
+       own session ring) and `examples/Faderfox_UC4/device.yaml` (no reply, a layout row per
+       group, display hints only from the device facts). 179 tests pass.
+   - **In Live** (12.4.16, the user, 2026-11-18):
+     - With `rig serve` running without a reply, the script logged
+       `ready, waiting for the identity reply` and nothing more.
+     - When `rig serve` restarted with `--profile`, Live asked again as soon as the port
+       reappeared. The rig answered once, and the script logged
+       `identified: 7F 06 02 7D 00 01 00 01 00 01 00 00`, then sent its start-up state.
+     - So the bytes a v3 script gets lack `F0 7E` and `F7`. That's why the framework finds
+       `06 02` at positions 1–2 and the id bytes from position 3 (tested).
+     - Its check file: fader 1 passed; the session box is asked of the user.
 5. **Web panel** — blocked by: 4.
    - **Delivers:** `rig panel <script>`: the page, the WebSocket, the "driver is in charge"
      notice, live values both ways.
