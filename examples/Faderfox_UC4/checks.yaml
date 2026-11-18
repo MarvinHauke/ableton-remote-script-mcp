@@ -8,7 +8,7 @@
 # values again got no reply), so each value step first sends one below it.
 #
 # Item 1 (loads) is the run's start: Live sends the start-up state on the rig's port.
-# Items 2, 5's device follow, 9, 12 and 13 need eyes on Live: they are `ask_user` steps.
+# Items 2, 5's device follow, 12 and 13 need eyes on Live: they are `ask_user` steps.
 # Item 14 (disconnect) is the user's action in Live and stays in the milestone checklist.
 
 script: .
@@ -19,7 +19,7 @@ requires:
   tracks: 8
   returns: 2
   devices: [1, 2]
-  clips: [{track: 2, scene: 1}]
+  clips: [{track: 1, scene: 1}]   # created when missing: a plain clip, no follow action
 steps:
   - id: session-box
     description: "2: a box of 8 tracks x 1 scene"
@@ -240,26 +240,26 @@ steps:
     log: clean
 
   - id: launch
-    description: "9: Launch 2 starts track 2's clip in scene 1; Live lights Launch 2 and Stop 2"
+    description: "9: Launch 1 starts track 1's clip in scene 1; Live lights Launch 1 and Stop 1"
     send:
-      launch_buttons[1]: press
+      launch_buttons[0]: press
     wait: 2.5   # clips start and stop on the next bar
     timeout: 5.0
     expect:
-      launch_buttons[1]: 127
-      stop_buttons[1]: 127
+      launch_buttons[0]: 127
+      stop_buttons[0]: 127
     events:
-      - {type: clip_playing_changed, track: 2, clip: 1}
+      - {type: clip_playing_changed, track: 1, clip: 1}
     log: clean
   - id: stop-all
     depends_on: launch
-    description: "8, 9: Stop All Clips stops it; Stop 2 goes dark"
+    description: "8, 9: Stop All Clips stops it; Stop 1 goes dark"
     send:
       stop_all_clips_button: press
-    wait: 2.5   # clips start and stop on the next bar
+    wait: 2.5
     timeout: 5.0
     expect:
-      stop_buttons[1]: 0
+      stop_buttons[0]: 0
     log: clean
   - id: stop-transport
     send:
@@ -289,25 +289,30 @@ steps:
     expect:
       rack_encoders[0]: 0
   - id: fire-clip-to-leds
-    description: "9: a clip fired in Live lights Launch 2 and Stop 2"
+    description: "9: a clip fired in Live lights Launch 1 and Stop 1"
     do:
-      - fire_clip: {track: 2, clip: 1}
-    wait: 2.5   # clips start and stop on the next bar
+      - fire_clip: {track: 1, clip: 1}
+    wait: 2.5
     timeout: 5.0
     expect:
-      launch_buttons[1]: 127
-      stop_buttons[1]: 127
+      launch_buttons[0]: 127
+      stop_buttons[0]: 127
     log: clean
   - id: stop-clip-to-leds
     depends_on: fire-clip-to-leds
+    description: "9: a clip stopped in Live turns Stop 1 off"
     do:
-      - stop_clip: {track: 2, clip: 1}
-      - stop_playback: {}
-    wait: 2.5   # clips start and stop on the next bar
+      - stop_clip: {track: 1, clip: 1}
+    wait: 2.5
     timeout: 5.0
     expect:
-      stop_buttons[1]: 0
+      stop_buttons[0]: 0
     log: clean
+  - id: stop-playback
+    do:
+      - stop_playback: {}
+    state:
+      song: {is_playing: false}
   - id: select-track-1-again
     send:
       select_buttons[0]: press

@@ -267,8 +267,15 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      - Learned: Tempo Coarse +1 and −1 sent at once fire no `tempo_changed` (one at a time
        does). Clips start and stop on the next bar (2 s at 120 BPM), so those steps listen at
        least 2.5 s. Pressing Launch 2 also resends the controller's whole state. The two clip
-       LED steps still fail (Launch 2 dark after a fire). The likely cause is the box moving to
-       the next scene on launch; the user is asked.
+       LED steps failed at first: track 2's clips have follow actions (the user), so after a fire
+       the track moved on to its scene 2 clip. The clip steps now use track 1, scene 1, where
+       `requires` creates a plain 4-beat clip.
+     - Tested-command list (Decision 6; the user set three states by hand, 2026-11-18): the
+       rig read track 3 muted (`get_track_info`), tempo 123 (`get_session_info`) and Macro 2
+       = 64 (`get_device_parameters`). All three are in `TESTED`.
+     - The full UC4 check file in Live: 34 passed, 0 failed, 4 to ask the user (session box,
+       navigation, device follow, group LEDs). This reproduces the load test's results for
+       items 3-12.
    - **Docs:** a guide page "Testing a script with the test rig"; How it works and Getting
      started mention the rig.
 4. **Device profiles and identity** — blocked by: 2.

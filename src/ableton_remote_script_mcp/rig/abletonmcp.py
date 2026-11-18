@@ -28,7 +28,11 @@ ALLOWED = READS | WRITES
 # Commands whose answer was checked against a state the user set by hand in Live (Decision 6),
 # with the evidence. A command not listed here is used, but its result is labelled untested.
 TESTED = {
-    "get_track_info": "2026-11-18, Live 12.4.16: track 1's volume read 0.787 after the rig sent CC 40 = 100 (step 1)",
+    "get_track_info": "2026-11-18, Live 12.4.16: track 1's volume read 0.787 after the rig sent CC 40 = 100 (step 1); "
+                      "track 3 read `mute` after the user muted it by hand",
+    "get_session_info": "2026-11-18, Live 12.4.16: tempo read 123 after the user set 123 BPM by hand",
+    "get_device_parameters": "2026-11-18, Live 12.4.16: Macro 2 of track 2's Instrument Rack read 64.0 after the "
+                             "user set it to 64 by hand",
 }
 
 
