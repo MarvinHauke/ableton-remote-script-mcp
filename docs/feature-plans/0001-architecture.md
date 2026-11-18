@@ -726,14 +726,19 @@ meant to do, and uses only API names that exist in the Live build they target.
       (basedpyright or pylsp in Neovim) reads; there is no language server of our own. Like the
       index, the stubs are built from Ableton's code, so they are generated locally and never
       published; maybe in a separate repo later (the user). A small step after step 11.
-    - **Q10 (round 2), proposed, the user asked about the drawbacks:** one answer shape for the
-      CLI's `--json`, the Python functions and the MCP tools, with the CLI documented as the way
-      in for code in any language. Nothing is lost: the CLI's text output, the Python functions
-      and the MCP tools stay as they are. The costs:
-      - the shape is a contract, so answers carry a version number and changes are noted;
-      - a CLI call takes 0.11–0.15 s against about 0.05 s from Python (measured 2026-11-18),
-        so `lookup` and `check_names` take many names in one call.
-      Awaiting the user's yes.
+    - **Q10 (round 2), decided "yes with extras"** (user, 2026-11-18, after asking for the
+      drawbacks twice). The CLI's `--json`, the Python functions and the MCP tools share one
+      versioned answer core, and the CLI is documented as the way in for code in any language.
+      MCP tools may add extras around that core (resource links, a short text summary) without
+      changing it.
+      - Nothing is lost: the CLI's text output for people stays.
+      - Accepted costs: a version number and a change note for every change to the core.
+      - A CLI call takes 0.11–0.15 s against about 0.05 s from Python (measured 2026-11-18), so
+        `lookup` and `check_names` take many names per call.
+      - Loosening the core later needs a new version.
+    - **Comparison run** (the user wants one): the step 13 benchmark measures, on the same tasks,
+      the MCP tools against the CLI called from code (Code Mode), and plain tool calls against a
+      tool that calls a model itself (Q8), by cost, tool calls, tokens and correctness.
 
 ## Open questions
 
@@ -958,6 +963,11 @@ Every step's checks include `uv run pytest` passing.
       showed in steps 9–10, and startable with `uvx`.
     - **Checks:** in-memory MCP client smoke tests; a tool and the matching skill script give the
       same answer.
+    - **Also, from Decision 49:** `check_names` (CLI and tool); a stable API of six functions
+      sharing one versioned answer core with the CLI's `--json` and the tools (tools may add
+      extras); default size caps with `--full`, `outline` by section, "more available" with a
+      next page; a worked example per tool; `eval_score.py` counting tool calls and tokens.
+      After the step: `build-stubs` for editor completion (local only).
 12. **Plugin and publishing**
     - **Blocked by:** 11
     - **Delivers:**

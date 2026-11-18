@@ -170,7 +170,7 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
 
 ## Small items
 
-- [needs-grilling] **MCP server design ideas for step 11, from the user's sources (2026-11-17):**
+- [grilled] **MCP server design ideas for step 11, from the user's sources (2026-11-17):**
   Zhang, Kraska, Khattab, *Recursive Language Models* (arxiv.org/abs/2512.24601), Zhang's blog
   post *The Mismanaged Geniuses Hypothesis* (alexzhang13.github.io/blog/2026/mgh/), and a video
   on Claude Code's "code mode" (youtube.com/watch?v=DRNbxPk9Ab8, only its title read). Their
@@ -185,8 +185,9 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   4. a worked example in each tool description and a batch-check example in the skill
   
   Measure them in the 9a round and the step 13 benchmark (tool calls, tokens, invented names).
-  Grilled 2026-11-18, round 1 (Q1–Q8): 0001 Decision 49. Round 2: Q9 decided (type stubs for the user's
-  language server); Q10 (one answer shape, CLI `--json` for code) awaits the user's yes.
+  Grilled 2026-11-18, round 1 (Q1–Q8): 0001 Decision 49. Round 2 (2026-11-18): Q9 type stubs for the
+  user's language server; Q10 one versioned answer core, MCP extras allowed. Grilling closed;
+  the comparison run goes into step 13.
 
 
 - [needs-triage] Validator rule for attribute names by class (for example a made-up
