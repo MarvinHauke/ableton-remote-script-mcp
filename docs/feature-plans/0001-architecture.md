@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); next `build-stubs`, then step 12._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -805,6 +805,36 @@ meant to do, and uses only API names that exist in the Live build they target.
       loaded.
     - **`eval_score.py`** reads each run's tool calls (by tool), the characters of the tool
       results, and the tokens and cost from the run's result event (Decision 49 Q7).
+
+53. **How `build-stubs` writes the stubs** (agent, 2026-11-19; carries out Decision 49 Q9).
+    - **Where:** one `.pyi` per module of the Remote Scripts folder and a `Live` package. They
+      go to `<index dir>/stubs/<build>`, or `--out`. A folder of earlier stubs (it has the
+      tool's marker file) is replaced; a folder with other files is refused. Like the index,
+      the stubs never leave the machine.
+    - **What they hold:**
+      - imports as re-exports, and star imports;
+      - classes with their bases as written, nested classes inside their class;
+      - methods with their parameters: literal defaults kept, others `...`;
+      - properties, with a setter when there is one;
+      - class attributes, and the instance attributes the methods assign (`self._x`, from the
+        statement summaries).
+    - **Types are `Any` throughout,** also for attributes. With a literal type, a base's
+      `= None` made every subclass that sets it an error.
+    - **Stored functions:** a "method" without `self` (`create_mappings_function = lambda *x:
+      …`) is written as an attribute, so a subclass may set any function.
+    - **`Live`** is written from the Push 3 helper's `live_model`, without that model's own
+      base classes. Members marked `# documented` are added:
+      - the listener methods made from `__events__`;
+      - Structure Void's runtime members, when they are imported.
+
+      `--observed-only` leaves both out.
+    - **Checked with basedpyright 1.31** (standard mode, against 12.4.16, 2026-11-19):
+      - In a sample script it flagged exactly the two invented names. `Song.tracks` and the
+        documented `add_tracks_listener` resolved.
+      - The three example scripts, which load in Live: no error is a gap in the stubs. The
+        five left come from pyright reading the scripts' own code (an attribute that may be
+        `None`, and the v3 idiom `@button.pressed` above a method of the same name).
+      - pylsp/jedi is documented, not tested.
 
 ## Open questions
 

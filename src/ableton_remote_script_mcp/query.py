@@ -472,3 +472,20 @@ def check_names(index_dir: Path, live_build: str | None = None, folder: Path | N
     resolver = Resolver(index)
     return {"status": "ok", **check_list(names, index, statements, doc,
                                           lambda n: find_class_keys(index, resolver, n))}
+
+
+def build_stubs(index_dir: Path, live_build: str | None = None, out: Path | None = None,
+                observed_only: bool = False) -> dict:
+    """Write type stubs of one build for a language server (`stubs.py`); default folder:
+    `<index dir>/stubs/<build>`."""
+    from .stubs import write_stubs
+
+    index, missing = _open(index_dir, live_build, with_statements=True)  # instance attributes come from them
+    if missing:
+        return missing
+    live_build = index["live_build"]
+    out = Path(out).expanduser() if out else Path(index_dir) / "stubs" / live_build
+    try:
+        return write_stubs(index, out, load_document(index_dir, live_major(live_build)), observed_only)
+    except FileExistsError as e:
+        return {"status": "not_found", "live_build": live_build, "message": str(e)}
