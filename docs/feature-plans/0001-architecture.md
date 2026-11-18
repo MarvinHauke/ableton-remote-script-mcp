@@ -685,6 +685,42 @@ meant to do, and uses only API names that exist in the Live build they target.
       store of `a or b` had kept only `b`, and the v3 page's mute LED claim had rested on that.
       Now `a or b` and `a and b` keep both sides, other merges (a conditional expression) give
       `…`; indexes are rebuilt (no schema change).
+49. **The MCP design ideas go into step 11** (user, 2026-11-18, grilling round 1 of the MCP
+    ideas, Q1–Q8, on the agent's recommendations). Sources: Zhang, Kraska, Khattab, *Recursive
+    Language Models* (arxiv.org/abs/2512.24601); Zhang, *The Mismanaged Geniuses Hypothesis*
+    (alexzhang13.github.io/blog/2026/mgh/); Claude Code's Code Mode page
+    (code.claude.com/docs/de/code-mode) and MindStudio's explainer of it. Their shared point:
+    keep big reference data out of the agent's context, and give it small building blocks it can
+    combine, also from code, with answers of bounded size.
+    - **Q1:** they are additions to step 11, not a plan of their own.
+    - **Q2:** every building block is in the query core, so the CLI, the skill's scripts and
+      the MCP tools all have it. The user asked what MCP adds then:
+      - typed tool parameters the client shows the model;
+      - clients without a shell (Claude Desktop, other MCP clients);
+      - starting with `uvx`, no install;
+      - an index kept loaded between calls.
+      Its cost: the tool descriptions take context in every session.
+    - **Q3:** `check_names` (from `scripts/eval_names.py`) moves into the package as a CLI
+      command and MCP tool. For a script folder or a list of names, it gives each class, member
+      and keyword with its confidence. It stays separate from `validate`, since it reports facts,
+      not errors. The skill runs it on each draft. The user asked about editor completion; that
+      is the open Q9.
+    - **Q4:** a small stable API of six functions (`lookup`, `search`, `outline`, `validate`,
+      `check_names`, `list_builds`), returning the same answers as the tools. More can join
+      later. Claude Code's Code Mode (experimental, off by default) runs **JavaScript** that calls
+      tools and shell commands, so for code the CLI's `--json` answers are the interface any
+      language reaches; the Python functions serve Python callers (Q10).
+    - **Q5:** every answer has a default size cap (about 4,000 tokens). `outline` is answered by
+      section (classes, Specification, mappings, elements). `search` and `outline` say what was
+      left out and how to get the next page. The user's condition: it must be undoable and
+      harmless. So `--full` or a larger limit gives the whole answer, nothing is removed from
+      the index, and the note always says what was cut.
+    - **Q6:** one short worked example in each tool's description; one batch-check example in
+      the skill.
+    - **Q7:** `eval_score.py` counts tool calls and tokens per run from the kept traces, so later
+      rounds and the step 13 benchmark show what these save.
+    - **Q8:** no tool that calls a model itself for now. The user wants it compared later with
+      plain tool calls (cost and correctness), as an experiment in the step 13 benchmark.
 
 ## Open questions
 
