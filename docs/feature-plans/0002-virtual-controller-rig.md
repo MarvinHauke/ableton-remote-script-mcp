@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18. Frontier: step 2._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; step 2 built, its Live run pending. Frontier: step 2's Live run._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -193,20 +193,38 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      `rig serve` running, does a Live restart keep slot 1's `ARS Test Rig` and script? When Live
      starts before the rig, does the slot reconnect once the port appears? The answers go into
      the guide's "after a script change" steps.
-   - **Started** (2026-11-18, agent; branch `feat/0002-step-2-rig-run`, nothing built yet).
-     Findings for the controller model:
-     - `outline` reads only scripts indexed from Live. A script folder can be outlined the way
-       the validator does it: parse the sources, then `compile_sources` → `overlay_index` →
-       `outline_package` (tried on `examples/Faderfox_UC4`: 44 elements, all mappings).
-     - Its element arguments are not enough for MIDI numbers. When a call has `**k`, the
-       statement summary packs the positional arguments into `*(48, 'Crossfader')` and drops
-       the keywords (`"**": "…"`), so `channel=CH14` is lost.
-     - Plan: use `outline` to find which calls build elements (the line and the framework
-       `add_*` method), then read that call's arguments from the script's own AST, resolving
-       its module constants.
-     - Defaults: `add_button` and `add_encoder` take `channel` from `k`, else the Elements'
-       `global_channel` (observed, 12.4.16, `ElementsBase.add_button` statements). The default
-       `msg_type` of `create_button` and `create_encoder` is still to be looked up in the index.
+   - **Built** (2026-11-18, agent; branch `feat/0002-step-2-rig-run`), not yet run against Live:
+     - `outline` takes a script folder (`outline examples/Faderfox_UC4`), read like the
+       validator reads it (sources compiled, then the index overlay).
+     - The controller model (`rig/controller.py`, `rig elements <folder>`): `outline` finds the
+       calls that build elements; the arguments come from those calls in the script's source,
+       because the statement summary drops the keywords of a call that also passes `**k`
+       (`channel=CH14` next to `**SHOWS_VALUE`). Defaults observed in the 12.4.16 index:
+       the channel comes from the keywords, else `global_channel`; `ButtonElement` and
+       `EncoderElement` default to `msg_type=MIDI_CC_TYPE`. A matrix element is `<matrix>[i]`,
+       counted row by row. For the UC4 it gives 142 elements, matching `elements.py`. Elements
+       it can't work out are listed as not read, never guessed.
+     - Check files (`rig/checks.py`): `send` takes an element and a value (a number, `press`, or
+       steps on a relative encoder), or a raw message. `expect` checks the last reply per
+       element: a value, a list of values, `any` or `none`. Also `log: clean`, `ask_user`,
+       `depends_on`, and `quiet`/`timeout` per step. Before the first step the run waits for
+       `settle` seconds of quiet. Relative steps are encoded only as two's complement, the
+       only mode tested so far (the UC4's CCr1).
+     - `rig run <checks.yaml>` goes through `rig serve` when one is running; otherwise it opens
+       its own port and waits for Live. It prints a report and writes `checks.result.json`
+       beside the check file (git-ignored). Exit codes: 0 no step failed, 1 a step failed,
+       2 Live never connected, 3 no rig extra, 4 the check file can't be read.
+     - `rig serve` (`rig/serve.py`) holds the port and talks JSON lines on 127.0.0.1:9878
+       (AbletonMCP uses 9877). Each client gets its own inbox.
+     - The first check file is `examples/Faderfox_UC4/checks.yaml`: 22 steps from MIDI and the
+       log, 6 `ask_user` steps. Items 1 and 14 stay with the start of the run and the user.
+     - PyYAML joins the `rig` extra. 165 tests pass (seam C over `MemoryPort`, including a
+       served port; 3 new local-only tests: the folder outline, the UC4 model and its check
+       file's names).
+   - **Still to do in step 2:** run the UC4 check file in Live (the user's Set must be the test
+     Set), compare it with the 14 results, and do the two restart checks above.
+   - **Found on the way:** the extractor's statement summary loses the keywords of a call that
+     also passes `**k`. That is an `outline` gap for every script, recorded for 0001.
 3. **AbletonMCP** — blocked by: 2.
    - **Delivers:** the socket client (version, allow-list, repeated reads, events), `state`
      expectations, `do` steps (Live → controller), `requires` checked against the test Set and

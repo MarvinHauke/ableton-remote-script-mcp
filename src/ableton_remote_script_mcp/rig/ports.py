@@ -127,6 +127,22 @@ def wait_for(port, seconds: float, until_any: bool = False, quiet: float | None 
     return got + port.drain()
 
 
+def wait_quiet(port, quiet: float, limit: float, sleep=time.sleep, clock=time.monotonic) -> list[Received]:
+    """Collect until nothing has arrived for `quiet` seconds (counted from the start too), or
+    `limit` seconds have passed."""
+    got: list[Received] = []
+    start = last = clock()
+    while clock() - start < limit:
+        new = port.drain()
+        if new:
+            got += new
+            last = clock()
+        elif clock() - last >= quiet:
+            break
+        sleep(0.005)
+    return got + port.drain()
+
+
 def describe(message: list[int]) -> str:
     """`CC 40 = 100, channel 13` style text (channels counted from 1, as controllers show them)."""
     if not message:

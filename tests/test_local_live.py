@@ -208,3 +208,47 @@ def test_session_ring_warning_without_identity_in_12_4_16(index_dir, tmp_path):
         "    session_ring_component_type = SessionRingComponent", "    pass"))
     findings = validate_script(folder, index_dir, "12.4.16")["findings"]
     assert [(f["rule"], f["severity"]) for f in findings] == [("session-ring", "warning")]
+
+
+@pytest.mark.local_live
+def test_outline_of_a_script_folder(index_dir):
+    answer = outline_script(str(Path(__file__).parent.parent / "examples" / "Faderfox_UC4"), index_dir, "12.4.16")
+    assert answer["status"] == "ok" and answer["script"] == "Faderfox_UC4"
+    assert answer["folder"].endswith("Faderfox_UC4") and answer["specification"]
+    names = {m["name"] for m in answer["mappings"]["mappings"]}
+    assert {"Mixer", "Session", "Quantization"} <= names
+
+
+@pytest.mark.local_live
+def test_uc4_controller_model(index_dir):
+    """plan 0002 step 2: the rig's controller model of the UC4 example matches its elements.py."""
+    from ableton_remote_script_mcp.rig.controller import controller_for_folder
+
+    ctl, why = controller_for_folder(Path(__file__).parent.parent / "examples/Faderfox_UC4", index_dir, "12.4.16")
+    assert ctl is not None, why
+    assert len(ctl.elements) == 142 and not ctl.unresolved
+    assert ctl.element("faders[0]").key == (0xBC, 40) and ctl.element("faders[0]").feedback
+    assert ctl.element("crossfader").key == (0xBD, 48)
+    assert ctl.element("bank_left_button").key == (0x9D, 123)
+    assert ctl.element("quantization_encoder").relative
+    assert ctl.matrices["active_buttons"][7] == "active_buttons[7]"
+    assert ctl.element("active_buttons[7]").key == (0x9C, 111)
+
+
+@pytest.mark.local_live
+def test_uc4_check_file_names_its_elements(index_dir):
+    from ableton_remote_script_mcp.rig.checks import (
+        check_names,
+        encode,
+        load_check_file,
+    )
+    from ableton_remote_script_mcp.rig.controller import controller_for_folder
+
+    checks = load_check_file(Path(__file__).parent.parent / "examples/Faderfox_UC4/checks.yaml")
+    ctl, why = controller_for_folder(checks.script_folder, index_dir, checks.build)
+    assert ctl is not None, why
+    assert check_names(checks, ctl) == []
+    for step in checks.steps:  # every value can be played on its element
+        for item in step.send:
+            if isinstance(item, tuple):
+                encode(ctl.element(item[0]), item[1])

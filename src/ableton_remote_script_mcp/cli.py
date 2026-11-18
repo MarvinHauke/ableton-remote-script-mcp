@@ -527,6 +527,29 @@ def make_parser() -> argparse.ArgumentParser:
                     "(default: cc 13 40 100, the Faderfox UC4's fader 1 in SE17)")
     pr.add_argument("--json", action="store_true", help="print the answer as JSON")
     pr.set_defaults(func=_cmd_rig_probe)
+    el = rg_sub.add_parser("elements", help="the controller model of a script folder: each element's name and MIDI "
+                           "message, as check files name them")
+    el.add_argument("folder", help="the Remote Script's folder")
+    el.add_argument("--build", help="Live build whose index reads the script (default: newest indexed)")
+    el.add_argument("--json", action="store_true", help="print the answer as JSON")
+    el.set_defaults(func=_cmd_rig_elements)
+    sv = rg_sub.add_parser("serve", help="hold the rig's virtual port open (across Live restarts) for `rig run`")
+    sv.add_argument("--name", default=None, help="the virtual port's name (default: ARS Test Rig)")
+    sv.add_argument("--port", type=int, default=None, help="the local TCP port clients use (default: 9878)")
+    sv.set_defaults(func=_cmd_rig_serve)
+    rr = rg_sub.add_parser("run", help="run a check file against a script in Live, over `rig serve` or a port of "
+                           "its own; writes checks.result.json beside it")
+    rr.add_argument("checks", help="the check file (checks.yaml)")
+    rr.add_argument("--build", help="Live build whose index reads the script (default: the check file's, else "
+                    "newest indexed)")
+    rr.add_argument("--name", default=None, help="without `rig serve`: the virtual port's name (default: ARS Test Rig)")
+    rr.add_argument("--port", type=int, default=None, help="the local TCP port of `rig serve` (default: 9878)")
+    rr.add_argument("--wait", type=float, default=120.0,
+                    help="without `rig serve`: seconds to wait for Live to connect (default: 120)")
+    rr.add_argument("--log", help="the Log.txt to read for `log: clean` (default: the Live build's, else the "
+                    "most recently written)")
+    rr.add_argument("--json", action="store_true", help="print the result as JSON")
+    rr.set_defaults(func=_cmd_rig_run)
     return p
 
 
@@ -574,6 +597,117 @@ def _cmd_rig_probe(args: argparse.Namespace) -> int:
     if not result["connected"]:
         return 2
     return 0 if result["echo"] else 1
+
+
+def _cmd_rig_elements(args: argparse.Namespace) -> int:
+    from .rig.controller import controller_for_folder
+
+    ctl, why = controller_for_folder(Path(args.folder), Path(args.index_dir), args.build)
+    if ctl is None:
+        print(why, file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(ctl.as_dict(), indent=1))
+        return 0
+    print(f"{ctl.script}: {len(ctl.elements)} elements ({ctl.folder})")
+    single = [e for e in ctl.elements.values() if "[" not in e.name]
+    for name, items in ctl.matrices.items():
+        first, last = ctl.elements[items[0]], ctl.elements[items[-1]]
+        print(f"  {name}[0..{len(items) - 1}]  {first.kind}  {first.describe()} .. {last.describe()}"
+              + _element_flags(first))
+    for e in single:
+        print(f"  {e.name}  {e.kind}  {e.describe()}" + _element_flags(e))
+    for u in ctl.unresolved:
+        print(f"  not read: line {u['line']} in {u['in']}: {u['reason']}")
+    return 0
+
+
+def _element_flags(e) -> str:
+    flags = (["relative " + e.map_mode] if e.relative else []) + (["sends values back"] if e.feedback else [])
+    return f"  ({', '.join(flags)})" if flags else ""
+
+
+def _cmd_rig_serve(args: argparse.Namespace) -> int:  # pragma: no cover - needs MIDI
+    from .rig.ports import DEFAULT_NAME, RigUnavailable
+    from .rig.serve import DEFAULT_PORT, serve
+
+    try:
+        serve(args.name or DEFAULT_NAME, ("127.0.0.1", args.port or DEFAULT_PORT), log=lambda t: print(t, flush=True))
+    except RigUnavailable as e:
+        print(e, file=sys.stderr)
+        return 3
+    except OSError as e:
+        print(f"rig serve: {e} (is another `rig serve` running?)", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _cmd_rig_run(args: argparse.Namespace) -> int:
+    """Exit 0: no step failed; 1: a step failed; 2: Live sent nothing on the port; 3: the rig extra
+    is missing; 4: the check file, the script or its element names can't be read."""
+    from .live_log import find_log
+    from .rig.checks import (
+        CheckFileError,
+        LogWatch,
+        check_names,
+        load_check_file,
+        run_checks,
+    )
+    from .rig.controller import controller_for_folder
+    from .rig.ports import DEFAULT_NAME, RigUnavailable, wait_for
+    from .rig.report import format_report, write_result
+    from .rig.serve import DEFAULT_PORT, connect
+
+    say = (lambda *_: None) if args.json else (lambda text: print(text, flush=True))
+    try:
+        checks = load_check_file(Path(args.checks))
+    except (CheckFileError, ImportError) as e:
+        print(e, file=sys.stderr)
+        return 3 if isinstance(e, ImportError) else 4
+    ctl, why = controller_for_folder(checks.script_folder, Path(args.index_dir), args.build or checks.build)
+    if ctl is None:
+        print(why, file=sys.stderr)
+        return 4
+    problems = check_names(checks, ctl)
+    if problems:
+        print("\n".join(problems), file=sys.stderr)
+        return 4
+    log_path = Path(args.log) if args.log else find_log(args.build or checks.build)
+    if any(s.log_clean for s in checks.steps) and log_path is None:
+        print("the check file asks for `log: clean`, and no Log.txt was found; pass --log", file=sys.stderr)
+        return 4
+    port = connect(port=args.port or DEFAULT_PORT)
+    own = port is None
+    try:
+        if own:
+            from .rig.ports import VirtualPort
+
+            port = VirtualPort(args.name or DEFAULT_NAME)
+            say(f"no `rig serve` running: opened `{port.name}` for this run; waiting up to {args.wait:.0f} s for "
+                "Live to send on it (pick it as the Control Surface's Input and Output)")
+            if not wait_for(port, args.wait, until_any=True):
+                print(f"Live sent nothing on `{port.name}` within {args.wait:.0f} s", file=sys.stderr)
+                return 2
+        else:
+            say(f"using `rig serve`'s port `{port.name}` ({port.hello['received']} message(s) from Live so far)")
+        say(f"sending MIDI only to `{port.name}`; stop with Ctrl-C")
+        result = run_checks(checks, ctl, port, LogWatch(log_path, ctl.script), say=say)
+    except RigUnavailable as e:
+        print(e, file=sys.stderr)
+        return 3
+    except CheckFileError as e:
+        print(e, file=sys.stderr)
+        return 4
+    finally:
+        if port is not None:
+            port.close()
+    path = write_result(result, checks.path)
+    if args.json:
+        print(json.dumps(result, indent=1, ensure_ascii=False))
+    else:
+        print(format_report(result))
+        print(f"full result: {path}")
+    return 1 if result["counts"]["failed"] else 0
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -1,0 +1,223 @@
+# The UC4 script's behaviour checklist (docs/feature-plans/milestone-1/faderfox-uc4.md) as far as
+# MIDI and Log.txt can decide it, for `ableton-remote-script-mcp rig run` (plan 0002 step 2).
+# Expected values are the user's load-test results, Live 12.4.16, 2026-11-18. Run it in the test
+# Set (devSetup.als: 8 tracks, none muted, soloed or armed at the start); it changes the Set and
+# turns toggles back, and never saves.
+#
+# Item 1 (loads) is the run's start: Live sends the start-up state on the rig's port.
+# Items 2, 5's device follow, 9, 12 and 13 need eyes on Live: they are `ask_user` steps.
+# Item 14 (disconnect) is the user's action in Live and stays in the milestone checklist.
+
+script: .
+build: 12.4.16
+settle: 1.5
+steps:
+  - id: session-box
+    description: "2: a box of 8 tracks x 1 scene"
+    ask_user: Is there a box around tracks 1-8 and one scene in Session View?
+
+  - id: fader-1
+    description: "3: fader 1 sets track 1's volume and Live sends the value back (feedback, fix 2)"
+    send:
+      faders[0]: 100
+    expect:
+      faders[0]: 100
+    log: clean
+  - id: fader-8
+    description: "3: fader 8 sets track 8's volume"
+    send:
+      faders[7]: 50
+    expect:
+      faders[7]: 50
+    log: clean
+  - id: crossfader
+    description: "3: fader 9 sets the crossfader"
+    send:
+      crossfader: 64
+    expect:
+      crossfader: 64
+    log: clean
+
+  - id: send-a
+    description: "4: Send 1 encoder 1 sets track 1's send A"
+    send:
+      send_a_encoders[0]: 30
+    expect:
+      send_a_encoders[0]: 30
+    log: clean
+  - id: send-d
+    description: "4: Send 4 encoder 8 sets track 8's send D"
+    send:
+      send_d_encoders[7]: 30
+    expect:
+      send_d_encoders[7]: 30
+    log: clean
+  - id: pan
+    description: "4: Pan encoder 1 sets track 1's pan"
+    send:
+      pan_encoders[0]: 40
+    expect:
+      pan_encoders[0]: 40
+    log: clean
+
+  - id: select-track-1
+    description: "10: Select 1 selects track 1 and its LED lights"
+    send:
+      select_buttons[0]: press
+    expect:
+      select_buttons[0]: 127
+    log: clean
+  - id: rack
+    depends_on: select-track-1
+    description: "5: Rack encoder 1 sets the selected track's device parameter 1 (the test Set has a rack on every track)"
+    send:
+      rack_encoders[0]: 20
+    expect:
+      rack_encoders[0]: 20
+    log: clean
+  - id: track-volume
+    depends_on: select-track-1
+    description: "6: Track encoder 1 sets the selected track's volume; fader 1 follows"
+    send:
+      track_volume_encoder: 90
+    expect:
+      track_volume_encoder: 90
+      faders[0]: 90
+    log: clean
+  - id: track-pan
+    depends_on: select-track-1
+    description: "6: Track encoder 6 sets the selected track's pan; Pan encoder 1 follows"
+    send:
+      track_pan_encoder: 70
+    expect:
+      track_pan_encoder: 70
+      pan_encoders[0]: 70
+    log: clean
+  - id: next-track
+    description: "6: Track encoder 4 (relative) selects the next track; Select 2 lights"
+    depends_on: select-track-1
+    send:
+      track_select_encoder: 1
+    expect:
+      select_buttons[1]: 127
+      select_buttons[0]: 0
+    log: clean
+  - id: select-back
+    send:
+      select_buttons[0]: press
+    expect:
+      select_buttons[0]: 127
+    log: clean
+
+  - id: cue-volume
+    description: "7: Global encoder 3 sets the cue volume"
+    send:
+      cue_volume_encoder: 80
+    expect:
+      cue_volume_encoder: 80
+    log: clean
+  - id: master-volume
+    description: "7: Global encoder 6 sets the master volume"
+    send:
+      master_volume_encoder: 100
+    expect:
+      master_volume_encoder: 100
+    log: clean
+  - id: tempo-and-quant
+    description: "7: tempo coarse up and down, quantization up and down (fix 3: no ArgumentError)"
+    send:
+      - tempo_coarse_encoder: 1
+      - tempo_coarse_encoder: -1
+      - quantization_encoder: 1
+      - quantization_encoder: -1
+    log: clean
+
+  - id: mute-1
+    description: "10: Active 1 mutes track 1; its LED goes dark (fix 4: lit while the track plays)"
+    send:
+      active_buttons[0]: press
+    expect:
+      active_buttons[0]: 0
+    log: clean
+  - id: unmute-1
+    depends_on: mute-1
+    send:
+      active_buttons[0]: press
+    expect:
+      active_buttons[0]: 127
+    log: clean
+  - id: solo-1
+    description: "10, 13: Solo 1 lights; Active 2 goes dark, as tracks a solo silences count as muted"
+    send:
+      solo_buttons[0]: press
+    expect:
+      solo_buttons[0]: 127
+      active_buttons[1]: 0
+    log: clean
+  - id: unsolo-1
+    depends_on: solo-1
+    send:
+      solo_buttons[0]: press
+    expect:
+      solo_buttons[0]: 0
+      active_buttons[1]: 127
+    log: clean
+  - id: arm-1
+    description: "10: Record 1 arms track 1 and lights"
+    send:
+      record_buttons[0]: press
+    expect:
+      record_buttons[0]: 127
+    log: clean
+  - id: disarm-1
+    depends_on: arm-1
+    send:
+      record_buttons[0]: press
+    expect:
+      record_buttons[0]: 0
+    log: clean
+  - id: monitor-in
+    description: "11: Monitor 1 switches track 1 to In and lights"
+    send:
+      monitor_buttons[0]: press
+    expect:
+      monitor_buttons[0]: 127
+    log: clean
+  - id: monitor-auto
+    depends_on: monitor-in
+    send:
+      monitor_buttons[0]: press
+    expect:
+      monitor_buttons[0]: 0
+    log: clean
+
+  - id: launch-and-stop
+    description: "9: Launch 1 starts track 1's clip, Stop All stops it"
+    send:
+      - launch_buttons[0]: press
+    timeout: 4.0
+    quiet: 1.0
+    ask_user: Did track 1's clip in the box's scene start, with Launch 1 and Stop 1 lit?
+    log: clean
+  - id: stop-all
+    depends_on: launch-and-stop
+    send:
+      stop_all_clips_button: press
+    timeout: 4.0
+    quiet: 1.0
+    log: clean
+  - id: navigation
+    description: "12: Next Track moves the selection; Next Device moves through the devices"
+    send:
+      - next_track_button: press
+      - prev_track_button: press
+      - next_device_button: press
+      - prev_device_button: press
+    ask_user: Did the selection move to track 2 and back, and the device selection right and back?
+    log: clean
+  - id: device-follows
+    description: "5: the Rack encoders follow the selected device"
+    ask_user: After selecting another device in Live, do the Rack encoders show its parameters?
+  - id: group-leds
+    description: "13: each green button group shows its own state at once"
+    ask_user: After switching the UC4 to another green button group and back, do the LEDs show that group's state?

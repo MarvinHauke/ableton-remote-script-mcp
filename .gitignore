@@ -16,3 +16,4 @@ __pycache__/
 /skills/*-workspace/
 /skills/*/evals/results/
 Ableton_Examples/
+checks.result.json

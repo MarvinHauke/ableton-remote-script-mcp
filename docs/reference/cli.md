@@ -179,3 +179,48 @@ ableton-remote-script-mcp rig probe [--name NAME] [--wait WAIT] [--send SEND] [-
 | `--wait WAIT` | Seconds to wait for Live to connect (default: 120). |
 | `--send SEND` | The message to send: `cc\|note\|noteoff <channel 1-16> <number> <value>` or hex bytes (default: cc 13 40 100, the Faderfox UC4's fader 1 in SE17). |
 | `--json` | Print the answer as JSON. |
+
+### `rig elements`
+
+The controller model of a script folder: each element's name and MIDI message, as check files name them.
+
+```text
+ableton-remote-script-mcp rig elements [--build BUILD] [--json] folder
+```
+
+| Argument | What it does |
+| --- | --- |
+| `folder` | The Remote Script's folder. |
+| `--build BUILD` | Live build whose index reads the script (default: newest indexed). |
+| `--json` | Print the answer as JSON. |
+
+### `rig serve`
+
+Hold the rig's virtual port open (across Live restarts) for `rig run`.
+
+```text
+ableton-remote-script-mcp rig serve [--name NAME] [--port PORT]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--name NAME` | The virtual port's name (default: ARS Test Rig). |
+| `--port PORT` | The local TCP port clients use (default: 9878). |
+
+### `rig run`
+
+Run a check file against a script in Live, over `rig serve` or a port of its own; writes checks.result.json beside it.
+
+```text
+ableton-remote-script-mcp rig run [--build BUILD] [--name NAME] [--port PORT] [--wait WAIT] [--log LOG] [--json] checks
+```
+
+| Argument | What it does |
+| --- | --- |
+| `checks` | The check file (checks.yaml). |
+| `--build BUILD` | Live build whose index reads the script (default: the check file's, else newest indexed). |
+| `--name NAME` | Without `rig serve`: the virtual port's name (default: ARS Test Rig). |
+| `--port PORT` | The local TCP port of `rig serve` (default: 9878). |
+| `--wait WAIT` | Without `rig serve`: seconds to wait for Live to connect (default: 120). |
+| `--log LOG` | The Log.txt to read for `log: clean` (default: the Live build's, else the most recently written). |
+| `--json` | Print the result as JSON. |

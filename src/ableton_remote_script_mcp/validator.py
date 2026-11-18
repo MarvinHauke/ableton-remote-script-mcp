@@ -289,25 +289,10 @@ def _check_create_instance(init: Source | None, folder: Path, findings: list[dic
             "declare it as `def create_instance(c_instance):`"))
 
 
-def validate_folder(folder: Path, index: dict) -> dict:
-    """The findings for one script folder against one loaded index (see the module docstring)."""
+def read_sources(folder: Path, findings: list[dict]) -> tuple[dict[str, Source], list[Path]]:
+    """Parse every `.py` file of a script folder as Live's Python would; a file that can't be read
+    or parsed is a `syntax-error` finding and has no tree."""
     script = folder.name
-    findings: list[dict] = []
-    not_checked: list[dict] = []
-    if " " in script:
-        suggested = "_".join(script.split())
-        findings.append(_finding(
-            "folder-name", ".", None,
-            f"the folder name {script!r} has spaces: Live does not list it as a control surface",
-            f"rename the folder to {suggested!r}"))
-    elif not script.isidentifier():
-        suggested = re.sub(r"\W", "_", script)
-        suggested = suggested if suggested.isidentifier() else f"_{suggested}"
-        findings.append(_finding(
-            "folder-name", ".", None,
-            f"the folder name {script!r} is not a Python name: Live imports the script by its folder name, "
-            "and the import fails with a SyntaxError",
-            f"rename the folder to {suggested!r}"))
     sources: dict[str, Source] = {}
     paths = sorted(p for p in folder.rglob("*.py")
                    if not (set(p.relative_to(folder).parts[:-1]) & SKIP_DIRS)
@@ -331,6 +316,29 @@ def validate_folder(folder: Path, index: dict) -> dict:
                                      f"fix the syntax (Live runs Python {'.'.join(map(str, LIVE_PYTHON))})"))
             continue
         _top_level_binds(src.tree.body, src)
+    return sources, paths
+
+
+def validate_folder(folder: Path, index: dict) -> dict:
+    """The findings for one script folder against one loaded index (see the module docstring)."""
+    script = folder.name
+    findings: list[dict] = []
+    not_checked: list[dict] = []
+    if " " in script:
+        suggested = "_".join(script.split())
+        findings.append(_finding(
+            "folder-name", ".", None,
+            f"the folder name {script!r} has spaces: Live does not list it as a control surface",
+            f"rename the folder to {suggested!r}"))
+    elif not script.isidentifier():
+        suggested = re.sub(r"\W", "_", script)
+        suggested = suggested if suggested.isidentifier() else f"_{suggested}"
+        findings.append(_finding(
+            "folder-name", ".", None,
+            f"the folder name {script!r} is not a Python name: Live imports the script by its folder name, "
+            "and the import fails with a SyntaxError",
+            f"rename the folder to {suggested!r}"))
+    sources, paths = read_sources(folder, findings)
     _check_create_instance(sources.get(script), folder, findings)
     imports = _Imports(index, script, sources)
     for src in sources.values():

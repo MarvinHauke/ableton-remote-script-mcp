@@ -13,22 +13,28 @@ source = { editable = "." }
 
 [package.optional-dependencies]
 rig = [
+    { name = "pyyaml" },
     { name = "rtmidi2" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "zensical" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "rtmidi2", marker = "extra == 'rig'", specifier = ">=1.5" }]
+requires-dist = [
+    { name = "pyyaml", marker = "extra == 'rig'", specifier = ">=6" },
+    { name = "rtmidi2", marker = "extra == 'rig'", specifier = ">=1.5" },
+]
 provides-extras = ["rig"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "pytest", specifier = ">=8" },
+    { name = "pyyaml", specifier = ">=6" },
     { name = "zensical", specifier = "==0.1.1" },
 ]
 

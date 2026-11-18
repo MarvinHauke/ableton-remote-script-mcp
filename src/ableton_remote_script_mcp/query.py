@@ -28,7 +28,7 @@ from .live_install import LiveInstall
 from .outline import find_script, outline_package
 from .resolve import Resolver, lineage
 from .structure_void import live_major, load_document
-from .validator import validate_folder
+from .validator import read_sources, validate_folder
 
 BUILD_INDEX_HINT = "run `uv run ableton-remote-script-mcp build-index` (or `--app <Live.app>` for a specific build)"
 
@@ -288,21 +288,68 @@ def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> d
     return {"status": "ok", "builds": builds, "installed_not_indexed": not_indexed}
 
 
-def outline_script(name: str, index_dir: Path, live_build: str | None = None) -> dict:
-    """The outline of one Remote Script (or library): its classes with their roles and own
-    members, the Specification fields it sets, its component map and mappings (v3), and the
-    elements, components and layers its code creates, without function bodies.
-    See `outline.py` for how each part is found."""
+def is_script_folder(name: str) -> bool:
+    """`outline`'s argument names a folder on disk (a path), not a script in Live's install."""
+    return ("/" in name or name.startswith(".")) and Path(name).expanduser().is_dir()
+
+
+def outline_folder(folder: Path, index: dict) -> tuple[dict | None, str]:
+    """(the outline of a script folder against a loaded index with statements, or None and why).
+    The folder's sources are compiled and read like Live's own scripts (the validator's overlay),
+    so the outline is the same as for an indexed script."""
+    import sys
+
+    from .framework_checks import LIVE_PYTHON, compile_sources, overlay_index
+    if sys.version_info[:2] != LIVE_PYTHON:
+        return None, f"an outline of a folder compiles it as Live's Python {LIVE_PYTHON[0]}.{LIVE_PYTHON[1]} does"
+    folder = Path(folder).expanduser().resolve()
+    findings: list[dict] = []
+    not_checked: list[dict] = []
+    sources, _ = read_sources(folder, findings)
+    codes = compile_sources(sources, findings, not_checked)
+    if not codes:
+        return None, f"no readable Python sources in {folder}" + (f" ({findings[0]['message']})" if findings else "")
+    overlay = overlay_index(index, folder.name, sources, codes, not_checked)
+    if folder.name not in overlay["packages"]:
+        return None, f"{folder} has no __init__.py: it is not a Remote Script folder"
+    answer = outline_package(overlay, folder.name)
+    answer["folder"] = str(folder)
+    if findings or not_checked:
+        answer["not_read"] = [f"{f['file']}: {f['message']}" for f in findings] + [
+            f"{n['file']}: {n['reason']}" for n in not_checked]
+    return answer, ""
+
+
+def _with_statements(index_dir: Path, live_build: str | None) -> tuple[dict | None, dict | None]:
     index, missing = _open(index_dir, live_build)
     if missing:
-        return missing
+        return None, missing
     live_build = index["live_build"]
     statements = load_statements(index_dir, index)
     if statements is None:
-        return _index_missing(index_dir, live_build,
-                              f"no statement summaries for Live {live_build} at {statements_path(index_dir, live_build)}"
-                              " (an outline needs them; build-index writes them unless --no-statements)")
+        return None, _index_missing(
+            index_dir, live_build,
+            f"no statement summaries for Live {live_build} at {statements_path(index_dir, live_build)}"
+            " (an outline needs them; build-index writes them unless --no-statements)")
     attach_statements(index, statements)
+    return index, None
+
+
+def outline_script(name: str, index_dir: Path, live_build: str | None = None) -> dict:
+    """The outline of one Remote Script (or library): its classes with their roles and own
+    members, the Specification fields it sets, its component map and mappings (v3), and the
+    elements, components and layers its code creates, without function bodies. `name` is a
+    script in Live's install, or a path to a script folder (`./my_script`, `examples/X`).
+    See `outline.py` for how each part is found."""
+    index, missing = _with_statements(index_dir, live_build)
+    if missing:
+        return missing
+    live_build = index["live_build"]
+    if is_script_folder(name):
+        answer, why = outline_folder(Path(name), index)
+        if answer is None:
+            return {"status": "not_found", "live_build": live_build, "message": why}
+        return {"status": "ok", "live_build": live_build, "confidence": "observed", **answer}
     key = find_script(index, name)
     if key is None:
         return _not_found(live_build, f"Remote Script {name!r}")

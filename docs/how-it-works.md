@@ -36,6 +36,11 @@ are stored, and the conditions, loops and exception handlers each call sits unde
 Nothing is run to get them, so a call under an `if` is only known to run, or not to run, when the
 script's own class attributes settle the test. `outline` marks such entries.
 
+`outline` also takes a path to a script folder of your own (`outline ./My_Script`). It reads the
+folder the way `validate` does: it compiles the sources and lays them over the index. One gap:
+a call that also passes `**k` loses its keyword arguments in the summary, so `outline` shows
+them as `…`.
+
 Only `outline` reads this file. If you don't want it, build with `--no-statements`; every other
 command works the same, and `outline` tells you that the summaries are missing.
 
