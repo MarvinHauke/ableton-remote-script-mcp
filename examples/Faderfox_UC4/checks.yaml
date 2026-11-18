@@ -233,5 +233,5 @@ steps:
     description: "5: the Rack encoders follow the selected device"
     ask_user: After selecting another device in Live, do the Rack encoders show its parameters?
   - id: group-leds
-    description: "13: each green button group shows its own state at once"
-    ask_user: After switching the UC4 to another green button group and back, do the LEDs show that group's state?
+    description: "13: each green button group shows its own state at once (needs the UC4 itself: the device keeps the LED state per group)"
+    ask_user: With the UC4 connected, after switching to another green button group and back, do the LEDs show that group's state?

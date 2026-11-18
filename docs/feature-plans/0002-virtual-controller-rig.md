@@ -230,8 +230,12 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      - The test Set has 2 returns, so send D has nothing to set: the step uses send B.
      - When `rig serve` opened the port while Live was running, the slot (picked in step 1)
        reconnected and the script sent its start-up state (228 messages) without a restart.
-   - **Still to do in step 2:** the restart check with `rig serve` running (does slot 1 keep
-     `ARS Test Rig` and the script?).
+   - **Live restart with `rig serve` running** (the user, 2026-11-18): the slot kept
+     `ARS Test Rig` and `Faderfox_UC4`; the script logged `ready`, the port stayed open, and the
+     check file passed again (24 passed). So after a script change: keep `rig serve` running,
+     restart Live, run the checks.
+   - **Still to do in step 2:** Live started while no `rig serve` holds the port: does the slot
+     keep `ARS Test Rig` and reconnect once `rig serve` starts?
    - **Found on the way:** the extractor's statement summary loses the keywords of a call that
      also passes `**k`. That is an `outline` gap for every script, recorded for 0001.
 3. **AbletonMCP** — blocked by: 2.
