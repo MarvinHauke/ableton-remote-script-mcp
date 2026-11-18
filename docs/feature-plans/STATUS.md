@@ -220,12 +220,12 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   how much LED traffic it takes before it loses presses; the APC mini's limit is in
   [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md) (0001 decision 41).
 
-- [ready-for-agent] Before the first push (the repo is public): take the Live 13 beta findings out of
-  the research doc's section 3 (12.4.16 → 13.0b25 differences; it also lists the User Library's
-  scripts) and out of plan step 4's check, and rewrite the unpushed history so no commit carries
-  them. Only with the user's go (found 2026-11-15; the user deferred it).
-- [ready-for-human] Merge the step branches into `main` and push, so the `docs` workflow publishes
-  the site. GitHub Pages is set to deploy from GitHub Actions (the user, checked 2026-11-15).
+- Done 2026-11-18 (the user's go): the Live 13 beta findings are out of the research doc
+  (section 3's differences, the beta's `.pyc` counts, the Push2 move, the User Library listing)
+  and out of plan step 4's check. The 60 unpushed commits were rewritten (`git filter-branch`),
+  so no commit on `main` carries them.
+- [ready-for-human] Push `main` (the step branches are merged and deleted, 2026-11-18), so the
+  `docs` workflow publishes the site. GitHub Pages is set to deploy from GitHub Actions (the user, checked 2026-11-15).
 - [ready-for-human] Ask the people responsible at Ableton whether extracted API facts and Live 13
   beta findings may be published (0001 decisions 15 and 36); until then they stay local.
 - [ready-for-human] Set the GitHub repo description and topics (0001 decision 27).
