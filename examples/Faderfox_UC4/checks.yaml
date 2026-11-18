@@ -14,6 +14,12 @@
 script: .
 build: 12.4.16
 settle: 1.5
+# with AbletonMCP running (plan 0002 step 3): the test Set must have these
+requires:
+  tracks: 8
+  returns: 2
+  devices: [1, 2]
+  clips: [{track: 2, scene: 1}]
 steps:
   - id: session-box
     description: "2: a box of 8 tracks x 1 scene"
@@ -26,6 +32,10 @@ steps:
       - faders[0]: 100
     expect:
       faders[0]: 100
+    state:
+      track 1: {volume: 0.787}   # 100/127
+    events:
+      - {type: volume_changed, track: 1}
     log: clean
   - id: fader-8
     description: "3: fader 8 sets track 8's volume"
@@ -67,6 +77,8 @@ steps:
       - pan_encoders[0]: 40
     expect:
       pan_encoders[0]: 40
+    state:
+      track 1: {panning: -0.370}   # -1 + 2 * 40/127
     log: clean
 
   - id: select-track-1
@@ -138,12 +150,19 @@ steps:
       master_volume_encoder: 100
     log: clean
   - id: tempo-and-quant
-    description: "7: tempo coarse up and down, quantization up and down (fix 3: no ArgumentError)"
+    description: "7: tempo coarse up, quantization up and down (fix 3: no ArgumentError)"
     send:
       - tempo_coarse_encoder: 1
-      - tempo_coarse_encoder: -1
       - quantization_encoder: 1
       - quantization_encoder: -1
+    events:
+      - {type: tempo_changed}   # +1 and -1 at once change nothing Live reports (2026-11-18)
+    log: clean
+  - id: tempo-back
+    send:
+      tempo_coarse_encoder: -1
+    events:
+      - {type: tempo_changed}
     log: clean
 
   - id: mute-1
@@ -152,6 +171,10 @@ steps:
       active_buttons[0]: press
     expect:
       active_buttons[0]: 0
+    state:
+      track 1: {mute: true}
+    events:
+      - {type: mute_changed, track: 1}
     log: clean
   - id: unmute-1
     depends_on: mute-1
@@ -159,6 +182,8 @@ steps:
       active_buttons[0]: press
     expect:
       active_buttons[0]: 127
+    state:
+      track 1: {mute: false}
     log: clean
   - id: solo-1
     description: "10, 13: Solo 1 lights; Active 2 goes dark, as tracks a solo silences count as muted"
@@ -167,6 +192,9 @@ steps:
     expect:
       solo_buttons[0]: 127
       active_buttons[1]: 0
+    state:
+      track 1: {solo: true}
+      track 2: {mute: false}   # silenced by the solo, not muted
     log: clean
   - id: unsolo-1
     depends_on: solo-1
@@ -175,6 +203,8 @@ steps:
     expect:
       solo_buttons[0]: 0
       active_buttons[1]: 127
+    state:
+      track 1: {solo: false}
     log: clean
   - id: arm-1
     description: "10: Record 1 arms track 1 and lights"
@@ -182,6 +212,8 @@ steps:
       record_buttons[0]: press
     expect:
       record_buttons[0]: 127
+    state:
+      track 1: {arm: true}
     log: clean
   - id: disarm-1
     depends_on: arm-1
@@ -189,6 +221,8 @@ steps:
       record_buttons[0]: press
     expect:
       record_buttons[0]: 0
+    state:
+      track 1: {arm: false}
     log: clean
   - id: monitor-in
     description: "11: Monitor 1 switches track 1 to In and lights"
@@ -205,21 +239,81 @@ steps:
       monitor_buttons[0]: 0
     log: clean
 
-  - id: launch-and-stop
-    description: "9: Launch 1 starts track 1's clip, Stop All stops it"
+  - id: launch
+    description: "9: Launch 2 starts track 2's clip in scene 1; Live lights Launch 2 and Stop 2"
     send:
-      - launch_buttons[0]: press
-    timeout: 4.0
-    quiet: 1.0
-    ask_user: Did track 1's clip in the box's scene start, with Launch 1 and Stop 1 lit?
+      launch_buttons[1]: press
+    wait: 2.5   # clips start and stop on the next bar
+    timeout: 5.0
+    expect:
+      launch_buttons[1]: 127
+      stop_buttons[1]: 127
+    events:
+      - {type: clip_playing_changed, track: 2, clip: 1}
     log: clean
   - id: stop-all
-    depends_on: launch-and-stop
+    depends_on: launch
+    description: "8, 9: Stop All Clips stops it; Stop 2 goes dark"
     send:
       stop_all_clips_button: press
-    timeout: 4.0
-    quiet: 1.0
+    wait: 2.5   # clips start and stop on the next bar
+    timeout: 5.0
+    expect:
+      stop_buttons[1]: 0
     log: clean
+  - id: stop-transport
+    send:
+      stop_button: press
+    state:
+      song: {is_playing: false}
+    log: clean
+
+  # Live -> controller (AbletonMCP does it in Live; the script must send it to the UC4)
+  - id: select-track-2
+    send:
+      select_buttons[1]: press
+    expect:
+      select_buttons[1]: 127
+  - id: macro-to-rack-encoder
+    depends_on: select-track-2
+    description: "5: a macro changed in Live shows on Rack encoder 1 (the device of the selected track 2)"
+    do:
+      - set_device_parameter: {track: 2, device: 1, parameter: 2, value: 64}   # Macro 1
+    expect:
+      rack_encoders[0]: 64
+    log: clean
+  - id: macro-back
+    depends_on: macro-to-rack-encoder
+    do:
+      - set_device_parameter: {track: 2, device: 1, parameter: 2, value: 0}
+    expect:
+      rack_encoders[0]: 0
+  - id: fire-clip-to-leds
+    description: "9: a clip fired in Live lights Launch 2 and Stop 2"
+    do:
+      - fire_clip: {track: 2, clip: 1}
+    wait: 2.5   # clips start and stop on the next bar
+    timeout: 5.0
+    expect:
+      launch_buttons[1]: 127
+      stop_buttons[1]: 127
+    log: clean
+  - id: stop-clip-to-leds
+    depends_on: fire-clip-to-leds
+    do:
+      - stop_clip: {track: 2, clip: 1}
+      - stop_playback: {}
+    wait: 2.5   # clips start and stop on the next bar
+    timeout: 5.0
+    expect:
+      stop_buttons[1]: 0
+    log: clean
+  - id: select-track-1-again
+    send:
+      select_buttons[0]: press
+    expect:
+      select_buttons[0]: 127
+
   - id: navigation
     description: "12: Next Track moves the selection; Next Device moves through the devices"
     send:

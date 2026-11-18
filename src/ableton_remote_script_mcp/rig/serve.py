@@ -143,8 +143,16 @@ def connect(host: str = "127.0.0.1", port: int = DEFAULT_PORT) -> ServedPort | N
 def serve(name: str, address=("127.0.0.1", DEFAULT_PORT), log=print) -> None:  # pragma: no cover - needs MIDI
     from .ports import VirtualPort
 
+    running = connect(*address)
+    if running is not None:  # checked before opening a second port of the same name in Live's lists
+        running.close()
+        raise OSError(f"a `rig serve` already listens on {address[0]}:{address[1]}")
     midi = VirtualPort(name)
-    server = RigServer(midi, address)
+    try:
+        server = RigServer(midi, address)
+    except OSError:
+        midi.close()
+        raise
     log(f"rig serve: holding the virtual port `{name}`; clients connect on {address[0]}:{address[1]}. "
         "Restart Live as often as needed; stop with Ctrl-C.")
     try:

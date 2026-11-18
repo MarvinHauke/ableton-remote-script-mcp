@@ -548,8 +548,14 @@ def make_parser() -> argparse.ArgumentParser:
                     help="without `rig serve`: seconds to wait for Live to connect (default: 120)")
     rr.add_argument("--log", help="the Log.txt to read for `log: clean` (default: the Live build's, else the "
                     "most recently written)")
+    rr.add_argument("--no-abletonmcp", action="store_true",
+                    help="don't use AbletonMCP even when it runs (state, events and do steps are not checked)")
     rr.add_argument("--json", action="store_true", help="print the result as JSON")
     rr.set_defaults(func=_cmd_rig_run)
+    am = rg_sub.add_parser("abletonmcp", help="what the rig reads through AbletonMCP now: its version, the song and "
+                           "each track (for checking reads against what the user sees in Live)")
+    am.add_argument("--json", action="store_true", help="print the answer as JSON")
+    am.set_defaults(func=_cmd_rig_abletonmcp)
     return p
 
 
@@ -627,6 +633,38 @@ def _element_flags(e) -> str:
     return f"  ({', '.join(flags)})" if flags else ""
 
 
+def _cmd_rig_abletonmcp(args: argparse.Namespace) -> int:
+    """Exit 0: read; 2: no AbletonMCP the rig can use."""
+    from .rig.abletonmcp import TESTED, connect
+
+    mcp, why = connect()
+    if mcp is None:
+        print(why, file=sys.stderr)
+        return 2
+    try:
+        song = mcp.read("get_session_info")
+        tracks = [mcp.read("get_track_info", track_index=i) for i in range(song["track_count"])]
+    finally:
+        mcp.close()
+    if args.json:
+        print(json.dumps({"script_info": mcp.info, "song": song, "tracks": tracks, "tested": TESTED}, indent=1))
+        return 0
+    print(f"AbletonMCP {mcp.info['script_version']} (protocol {mcp.info['protocol_version']})")
+    print(f"song: tempo {song['tempo']:g}, {'playing' if song['is_playing'] else 'stopped'}, "
+          f"{song['track_count']} tracks, {song['return_track_count']} returns, "
+          f"main volume {song['master_track']['volume']:.3f}")
+    for t in tracks:
+        flags = [f for f in ("mute", "solo", "arm") if t[f]]
+        clips = [str(c["index"] + 1) for c in t["clip_slots"] if c["has_clip"]]
+        playing = [str(c["index"] + 1) for c in t["clip_slots"] if c["has_clip"] and c["clip"]["is_playing"]]
+        print(f"  track {t['index'] + 1} {t['name']!r}: volume {t['volume']:.3f}, pan {t['panning']:+.2f}"
+              + (f", {' '.join(flags)}" if flags else "")
+              + f"; devices: {', '.join(d['name'] for d in t['devices']) or 'none'}"
+              + f"; clips in scenes {','.join(clips) or '-'}" + (f" (playing: {','.join(playing)})" if playing else ""))
+    print("tested reads: " + "; ".join(f"{k} ({v})" for k, v in TESTED.items()))
+    return 0
+
+
 def _cmd_rig_serve(args: argparse.Namespace) -> int:  # pragma: no cover - needs MIDI
     from .rig.ports import DEFAULT_NAME, RigUnavailable
     from .rig.serve import DEFAULT_PORT, serve
@@ -676,6 +714,11 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
     if any(s.log_clean for s in checks.steps) and log_path is None:
         print("the check file asks for `log: clean`, and no Log.txt was found; pass --log", file=sys.stderr)
         return 4
+    from .rig import abletonmcp
+
+    mcp, mcp_note = (None, "--no-abletonmcp") if args.no_abletonmcp else abletonmcp.connect()
+    say(f"AbletonMCP {mcp.info['script_version']}: Live's state is checked too" if mcp else
+        f"without AbletonMCP ({mcp_note}): state, events and do steps are not checked")
     port = connect(port=args.port or DEFAULT_PORT)
     own = port is None
     try:
@@ -691,7 +734,7 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
         else:
             say(f"using `rig serve`'s port `{port.name}` ({port.hello['received']} message(s) from Live so far)")
         say(f"sending MIDI only to `{port.name}`; stop with Ctrl-C")
-        result = run_checks(checks, ctl, port, LogWatch(log_path, ctl.script), say=say)
+        result = run_checks(checks, ctl, port, LogWatch(log_path, ctl.script), say=say, mcp=mcp, mcp_note=mcp_note)
     except RigUnavailable as e:
         print(e, file=sys.stderr)
         return 3
@@ -701,6 +744,8 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
     finally:
         if port is not None:
             port.close()
+        if mcp is not None:
+            mcp.close()
     path = write_result(result, checks.path)
     if args.json:
         print(json.dumps(result, indent=1, ensure_ascii=False))

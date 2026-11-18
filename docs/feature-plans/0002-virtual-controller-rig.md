@@ -249,6 +249,26 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      creating what is missing; the tested-command list procedure (Decision 6).
    - **Checks:** seam C over the fake socket; the user sets three states by hand for the
      tested list; the full UC4 check file reproduces the 14 results (Decision 16).
+   - **In work** (2026-11-18, agent; branch `feat/0002-step-3-abletonmcp`):
+     - `rig/abletonmcp.py`: the client. AbletonMCP's protocol, read from its 1.7.1 script: one
+       JSON object per request and per answer, with no delimiter. The client checks the version
+       with `get_script_info` and refuses commands outside the allow-list before sending
+       anything. Reads repeat until two answers agree. `TESTED` holds the commands checked
+       against a state the user set by hand; a result from any other command is labelled.
+     - `rig/state.py`: check files gain `do` (allowed AbletonMCP writes), `state` (`song`,
+       `track N`, `track N device M`, fields compared within 0.005), `events` (AbletonMCP's
+       listener events during the step) and `requires` (the run stops with a list of what's
+       missing; a missing clip on a MIDI track is created). Everything counts from 1, as Live
+       shows it. Without AbletonMCP, `do` steps are skipped and state is listed as not checked.
+     - `rig abletonmcp` prints what the rig reads, so the user can compare it with Live.
+     - Run in Live (12.4.16, the test Set): 29 passed, including state for volume, pan, mute,
+       solo (a track silenced by a solo reads `mute: false`), arm and transport. In the Live →
+       controller direction, a macro set through AbletonMCP shows on Rack encoder 1.
+     - Learned: Tempo Coarse +1 and −1 sent at once fire no `tempo_changed` (one at a time
+       does). Clips start and stop on the next bar (2 s at 120 BPM), so those steps listen at
+       least 2.5 s. Pressing Launch 2 also resends the controller's whole state. The two clip
+       LED steps still fail (Launch 2 dark after a fire). The likely cause is the box moving to
+       the next scene on launch; the user is asked.
    - **Docs:** a guide page "Testing a script with the test rig"; How it works and Getting
      started mention the rig.
 4. **Device profiles and identity** — blocked by: 2.

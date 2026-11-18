@@ -29,6 +29,11 @@ steps up (positive) or down (negative), encoded as its map mode says. A matrix's
 step whose `depends_on` failed or was skipped is skipped.
 
 Only the last reply per element counts: Live sends a control's value more than once (step 1).
+
+With AbletonMCP running, a step can also `do` a command in Live first (the Live → controller
+direction), and expect Live's `state` and AbletonMCP's listener `events`; the file's `requires`
+is checked before the first step. See `state.py`. Without AbletonMCP, a step that does something
+is skipped, and its state and event expectations are listed as not checked.
 """
 
 from __future__ import annotations
@@ -39,9 +44,19 @@ from pathlib import Path
 
 from .controller import Controller, Element
 from .ports import describe, parse_message, wait_quiet
+from .state import (
+    StateError,
+    check_events,
+    check_state,
+    parse_do,
+    parse_events,
+    parse_requires,
+    parse_state,
+)
 
-STEP_KEYS = {"id", "description", "send", "expect", "log", "depends_on", "ask_user", "quiet", "timeout", "wait"}
-FILE_KEYS = {"script", "build", "settle", "quiet", "timeout", "wait", "steps"}
+STEP_KEYS = {"id", "description", "send", "expect", "log", "depends_on", "ask_user", "quiet", "timeout", "wait",
+             "do", "state", "events"}
+FILE_KEYS = {"script", "build", "settle", "quiet", "timeout", "wait", "steps", "requires"}
 # wait: Live sends a value back to an element later than 150 ms after it arrives (12.4.16, the
 # UC4 run of 2026-11-18: each echo came in the next step), so a step listens at least this long
 DEFAULTS = {"settle": 1.5, "quiet": 0.15, "timeout": 3.0, "wait": 0.5}
@@ -65,6 +80,13 @@ class Step:
     quiet: float = DEFAULTS["quiet"]
     timeout: float = DEFAULTS["timeout"]
     wait: float = DEFAULTS["wait"]
+    do: list = field(default_factory=list)  # [(command, AbletonMCP params)]
+    state: dict = field(default_factory=dict)
+    events: list = field(default_factory=list)
+
+    @property
+    def needs_live_state(self) -> bool:
+        return bool(self.do or self.state or self.events)
 
 
 @dataclass
@@ -74,6 +96,7 @@ class CheckFile:
     build: str | None
     settle: float
     steps: list[Step]
+    requires: dict = field(default_factory=dict)
 
 
 def load_check_file(path: Path) -> CheckFile:
@@ -109,15 +132,26 @@ def load_check_file(path: Path) -> CheckFile:
         expect = raw.get("expect") or {}
         if not isinstance(expect, dict):
             raise CheckFileError(f"{where}: `expect` is a mapping of element name to value")
-        if not (raw.get("send") or expect or log or raw.get("ask_user")):
-            raise CheckFileError(f"{where}: a step sends, expects, checks the log or asks the user")
-        steps.append(Step(
+        if not (raw.get("send") or expect or log or raw.get("ask_user") or raw.get("do") or raw.get("state")
+                or raw.get("events")):
+            raise CheckFileError(f"{where}: a step sends, does, expects, checks the log or asks the user")
+        try:
+            live = {"do": parse_do(raw["do"], where) if raw.get("do") else [],
+                    "state": parse_state(raw["state"], where) if raw.get("state") else {},
+                    "events": parse_events(raw["events"], where) if raw.get("events") else []}
+        except StateError as e:
+            raise CheckFileError(str(e)) from e
+        steps.append(Step(**live,
             id=sid, description=str(raw.get("description", "")), send=_sends(raw.get("send"), where),
             expect={str(k): v for k, v in expect.items()}, log_clean=log == "clean", depends_on=deps,
             ask_user=raw.get("ask_user"), quiet=float(raw.get("quiet", opts["quiet"])),
             timeout=float(raw.get("timeout", opts["timeout"])), wait=float(raw.get("wait", opts["wait"]))))
     folder = (path.parent / str(data.get("script", "."))).resolve()
-    return CheckFile(path, folder, data.get("build") and str(data["build"]), opts["settle"], steps)
+    try:
+        requires = parse_requires(data.get("requires"), str(path))
+    except StateError as e:
+        raise CheckFileError(str(e)) from e
+    return CheckFile(path, folder, data.get("build") and str(data["build"]), opts["settle"], steps, requires)
 
 
 def _unknown(data: dict, allowed: set[str], where: str) -> None:
@@ -226,8 +260,17 @@ class LogWatch:
 
 
 def run_checks(checks: CheckFile, ctl: Controller, port, log: LogWatch | None = None,
-               sleep=time.sleep, quiet_wait=wait_quiet, say=print) -> dict:
-    """Run every step; the result as `checks.result.json` holds it."""
+               sleep=time.sleep, quiet_wait=wait_quiet, say=print, mcp=None, mcp_note: str = "") -> dict:
+    """Run every step; the result as `checks.result.json` holds it. `mcp` is an AbletonMCP
+    client, or None (`mcp_note` says why)."""
+    if mcp is not None:
+        from .state import check_requires
+
+        missing = check_requires(mcp, checks.requires, log=say)
+        if missing:
+            raise CheckFileError("the open Set lacks what the check file requires: " + "; ".join(missing))
+    elif checks.requires:
+        say(f"`requires` not checked: {mcp_note or 'no AbletonMCP'}")
     start = quiet_wait(port, checks.settle, max(10.0, checks.settle * 4))
     say(f"start-up: {len(start)} message(s) from Live, then {checks.settle:.1f} s quiet")
     results: dict[str, dict] = {}
@@ -236,19 +279,33 @@ def run_checks(checks: CheckFile, ctl: Controller, port, log: LogWatch | None = 
         if blocked:
             results[step.id] = {"id": step.id, "description": step.description, "verdict": "skipped",
                                 "reasons": [f"depends on {', '.join(blocked)}"]}
+        elif step.do and mcp is None:
+            results[step.id] = {"id": step.id, "description": step.description, "verdict": "skipped",
+                                "reasons": [(f"needs AbletonMCP to do {', '.join(c for c, _ in step.do)}: "
+                                            f"{mcp_note or 'not connected'}")]}
         else:
-            results[step.id] = _run_step(step, ctl, port, log, sleep, quiet_wait)
+            results[step.id] = _run_step(step, ctl, port, log, sleep, quiet_wait, mcp)
         r = results[step.id]
         say(f"{r['verdict'].upper():8} {step.id}" + (f" — {r['reasons'][0]}" if r.get("reasons") else ""))
     counts = {v: sum(r["verdict"] == v for r in results.values()) for v in ("passed", "failed", "skipped", "ask_user")}
     return {"check_file": str(checks.path), "script": ctl.script, "folder": ctl.folder, "port": port.name,
+            "abletonmcp": (mcp.info.get("script_version") if mcp is not None else None) or mcp_note,
             "counts": counts, "steps": list(results.values())}
 
 
-def _run_step(step: Step, ctl: Controller, port, log: LogWatch | None, sleep, quiet_wait) -> dict:
+def _run_step(step: Step, ctl: Controller, port, log: LogWatch | None, sleep, quiet_wait, mcp=None) -> dict:
     stray = port.drain()
+    if mcp is not None and step.needs_live_state:
+        mcp.events()  # what happened before the step
     if log and step.log_clean:
         log.mark()
+    done, reasons = [], []
+    for command, params in step.do:
+        try:
+            mcp.call(command, **params)
+            done.append(f"{command} {params}")
+        except Exception as e:  # noqa: BLE001  a failed command is the step's result
+            reasons.append(f"AbletonMCP {command} {params} failed: {e}")
     sent: list[list[int]] = []
     for item in step.send:
         messages = encode(ctl.element(item[0]), item[1]) if isinstance(item, tuple) else [item]
@@ -257,7 +314,8 @@ def _run_step(step: Step, ctl: Controller, port, log: LogWatch | None, sleep, qu
                 sleep(PRESS_GAP)
             port.send(m)
             sent.append(m)
-    replies = quiet_wait(port, step.quiet, step.timeout, at_least=step.wait) if (sent or step.expect) else []
+    listen = sent or step.expect or done or step.state or step.events
+    replies = quiet_wait(port, step.quiet, step.timeout, at_least=step.wait) if listen else []
     by_key: dict[tuple[int, int], list[int]] = {}
     for r in replies:
         k = _key(r.message)
@@ -265,9 +323,11 @@ def _run_step(step: Step, ctl: Controller, port, log: LogWatch | None, sleep, qu
             by_key.setdefault(k[0], []).append(k[1])
     result = {"id": step.id, "description": step.description,
               "sent": [describe(m) for m in sent], "received": [describe(r.message) for r in replies]}
+    if done:
+        result["done"] = done
     if stray:
         result["before_step"] = [describe(r.message) for r in stray]
-    reasons, expectations = [], []
+    expectations = []
     for name, want in step.expect.items():
         element = ctl.element(name)
         ok, got = _holds(want, by_key.get(element.key, []))
@@ -275,6 +335,22 @@ def _run_step(step: Step, ctl: Controller, port, log: LogWatch | None, sleep, qu
         if not ok:
             reasons.append(f"{name}: expected {want}, {got}")
     result["expect"] = expectations
+    if mcp is not None and (step.state or step.events):
+        events = mcp.events() if step.events else []
+        live = check_state(mcp, step.state) + check_events(step.events, events)
+        result["live"] = live
+        if step.events:
+            result["events"] = [{k: e.get(k) for k in ("type", "track_index", "clip_index", "detail")} for e in events]
+        for r in live:
+            if not r["ok"]:
+                what = r.get("state") or r.get("event")
+                reasons.append(f"{what}: expected {r.get('expected', 'it')}, got {r['got']}"
+                               if "state" in r else f"no event {what} during the step")
+        untested = sorted({r["command"] for r in live if r.get("tested") is False})
+        if untested:
+            result["untested_commands"] = untested
+    elif step.state or step.events:
+        result["not_checked"] = [*(f"state {k}" for k in step.state), *(f"event {e['type']}" for e in step.events)]
     if step.log_clean and log:
         tracebacks = log.new_tracebacks()
         result["tracebacks"] = [t["text"] for t in tracebacks]

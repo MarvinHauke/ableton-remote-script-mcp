@@ -212,7 +212,7 @@ ableton-remote-script-mcp rig serve [--name NAME] [--port PORT]
 Run a check file against a script in Live, over `rig serve` or a port of its own; writes checks.result.json beside it.
 
 ```text
-ableton-remote-script-mcp rig run [--build BUILD] [--name NAME] [--port PORT] [--wait WAIT] [--log LOG] [--json] checks
+ableton-remote-script-mcp rig run [--build BUILD] [--name NAME] [--port PORT] [--wait WAIT] [--log LOG] [--no-abletonmcp] [--json] checks
 ```
 
 | Argument | What it does |
@@ -223,4 +223,17 @@ ableton-remote-script-mcp rig run [--build BUILD] [--name NAME] [--port PORT] [-
 | `--port PORT` | The local TCP port of `rig serve` (default: 9878). |
 | `--wait WAIT` | Without `rig serve`: seconds to wait for Live to connect (default: 120). |
 | `--log LOG` | The Log.txt to read for `log: clean` (default: the Live build's, else the most recently written). |
+| `--no-abletonmcp` | Don't use AbletonMCP even when it runs (state, events and do steps are not checked). |
 | `--json` | Print the result as JSON. |
+
+### `rig abletonmcp`
+
+What the rig reads through AbletonMCP now: its version, the song and each track (for checking reads against what the user sees in Live).
+
+```text
+ableton-remote-script-mcp rig abletonmcp [--json]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--json` | Print the answer as JSON. |

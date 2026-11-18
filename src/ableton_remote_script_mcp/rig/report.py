@@ -30,6 +30,12 @@ def format_report(result: dict) -> str:
             lines.append(f"    received: {'; '.join(step.get('received') or []) or 'nothing'}")
         elif step["verdict"] == "skipped":
             lines.append(f"skipped {step['id']}: {step['reasons'][0]}")
+    unchecked = [s["id"] for s in result["steps"] if s.get("not_checked")]
+    if unchecked:
+        lines.append(f"Live's state not checked (no AbletonMCP) in: {', '.join(unchecked)}")
+    untested = sorted({c for s in result["steps"] for c in s.get("untested_commands", [])})
+    if untested:
+        lines.append(f"read with AbletonMCP commands not yet on the tested list: {', '.join(untested)}")
     asks = [s for s in result["steps"] if s["verdict"] == "ask_user"]
     if asks:
         lines.append("ask the user:")
