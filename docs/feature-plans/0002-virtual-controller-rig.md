@@ -193,6 +193,20 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      `rig serve` running, does a Live restart keep slot 1's `ARS Test Rig` and script? When Live
      starts before the rig, does the slot reconnect once the port appears? The answers go into
      the guide's "after a script change" steps.
+   - **Started** (2026-11-18, agent; branch `feat/0002-step-2-rig-run`, nothing built yet).
+     Findings for the controller model:
+     - `outline` reads only scripts indexed from Live. A script folder can be outlined the way
+       the validator does it: parse the sources, then `compile_sources` → `overlay_index` →
+       `outline_package` (tried on `examples/Faderfox_UC4`: 44 elements, all mappings).
+     - Its element arguments are not enough for MIDI numbers. When a call has `**k`, the
+       statement summary packs the positional arguments into `*(48, 'Crossfader')` and drops
+       the keywords (`"**": "…"`), so `channel=CH14` is lost.
+     - Plan: use `outline` to find which calls build elements (the line and the framework
+       `add_*` method), then read that call's arguments from the script's own AST, resolving
+       its module constants.
+     - Defaults: `add_button` and `add_encoder` take `channel` from `k`, else the Elements'
+       `global_channel` (observed, 12.4.16, `ElementsBase.add_button` statements). The default
+       `msg_type` of `create_button` and `create_encoder` is still to be looked up in the index.
 3. **AbletonMCP** — blocked by: 2.
    - **Delivers:** the socket client (version, allow-list, repeated reads, events), `state`
      expectations, `do` steps (Live → controller), `requires` checked against the test Set and
