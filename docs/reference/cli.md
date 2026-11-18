@@ -43,7 +43,7 @@ ableton-remote-script-mcp list builds [--json]
 
 ## `import-structure-void`
 
-Fetch Structure Void's runtime pages of the Live module as a documented source.
+Fetch Structure Void's reference (the Live module's runtime pages and the framework pages) as a documented source.
 
 ```text
 ableton-remote-script-mcp import-structure-void [--live LIVE] [--refresh]
@@ -53,6 +53,20 @@ ableton-remote-script-mcp import-structure-void [--live LIVE] [--refresh]
 | --- | --- |
 | `--live LIVE` | Live major version (default: 12). |
 | `--refresh` | Fetch the pages again instead of reusing the local copies. |
+
+## `check-structure-void`
+
+Compare Structure Void's framework pages with a build's index: classes, members, arguments and bases that differ.
+
+```text
+ableton-remote-script-mcp check-structure-void [--build BUILD] [--under UNDER] [--json]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--under UNDER` | Only this package or module and what is in it, e.g. ableton.v3. |
+| `--json` | Print the answer as JSON. |
 
 ## `lookup`
 
@@ -87,6 +101,21 @@ ableton-remote-script-mcp search [--kind KIND] [--limit LIMIT] [--build BUILD] [
 | `--kind KIND` | Only this kind (member = any class member). One of: `class`, `module`, `member`, `method`, `property`, `classmethod`, `staticmethod`, `function`, `attribute`. |
 | `--limit LIMIT` | How many results to show (default: 20). |
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--json` | Print the query core's answer as JSON. |
+
+## `diff`
+
+What changed between two Live builds: packages, modules, classes and members added, removed or changed.
+
+```text
+ableton-remote-script-mcp diff [--under UNDER] [--json] from to
+```
+
+| Argument | What it does |
+| --- | --- |
+| `from` | The older build, e.g. 12.4.16. |
+| `to` | The newer build, e.g. 12.4.25b1. |
+| `--under UNDER` | Only this package or module and what is in it, e.g. ableton.v3 or APC_mini (without it: counts per package). |
 | `--json` | Print the query core's answer as JSON. |
 
 ## `outline`

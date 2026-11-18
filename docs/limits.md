@@ -2,8 +2,8 @@
 
 - **macOS only.** Live installs are looked for as app bundles in `/Applications`; Windows is not
   supported.
-- **Only Live's own scripts are indexed.** `outline` works on the Remote Scripts that ship with
-  Live, not on scripts in your User Library.
+- **Only Live's own scripts are indexed.** `outline` reads your own script from its folder, but
+  the index holds only the Remote Scripts that ship with Live.
 - **Facts are `observed`, or `documented` from Structure Void.** Facts about Live's own
   objects that only Structure Void's pages have are `documented`. Those pages come from one
   unstated Live 12.x build, so a `documented` name may differ in your build. Nothing has been

@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-18 (0002 step 5 done and merged: `rig panel`; next 0001 step 4)._
+_Last updated: 2026-11-18 (0001 steps 4 and 6 built: `diff`, `check-structure-void`; next 0001 step 11)._
 
 ## Now
 
@@ -171,6 +171,12 @@ _Last updated: 2026-11-18 (0002 step 5 done and merged: `rig panel`; next 0001 s
   Found: the statement summary drops a call's keywords next to `**k` (an `outline` gap).
   None of this blocks 0001's 9a round.
 - The MCP design ideas are grilled (0001 Decision 49, 2026-11-18) and are part of step 11.
+- 0001 step 4 built on `feat/0001-step-4-diff` (2026-11-18): `diff <from> <to>` between two
+  builds' indexes (Decision 50), Seam B tests and a local-only check (199 tests). Step 6 built
+  on the same branch: Structure Void's framework pages from its search index,
+  `check-structure-void` and the comparison in `lookup class` (Decision 51). Against 12.4.16:
+  2565 classes agree, 22 differ (changes since the pages' older 12.x), 34 not matched (205
+  tests). Next: step 11 (MCP server v1, with Decision 49's additions).
 
 ## After grilling
 

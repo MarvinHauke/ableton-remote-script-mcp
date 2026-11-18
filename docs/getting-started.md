@@ -31,7 +31,9 @@ uv run ableton-remote-script-mcp build-index --app "/Applications/Ableton Live 1
 ```
 
 Optionally, add Structure Void's pages on Live's own objects (song, tracks, clips, devices),
-which the index knows only partly ([How it works](how-it-works.md#lives-own-objects)):
+which the index knows only partly ([How it works](how-it-works.md#lives-own-objects)), and its
+framework pages, to check the index against
+([How it works](how-it-works.md#checked-against-structure-voids-framework-pages)):
 
 ```sh
 uv run ableton-remote-script-mcp import-structure-void
@@ -59,6 +61,20 @@ uv run ableton-remote-script-mcp search session ring
 # how one of Live's own scripts is built: classes, Specification, component map, elements
 uv run ableton-remote-script-mcp outline APC_mini_mk2
 ```
+
+When you update Live, compare the old build's index with the new one's to see what a script
+written for the old build may find added, removed or changed:
+
+```sh
+# counts per package
+uv run ableton-remote-script-mcp diff 12.4.16 12.4.25b1
+
+# the classes, members and signatures, for one package or module
+uv run ableton-remote-script-mcp diff 12.4.16 12.4.25b1 --under ableton.v3
+```
+
+The diff compares names, bases and signatures (parameters, defaults, constant values), not line
+numbers or docstrings. Both builds need an index.
 
 Add `--build 12.4.16` to ask a particular build, and `--json` to get the answer as JSON. The
 [CLI reference](reference/cli.md) lists every option.

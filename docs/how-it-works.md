@@ -147,6 +147,24 @@ are CC BY-NC-SA 4.0), and marks every fact from them `documented`, with its page
 both have is shown once, as `observed`. The `View` classes (`Song.View`, `Clip.View`) have no
 members on those pages; the model has them.
 
+### Checked against Structure Void's framework pages
+
+Structure Void also has one page per module of Live's Remote Scripts: each class with its bases
+and its members' argument names. `import-structure-void` reads those too, from the site's
+search index (one download), and keeps them on your machine. They serve as a cross-check:
+
+```sh
+# the whole index against the pages, or one package
+uv run ableton-remote-script-mcp check-structure-void --under ableton.v3
+```
+
+It lists the classes where the pages and the index disagree: members only one side has,
+different argument names, different bases. `lookup class` shows the same for one class, with a
+link to its page. The pages come from an older, unstated Live 12.x, so most differences are
+changes between that build and yours (a renamed member, a new argument). A difference can also
+point to a gap in the index. The check names what to look at; the index's own facts stay
+`observed`.
+
 ## What stays local, and why
 
 Live's code belongs to Ableton. The `.pyc` files, the index built from them and the statement
