@@ -185,8 +185,8 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   4. a worked example in each tool description and a batch-check example in the skill
   
   Measure them in the 9a round and the step 13 benchmark (tool calls, tokens, invented names).
-  Grilled 2026-11-18, round 1 (Q1–Q8): 0001 Decision 49. Round 2 (Q9 editor completion, Q10 the
-  code interface) open.
+  Grilled 2026-11-18, round 1 (Q1–Q8): 0001 Decision 49. Round 2: Q9 decided (type stubs for the user's
+  language server); Q10 (one answer shape, CLI `--json` for code) awaits the user's yes.
 
 
 - [needs-triage] Validator rule for attribute names by class (for example a made-up

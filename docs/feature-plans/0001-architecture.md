@@ -721,6 +721,19 @@ meant to do, and uses only API names that exist in the Live build they target.
       rounds and the step 13 benchmark show what these save.
     - **Q8:** no tool that calls a model itself for now. The user wants it compared later with
       plain tool calls (cost and correctness), as an experiment in the step 13 benchmark.
+    - **Q9 (round 2):** editor completion comes from **type stubs**. `build-stubs <build>` writes
+      `.pyi` files for a Live build, which the user's existing Python language server
+      (basedpyright or pylsp in Neovim) reads; there is no language server of our own. Like the
+      index, the stubs are built from Ableton's code, so they are generated locally and never
+      published; maybe in a separate repo later (the user). A small step after step 11.
+    - **Q10 (round 2), proposed, the user asked about the drawbacks:** one answer shape for the
+      CLI's `--json`, the Python functions and the MCP tools, with the CLI documented as the way
+      in for code in any language. Nothing is lost: the CLI's text output, the Python functions
+      and the MCP tools stay as they are. The costs:
+      - the shape is a contract, so answers carry a version number and changes are noted;
+      - a CLI call takes 0.11–0.15 s against about 0.05 s from Python (measured 2026-11-18),
+        so `lookup` and `check_names` take many names in one call.
+      Awaiting the user's yes.
 
 ## Open questions
 
