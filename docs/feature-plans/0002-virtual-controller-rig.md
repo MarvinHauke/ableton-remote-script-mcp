@@ -185,8 +185,14 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
    - **Delivers:** the controller model from `outline`, the check file format, `rig run` with
      send/expect by element name, quiet-period waiting, `log: clean`, `ask_user`, `depends_on`,
      the report and its JSON.
+   - **Also** (the user, 2026-11-18): a script change needs a Live restart, and the port lives
+     only while the rig runs. So a long-running `rig serve` keeps the port open across Live
+     restarts; `rig run` (and later the panel) go through it instead of opening their own port.
    - **Checks:** seam C over the in-memory port; a first `examples/Faderfox_UC4/checks.yaml`
-     with the steps MIDI and the log can decide, run against Live (local-only).
+     with the steps MIDI and the log can decide, run against Live (local-only). In Live: with
+     `rig serve` running, does a Live restart keep slot 1's `ARS Test Rig` and script? When Live
+     starts before the rig, does the slot reconnect once the port appears? The answers go into
+     the guide's "after a script change" steps.
 3. **AbletonMCP** — blocked by: 2.
    - **Delivers:** the socket client (version, allow-list, repeated reads, events), `state`
      expectations, `do` steps (Live → controller), `requires` checked against the test Set and
