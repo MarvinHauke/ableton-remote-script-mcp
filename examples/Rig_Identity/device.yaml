@@ -1,0 +1,6 @@
+# The rig answers this script's identity request with its own identity (plan 0002 Decision 11).
+name: the test rig's own identity
+identity:
+  reply: rig
+layout:
+  - [faders]

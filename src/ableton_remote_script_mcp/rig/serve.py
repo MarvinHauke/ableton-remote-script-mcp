@@ -4,7 +4,8 @@ A script change needs a Live restart (the user, 2026-11-18), and the virtual por
 while a process holds it. `rig serve` holds it and lets `rig run` (and later the panel) use it
 over a local socket: one JSON object per line, on 127.0.0.1 only.
 
-    {"op": "hello"}                      -> {"ok": true, "port": name, "received": n, "last": s | null}
+    {"op": "hello"}                      -> {"ok": true, "port": name, "received": n, "last": s | null,
+                                             "identity_reply": hex | null, "identity_answered": n}
     {"op": "send", "messages": [[...]]}  -> {"ok": true}
     {"op": "drain"}                      -> {"ok": true, "messages": [[seconds, [bytes]], ...]}
 
@@ -82,8 +83,11 @@ class _Handler(socketserver.StreamRequestHandler):
         op = request["op"]
         if op == "hello":
             last = None if server.last is None else round(time.monotonic() - server.last, 3)
+            responder = getattr(server.midi, "responder", None)
+            reply = responder.profile.reply if responder and responder.profile else None
             return {"ok": True, "version": VERSION, "port": server.midi.name, "received": server.received,
-                    "last": last}
+                    "last": last, "identity_reply": " ".join(f"{b:02X}" for b in reply) if reply else None,
+                    "identity_answered": responder.answered if responder else 0}
         if op == "send":
             for m in request["messages"]:
                 if not (isinstance(m, list) and m and all(isinstance(b, int) and 0 <= b <= 255 for b in m)):
@@ -140,14 +144,18 @@ def connect(host: str = "127.0.0.1", port: int = DEFAULT_PORT) -> ServedPort | N
         return None
 
 
-def serve(name: str, address=("127.0.0.1", DEFAULT_PORT), log=print) -> None:  # pragma: no cover - needs MIDI
+def serve(name: str, address=("127.0.0.1", DEFAULT_PORT), log=print, profile=None) -> None:  # pragma: no cover
     from .ports import VirtualPort
+    from .profile import IdentityResponder, RespondingPort
 
     running = connect(*address)
     if running is not None:  # checked before opening a second port of the same name in Live's lists
         running.close()
         raise OSError(f"a `rig serve` already listens on {address[0]}:{address[1]}")
     midi = VirtualPort(name)
+    if profile is not None and profile.reply is not None:
+        midi = RespondingPort(midi, IdentityResponder(midi, profile, log=log))
+        log(f"answering Live's identity request as {profile.name or 'the profile says'}")
     try:
         server = RigServer(midi, address)
     except OSError:

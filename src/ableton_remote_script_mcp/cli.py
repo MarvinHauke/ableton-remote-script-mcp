@@ -536,6 +536,8 @@ def make_parser() -> argparse.ArgumentParser:
     sv = rg_sub.add_parser("serve", help="hold the rig's virtual port open (across Live restarts) for `rig run`")
     sv.add_argument("--name", default=None, help="the virtual port's name (default: ARS Test Rig)")
     sv.add_argument("--port", type=int, default=None, help="the local TCP port clients use (default: 9878)")
+    sv.add_argument("--profile", help="a device.yaml whose identity reply the rig sends when Live asks (default: "
+                    "no reply)")
     sv.set_defaults(func=_cmd_rig_serve)
     rr = rg_sub.add_parser("run", help="run a check file against a script in Live, over `rig serve` or a port of "
                            "its own; writes checks.result.json beside it")
@@ -667,10 +669,17 @@ def _cmd_rig_abletonmcp(args: argparse.Namespace) -> int:
 
 def _cmd_rig_serve(args: argparse.Namespace) -> int:  # pragma: no cover - needs MIDI
     from .rig.ports import DEFAULT_NAME, RigUnavailable
+    from .rig.profile import ProfileError, load_profile
     from .rig.serve import DEFAULT_PORT, serve
 
     try:
-        serve(args.name or DEFAULT_NAME, ("127.0.0.1", args.port or DEFAULT_PORT), log=lambda t: print(t, flush=True))
+        profile = load_profile(Path(args.profile)) if args.profile else None
+    except (ProfileError, ImportError) as e:
+        print(e, file=sys.stderr)
+        return 4
+    try:
+        serve(args.name or DEFAULT_NAME, ("127.0.0.1", args.port or DEFAULT_PORT), log=lambda t: print(t, flush=True),
+              profile=profile)
     except RigUnavailable as e:
         print(e, file=sys.stderr)
         return 3
@@ -706,7 +715,14 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
     if ctl is None:
         print(why, file=sys.stderr)
         return 4
-    problems = check_names(checks, ctl)
+    from .rig.profile import ProfileError, check_profile_names, profile_beside
+
+    try:
+        profile = profile_beside(checks.path)
+    except ProfileError as e:
+        print(e, file=sys.stderr)
+        return 4
+    problems = check_names(checks, ctl) + (check_profile_names(profile, ctl) if profile else [])
     if problems:
         print("\n".join(problems), file=sys.stderr)
         return 4
@@ -726,6 +742,10 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
             from .rig.ports import VirtualPort
 
             port = VirtualPort(args.name or DEFAULT_NAME)
+            if profile is not None and profile.reply is not None:
+                from .rig.profile import IdentityResponder, RespondingPort
+
+                port = RespondingPort(port, IdentityResponder(port, profile, log=say))
             say(f"no `rig serve` running: opened `{port.name}` for this run; waiting up to {args.wait:.0f} s for "
                 "Live to send on it (pick it as the Control Surface's Input and Output)")
             if not wait_for(port, args.wait, until_any=True):
@@ -733,6 +753,9 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
                 return 2
         else:
             say(f"using `rig serve`'s port `{port.name}` ({port.hello['received']} message(s) from Live so far)")
+            if profile is not None and profile.reply is not None and not port.hello.get("identity_reply"):
+                say("note: device.yaml has an identity reply, but `rig serve` was started without --profile, so "
+                    "Live's identity request goes unanswered")
         say(f"sending MIDI only to `{port.name}`; stop with Ctrl-C")
         result = run_checks(checks, ctl, port, LogWatch(log_path, ctl.script), say=say, mcp=mcp, mcp_note=mcp_note)
     except RigUnavailable as e:

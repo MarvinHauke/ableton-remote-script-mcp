@@ -1,0 +1,15 @@
+# Plan 0002 step 4: does the script start once the rig answers its identity request?
+# Run with `rig serve --profile examples/Rig_Identity/device.yaml` and the script on ARS Test Rig.
+script: .
+build: 12.4.16
+steps:
+  - id: fader-1
+    description: fader 1 sets track 1's volume and Live sends it back
+    send:
+      - faders[0]: 99
+      - faders[0]: 100
+    expect:
+      faders[0]: 100
+    log: clean
+  - id: session-box
+    ask_user: Is there a box around tracks 1-4 and one scene (the framework's own ring, enabled by the identity reply)?

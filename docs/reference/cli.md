@@ -199,13 +199,14 @@ ableton-remote-script-mcp rig elements [--build BUILD] [--json] folder
 Hold the rig's virtual port open (across Live restarts) for `rig run`.
 
 ```text
-ableton-remote-script-mcp rig serve [--name NAME] [--port PORT]
+ableton-remote-script-mcp rig serve [--name NAME] [--port PORT] [--profile PROFILE]
 ```
 
 | Argument | What it does |
 | --- | --- |
 | `--name NAME` | The virtual port's name (default: ARS Test Rig). |
 | `--port PORT` | The local TCP port clients use (default: 9878). |
+| `--profile PROFILE` | A device.yaml whose identity reply the rig sends when Live asks (default: no reply). |
 
 ### `rig run`
 

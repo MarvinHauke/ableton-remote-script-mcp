@@ -191,7 +191,7 @@ def test_skill_template_is_clean_in_12_4_16(index_dir, tmp_path, name):
 
 
 @pytest.mark.local_live
-@pytest.mark.parametrize("name", ["APC_mini_mk1", "Faderfox_UC4"])
+@pytest.mark.parametrize("name", ["APC_mini_mk1", "Faderfox_UC4", "Rig_Identity"])
 def test_example_is_clean_in_12_4_16(index_dir, name):
     folder = Path(__file__).parent.parent / "examples" / name
     answer = validate_script(folder, index_dir, "12.4.16")
@@ -252,3 +252,15 @@ def test_uc4_check_file_names_its_elements(index_dir):
         for item in step.send:
             if isinstance(item, tuple):
                 encode(ctl.element(item[0]), item[1])
+
+
+@pytest.mark.local_live
+@pytest.mark.parametrize("name", ["Faderfox_UC4", "Rig_Identity"])
+def test_example_device_profiles_name_their_elements(index_dir, name):
+    from ableton_remote_script_mcp.rig.controller import controller_for_folder
+    from ableton_remote_script_mcp.rig.profile import check_profile_names, load_profile
+
+    folder = Path(__file__).parent.parent / "examples" / name
+    ctl, why = controller_for_folder(folder, index_dir, "12.4.16")
+    assert ctl is not None, why
+    assert check_profile_names(load_profile(folder / "device.yaml"), ctl) == []

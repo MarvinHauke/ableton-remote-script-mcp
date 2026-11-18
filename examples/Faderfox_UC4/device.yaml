@@ -1,0 +1,41 @@
+# The Faderfox UC4 in its factory setup SE17 (device facts: elements.py and
+# docs/feature-plans/milestone-1/faderfox-uc4.md). For the test rig, plan 0002 step 4.
+name: Faderfox UC4, setup SE17
+identity:
+  reply: none   # not known whether the UC4 answers an identity request; the script doesn't ask
+# One row per group the UC4 switches itself (Shift + encoder n, Shift + green button n): the
+# panel shows every group at once, as the script maps them all.
+layout:
+  - [send_a_encoders]
+  - [send_b_encoders]
+  - [send_c_encoders]
+  - [send_d_encoders]
+  - [track_volume_encoder, track_send_a_encoder, track_send_b_encoder, track_select_encoder,
+     device_select_encoder, track_pan_encoder]
+  - [rack_encoders]
+  - [pan_encoders]
+  - [tempo_coarse_encoder, tempo_fine_encoder, cue_volume_encoder, scene_select_encoder,
+     quantization_encoder, master_volume_encoder, master_pan_encoder]
+  - [nudge_down_button, nudge_up_button, play_button, stop_button, stop_all_clips_button,
+     scene_launch_button, record_button, view_button]
+  - [launch_buttons]
+  - [stop_buttons]
+  - [active_buttons]
+  - [solo_buttons]
+  - [record_buttons]
+  - [monitor_buttons]
+  - [bank_left_button, bank_right_button, prev_track_button, next_track_button, prev_scene_button,
+     next_scene_button, prev_device_button, next_device_button]
+  - [select_buttons]
+  - [faders, crossfader]
+# From the device facts: bipolar display for the Pan group and Track encoder 6; relative (CCr1)
+# for Track encoders 4-5 and Global encoders 1, 2, 4, 5.
+display:
+  pan_encoders: bipolar
+  track_pan_encoder: bipolar
+  track_select_encoder: relative
+  device_select_encoder: relative
+  tempo_coarse_encoder: relative
+  tempo_fine_encoder: relative
+  scene_select_encoder: relative
+  quantization_encoder: relative
