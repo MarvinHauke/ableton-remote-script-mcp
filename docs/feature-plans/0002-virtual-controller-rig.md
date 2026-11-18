@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 built 2026-11-18, the UC4 check from the panel open. Frontier: step 5's check, then step 6._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6 (needs the APC sequencer's own plan)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -376,6 +376,7 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
        mute (AbletonMCP read True, False, True), and the page ended on Live's value. Live
        answers a press with a quick 0/127 pair and then the settled value about 40 ms later.
        The user then saw it working after the servers were restarted.
+   - **Done** (2026-11-18, the user).
 6. **The APC mini drum sequencer's checks** — blocked by: 3, and the sequencer's own plan.
    - **Delivers:** its check file and device profile; the skill mentions the rig (Decision 20)
      once the sequencer's checks pass.

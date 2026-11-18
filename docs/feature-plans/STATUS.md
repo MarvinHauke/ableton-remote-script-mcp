@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-18 (0002 step 5: `rig panel` built and played in Live; the UC4 from the panel is the user's check)._
+_Last updated: 2026-11-18 (0002 step 5 done and merged: `rig panel`; next 0001 step 4)._
 
 ## Now
 
@@ -161,7 +161,8 @@ _Last updated: 2026-11-18 (0002 step 5: `rig panel` built and played in Live; th
   Live and came back, `rig run`'s sends showed up on the page (191 tests). Left for step 5's
   check: the user plays the UC4 script from the panel. Played 2026-11-18: the controls reached
   Live. The panel's WebSocket became a contract (Decision 24, `docs/rig-panel-protocol.md`), and
-  the UC4 Editor's architect got a brief for its plan 0008 (play through the rig).
+  the UC4 Editor's architect got a brief for its plan 0008 (play through the rig). Step 5 done and merged
+  (2026-11-18). Next for 0002: step 6, once the APC sequencer has its own plan.
 - The 0001 step 10 eval round ran (user confirmed Decision 46, 2026-11-18). With the skill:
   100% of the graders in all three cases, 0 findings. Without it: no v3 script got the session box
   or the UC4's value feedback. The login expired partway through, so the v3 cases ran a second
