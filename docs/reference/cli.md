@@ -89,6 +89,21 @@ ableton-remote-script-mcp search [--kind KIND] [--limit LIMIT] [--build BUILD] [
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
 | `--json` | Print the query core's answer as JSON. |
 
+## `diff`
+
+What changed between two Live builds: packages, modules, classes and members added, removed or changed.
+
+```text
+ableton-remote-script-mcp diff [--under UNDER] [--json] from to
+```
+
+| Argument | What it does |
+| --- | --- |
+| `from` | The older build, e.g. 12.4.16. |
+| `to` | The newer build, e.g. 12.4.25b1. |
+| `--under UNDER` | Only this package or module and what is in it, e.g. ableton.v3 or APC_mini (without it: counts per package). |
+| `--json` | Print the query core's answer as JSON. |
+
 ## `outline`
 
 A Remote Script's classes, Specification, component map, mappings and elements.

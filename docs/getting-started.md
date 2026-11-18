@@ -60,6 +60,20 @@ uv run ableton-remote-script-mcp search session ring
 uv run ableton-remote-script-mcp outline APC_mini_mk2
 ```
 
+When you update Live, compare the old build's index with the new one's to see what a script
+written for the old build may find added, removed or changed:
+
+```sh
+# counts per package
+uv run ableton-remote-script-mcp diff 12.4.16 12.4.25b1
+
+# the classes, members and signatures, for one package or module
+uv run ableton-remote-script-mcp diff 12.4.16 12.4.25b1 --under ableton.v3
+```
+
+The diff compares names, bases and signatures (parameters, defaults, constant values), not line
+numbers or docstrings. Both builds need an index.
+
 Add `--build 12.4.16` to ask a particular build, and `--json` to get the answer as JSON. The
 [CLI reference](reference/cli.md) lists every option.
 

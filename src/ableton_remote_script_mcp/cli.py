@@ -180,6 +180,65 @@ def _cmd_search(args: argparse.Namespace) -> int:
     return {"ok": 0, "not_found": 1, "index_missing": 3}[answer["status"]]
 
 
+def _cmd_diff(args: argparse.Namespace) -> int:
+    from .diff import diff_builds
+
+    answer = diff_builds(args.from_build, args.to_build, Path(args.index_dir), args.under)
+    if args.json:
+        print(json.dumps(answer, indent=1))
+        return {"ok": 0, "index_missing": 3}[answer["status"]]
+    if answer["status"] != "ok":
+        print(answer["message"])
+        return 3
+    print(_format_diff(answer))
+    return 0
+
+
+def _format_diff(d: dict) -> str:
+    scope = f" under {d['under']}" if d["under"] else ""
+    lines = [f"Live {d['from']} -> {d['to']}{scope} (observed in each build)"]
+    if not d["under"]:
+        if not d["by_package"]:
+            return lines[0] + "\n  no differences"
+        lines.append("  package: modules +added -removed, classes +added -removed ~changed, members changed")
+        for r in d["by_package"]:
+            lines.append(f"  {r['package']}: modules +{r['modules_added']} -{r['modules_removed']}, "
+                         f"classes +{r['classes_added']} -{r['classes_removed']} ~{r['classes_changed']}, "
+                         f"members {r['members_changed']}")
+        for what in ("added", "removed", "changed"):
+            for pkg in d["packages"][what]:
+                extra = (f" ({pkg['framework']['from']} -> {pkg['framework']['to']})" if what == "changed"
+                         else f" ({pkg['kind']})")
+                lines.append(f"  package {what}: {pkg['name']}{extra}")
+        lines.append("  details: --under <package or module>")
+        return "\n".join(lines)
+    for what in ("added", "removed"):
+        for pkg in d["packages"][what]:
+            lines.append(f"  package {what}: {pkg['name']} ({pkg['kind']})")
+        for k in d["modules"][what]:
+            lines.append(f"  module {what}: {k}")
+        for k in d["classes"][what]:
+            lines.append(f"  class {what}: {k}")
+    for pkg in d["packages"]["changed"]:
+        lines.append(f"  package {pkg['name']}: framework {pkg['framework']['from']} -> {pkg['framework']['to']}")
+    for kind, label in (("modules", "module"), ("classes", "class")):
+        for c in d[kind]["changed"]:
+            lines.append(f"  {label} changed: {c['name']}")
+            if "bases" in c:
+                lines.append(f"    bases: {', '.join(map(str, c['bases']['from']))} -> "
+                             f"{', '.join(map(str, c['bases']['to']))}")
+            members = c.get("members", {})
+            for m in members.get("added", []):
+                lines.append(f"    + {m['name']}: {m['to']}")
+            for m in members.get("removed", []):
+                lines.append(f"    - {m['name']}: {m['from']}")
+            for m in members.get("changed", []):
+                lines.append(f"    ~ {m['name']}: {m['from']} -> {m['to']}")
+    if len(lines) == 1:
+        lines.append("  no differences")
+    return "\n".join(lines)
+
+
 def _short(text: str | None, width: int = 110) -> str:
     text = "" if text is None else " ".join(str(text).split())
     return text if len(text) <= width else text[: width - 1] + "…"
@@ -479,6 +538,15 @@ def make_parser() -> argparse.ArgumentParser:
     se.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
     se.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     se.set_defaults(func=_cmd_search)
+
+    df = sub.add_parser("diff", help="what changed between two Live builds: packages, modules, classes and members "
+                        "added, removed or changed")
+    df.add_argument("from_build", metavar="from", help="the older build, e.g. 12.4.16")
+    df.add_argument("to_build", metavar="to", help="the newer build, e.g. 12.4.25b1")
+    df.add_argument("--under", help="only this package or module and what is in it, e.g. ableton.v3 or APC_mini "
+                    "(without it: counts per package)")
+    df.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
+    df.set_defaults(func=_cmd_diff)
 
     ol = sub.add_parser("outline", help="a Remote Script's classes, Specification, component map, mappings and elements")
     ol.add_argument("script", help="the Remote Script's folder name, e.g. APC_mini_mk2")

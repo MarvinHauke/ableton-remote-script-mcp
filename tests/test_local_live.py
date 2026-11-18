@@ -264,3 +264,19 @@ def test_example_device_profiles_name_their_elements(index_dir, name):
     ctl, why = controller_for_folder(folder, index_dir, "12.4.16")
     assert ctl is not None, why
     assert check_profile_names(load_profile(folder / "device.yaml"), ctl) == []
+
+
+def test_diff_to_another_indexed_build():
+    """The diff 12.4.16 -> 13.0b25 over the user's own indexes (built with `build-index`).
+    It asserts only that something was added or removed, never which names: Live 13 beta
+    findings stay out of the repo (CLAUDE.md)."""
+    from ableton_remote_script_mcp.diff import diff_builds
+    from ableton_remote_script_mcp.index_store import default_index_dir, indexed_builds
+
+    index_dir = default_index_dir()
+    if not {"12.4.16", "13.0b25"} <= set(indexed_builds(index_dir)):
+        pytest.skip("the 12.4.16 and 13.0b25 indexes are not built here")
+    d = diff_builds("12.4.16", "13.0b25", index_dir)
+    assert d["status"] == "ok" and (d["modules"]["added"] or d["modules"]["removed"])
+    same = diff_builds("12.4.16", "12.4.16", index_dir)
+    assert not any(same["modules"].values()) and not any(same["classes"].values())

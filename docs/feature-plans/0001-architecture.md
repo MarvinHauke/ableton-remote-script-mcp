@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); next step 4 (order 4 → 6 → 11; the grilling session on the MCP design ideas comes before step 11)._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); step 4 built 2026-11-18; the MCP design ideas grilled (Decision 49); next step 6, then 11._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -740,6 +740,16 @@ meant to do, and uses only API names that exist in the Live build they target.
       the MCP tools against the CLI called from code (Code Mode), and plain tool calls against a
       tool that calls a model itself (Q8), by cost, tool calls, tokens and correctness.
 
+50. **What the diff compares** (agent, 2026-11-18, step 4). `diff <from> <to>` compares
+    packages (added, removed, a script's framework generation), modules, module-level members,
+    classes (added, removed, bases) and class members. A member has changed when its kind, its
+    parameters (name, kind, default), its setter or its value (a constant) differ. Line numbers,
+    docstrings and statement summaries are left out: they move with every build without
+    changing the API. Without `--under`, the CLI prints counts per package; `--under <package or
+    module>` lists the details, and `--json` always holds everything. A diff with a beta build
+    holds that beta's facts, so it is only printed: tests assert no beta names, and the docs
+    show the commands without output (Decision 15).
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -818,6 +828,14 @@ Every step's checks include `uv run pytest` passing.
      added, removed and changed members.
    - **Checks:** Seam B test with a member that differs between two builds; local-only: the diff
      12.4.16 → 13.0b25 lists the added and removed modules.
+   - **Built** (2026-11-18, `feat/0001-step-4-diff`): the 13.0b25 index was already built
+     locally (with 12.4.25b1). `diff.py` holds `diff_builds` for the query core (Decision 50), and
+     the CLI has `diff <from> <to> [--under …] [--json]`. Seam B tests in `tests/test_diff.py`
+     over the hand-written index (`Component.is_enabled`'s changed default, `NewThing` added, the
+     removed modules and packages, `--under`, index missing). The local-only check diffs the
+     user's 12.4.16 and 13.0b25 indexes, asserting only that modules were added or removed. What
+     the beta diffs found stays out of the repo. The diff of two full indexes takes about 0.2 s.
+     199 tests.
 5. **Reference script outline**
    - **Blocked by:** 2
    - **Delivers:** for one of Ableton's own scripts: its classes, the Specification fields it sets,
