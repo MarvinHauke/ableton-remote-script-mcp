@@ -179,7 +179,8 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      track 1's volume 0.787 (100/127; before: 0.693 = 88/127, the value Live had sent at start).
      For step 2: the start-up state comes in more than one burst (a full resend about a second
      later), so the driver waits for quiet before the first step and compares a control's last
-     reply only. Whether the port showed up without restarting Live: the user's answer below.
+     reply only. The port showed up in Live's lists without restarting Live (the user,
+     2026-11-18): the rig can open its port at any time; no fallback needed.
 2. **Driver and check files, MIDI and log only** — blocked by: 1.
    - **Delivers:** the controller model from `outline`, the check file format, `rig run` with
      send/expect by element name, quiet-period waiting, `log: clean`, `ask_user`, `depends_on`,
