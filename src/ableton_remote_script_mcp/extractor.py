@@ -464,6 +464,8 @@ def _function_docstring(code: types.CodeType) -> str | None:
 
 
 _NOOPS = {"RESUME", "NOP", "PUSH_NULL", "PRECALL", "CACHE", "EXTENDED_ARG", "MAKE_CELL", "COPY_FREE_VARS"}
+_NO_FALL_THROUGH = {"JUMP_FORWARD", "JUMP_BACKWARD", "JUMP_BACKWARD_NO_INTERRUPT", "JUMP",
+                    "RETURN_VALUE", "RAISE_VARARGS", "RERAISE"}
 _JUMPS = {
     "JUMP_FORWARD", "JUMP_BACKWARD", "JUMP_BACKWARD_NO_INTERRUPT", "JUMP",
     "POP_JUMP_FORWARD_IF_FALSE", "POP_JUMP_FORWARD_IF_TRUE", "POP_JUMP_BACKWARD_IF_FALSE",
@@ -494,6 +496,36 @@ def _run_body(code: types.CodeType, function: bool = False) -> _Body:
     regions: list[list] = _handler_regions(code, instructions) if function else []
     offset = 0
     pending_or: list = []  # `a or b`: a POP_JUMP_IF_TRUE into the body that follows: [target, test]
+    # The paths that meet at a forward jump's target: offset -> [(stack at the jump, joiner)].
+    # `a or b` jumps with `a` (joiner "or"); the fall-through brings `b`. Read in a line, the
+    # last path would win; merged, the value is the whole expression, or `…` for other merges.
+    incoming: dict[int, list] = {}
+    dead = False  # the previous instruction never falls through (a jump, a return, a raise)
+
+    def jump_to(target: int, snapshot: list, joiner: str | None = None) -> None:
+        if target > offset:
+            incoming.setdefault(target, []).append((snapshot, joiner))
+
+    def arrive() -> None:
+        nonlocal stack
+        paths = incoming.pop(offset, [])
+        if dead and paths:
+            stack = list(paths[0][0])
+            paths = paths[1:]
+        if not paths:
+            return
+        if any(len(p) != len(stack) for p, _ in paths):
+            if stack:
+                stack[-1] = UNKNOWN
+            return
+        if not stack or all(p[-1] is stack[-1] for p, _ in paths):
+            return
+        joiners = {j for _, j in paths}
+        if len(joiners) == 1 and None not in joiners:
+            parts = [p[-1] for p, _ in paths] + [stack[-1]]
+            stack[-1] = _Op(f" {joiners.pop()} ".join(_operand(v) for v in parts))
+        else:
+            stack[-1] = UNKNOWN
 
     def under() -> list:
         return [label for start, end, label in regions if start <= offset < end]
@@ -541,6 +573,8 @@ def _run_body(code: types.CodeType, function: bool = False) -> _Body:
     for ins in instructions:
         op = ins.opname
         offset = ins.offset
+        arrive()
+        dead = op in _NO_FALL_THROUGH
         if ins.positions and ins.positions.lineno:
             line = ins.positions.lineno
         if op in _NOOPS:
@@ -700,15 +734,18 @@ def _run_body(code: types.CodeType, function: bool = False) -> _Body:
             kind = pop()
             stack.append(_Expr(f"except {_text(kind)}"))
         elif op == "FOR_ITER":
+            jump_to(ins.argval, stack[:-1])  # exhausted: the iterator is popped
             iterable = _text(stack[-1] if stack else UNKNOWN)
             if function and ins.argval > ins.offset and iterable != ".0":  # .0: a comprehension's own loop
                 regions.append([ins.offset + 2, ins.argval, f"for … in {iterable}"])
             stack.append(UNKNOWN)
         elif op in ("JUMP_IF_FALSE_OR_POP", "JUMP_IF_TRUE_OR_POP"):  # `x = a and b`
             branch(ins, stack[-1] if stack else UNKNOWN)
+            jump_to(ins.argval, list(stack), "and" if "FALSE" in op else "or")
             pop()
         elif op in _JUMPS:
             test = pop() if op.startswith("POP_") else None
+            jump_to(ins.argval, list(stack))
             if test is not None and "FORWARD" in op:
                 branch(ins, test)
             elif op == "JUMP_FORWARD" and function:  # the end of an `if` body: what it jumps over is the else

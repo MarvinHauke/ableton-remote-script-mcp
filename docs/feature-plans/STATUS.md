@@ -136,6 +136,12 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   graders on `uc4-mixer-v3`, listener names from `__subject_events__`/`__events__` in
   `eval_names.py`, a reviewer pass on step 10 and its fixes. `uv run pytest` green (148 tests,
   16 local-only).
+- Extractor fix (2026-11-18): a store of `a or b` / `a and b` kept only its last part, and a
+  conditional expression one branch. The stack simulation now merges the paths that meet at a
+  forward jump's target (`a or b` whole, other merges `…`). The 12.4.16, 12.4.25b1 and 13.0b25
+  indexes are rebuilt; the step-8 reference check still gives no framework error (134 of gluon's
+  Live 12 folders). Found while checking the mute LED fact, which now cites
+  `track.mute or track.muted_via_solo`. `uv run pytest` green (152 tests, 16 local-only).
 - Plan 0002 drafted (2026-11-18): a virtual controller test rig, to grill before anything is built.
 - Next: one 9a round (0001 decision 46; needs the usage limit), which completes step 10 and
   Milestone 1. Then a grilling session on the MCP design ideas (Small items) before step 11.
@@ -147,14 +153,6 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
-
-- [ready-for-agent] **Extractor bug: statement values lose part of an expression.** A store of
-  `a or b`, `a and b` or `a if x else b` is recorded with only its last part
-  (`self.mute_button.is_on = self._track.mute or self._track.muted_via_solo` shows as
-  `… = self._track.muted_via_solo`; reproduced with `extractor.read_code`, 2026-11-18). Every
-  `outline` value and statement built from such a store can mislead. Fix: record the whole
-  expression, or `…` when it can't be rebuilt from the bytecode; a test per form. Found while
-  checking a claim on the v3 page; the page no longer rests on that summary.
 
 - [needs-grilling] **MCP server design ideas for step 11, from the user's sources (2026-11-17):**
   Zhang, Kraska, Khattab, *Recursive Language Models* (arxiv.org/abs/2512.24601), Zhang's blog

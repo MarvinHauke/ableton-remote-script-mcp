@@ -678,6 +678,10 @@ meant to do, and uses only API names that exist in the Live build they target.
       12.0 framework), found with ClyphX's `offset_has_listener`.
     - Not a rule: Live's property types (an int, not a float); the index has them only for some
       members.
+    - **The extractor's stack simulation merges paths at jump targets** (user, 2026-11-18): a
+      store of `a or b` had kept only `b`, and the v3 page's mute LED claim had rested on that.
+      Now `a or b` and `a and b` keep both sides, other merges (a conditional expression) give
+      `…`; indexes are rebuilt (no schema change).
 
 ## Open questions
 

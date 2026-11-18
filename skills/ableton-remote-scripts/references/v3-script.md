@@ -225,8 +225,9 @@ class Skin:
 - **`Mixer.MuteOn`: the mute LED is "on" for a muted track.** It is also "on" for a track that
   another track's solo silences, although that track is not muted (its Track Activator stays
   on in Live). Both `tested` in 12.4.16 with the framework's own `ChannelStripComponent`, through
-  the Faderfox UC4 script, which changes only the skin's values. A script that keeps that class
-  gets the same LED logic in that build; one with a channel strip of its own may not. In the
+  the Faderfox UC4 script, which changes only the skin's values; the class sets the LED from
+  `track.mute or track.muted_via_solo` (`observed` in the 12.4.16 index). A script that keeps
+  that class gets the same LED logic in that build; one with a channel strip of its own may not. In the
   decompiled 12.0 framework the button was mapped to the track activator, where "on" meant
   playing: the behaviour changed between 12.0 and 12.4.16, so trust the build's. For a button
   labelled "Active" or "Track On", swap the values (`MuteOn = OFF`, `MuteOff = ON`); it then
