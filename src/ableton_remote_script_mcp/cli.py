@@ -554,6 +554,13 @@ def make_parser() -> argparse.ArgumentParser:
                     help="don't use AbletonMCP even when it runs (state, events and do steps are not checked)")
     rr.add_argument("--json", action="store_true", help="print the result as JSON")
     rr.set_defaults(func=_cmd_rig_run)
+    rl = rg_sub.add_parser("restart-live", help="quit Live without saving and start it again (only when Live shows "
+                           "just the unsaved test Set; needs the terminal's Accessibility permission)")
+    rl.add_argument("--app", default="/Applications/Ableton Live 12 Suite.app", help="the Live app (default: %(default)s)")
+    rl.add_argument("--build", default="12.4.16", help="its build, for Log.txt (default: %(default)s)")
+    rl.add_argument("--title", default="Untitled", help="the test Set's window title (default: %(default)s)")
+    rl.add_argument("--wait-for", help="also wait until a script logs this text")
+    rl.set_defaults(func=_cmd_rig_restart_live)
     am = rg_sub.add_parser("abletonmcp", help="what the rig reads through AbletonMCP now: its version, the song and "
                            "each track (for checking reads against what the user sees in Live)")
     am.add_argument("--json", action="store_true", help="print the answer as JSON")
@@ -664,6 +671,23 @@ def _cmd_rig_abletonmcp(args: argparse.Namespace) -> int:
               + f"; devices: {', '.join(d['name'] for d in t['devices']) or 'none'}"
               + f"; clips in scenes {','.join(clips) or '-'}" + (f" (playing: {','.join(playing)})" if playing else ""))
     print("tested reads: " + "; ".join(f"{k} ({v})" for k, v in TESTED.items()))
+    return 0
+
+
+def _cmd_rig_restart_live(args: argparse.Namespace) -> int:  # pragma: no cover - drives Live
+    """Exit 0: restarted; 2: not done or stopped (the reason is printed)."""
+    from .live_log import find_log
+    from .rig.live_app import RestartError, restart_live
+
+    log = find_log(args.build)
+    if log is None:
+        print(f"no Log.txt for Live {args.build}", file=sys.stderr)
+        return 2
+    try:
+        restart_live(Path(args.app), log, args.title, args.wait_for, say=lambda t: print(t, flush=True))
+    except RestartError as e:
+        print(f"restart-live: {e}", file=sys.stderr)
+        return 2
     return 0
 
 

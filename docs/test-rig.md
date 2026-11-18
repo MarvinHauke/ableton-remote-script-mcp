@@ -34,6 +34,18 @@ Live loads a script's code only when it starts, so a script change needs a Live 
 reconnects by itself. If Live starts before `rig serve`, the slot shows `ARS Test Rig` greyed out
 and reconnects within a few seconds of `rig serve` starting. (Both seen in Live 12.4.16.)
 
+`rig restart-live` does the restart for you:
+
+```sh
+uv run ableton-remote-script-mcp rig restart-live --wait-for "ready"
+```
+
+It works only while Live shows nothing but an unsaved Set named `Untitled`, the one Live opens
+from a template, and otherwise does nothing. If Live asks whether to save, it answers "Don't
+Save", never "Save". It then starts Live again and waits until Live's log shows the new session
+(and, with `--wait-for`, a message from your script). It needs the Accessibility permission for
+your terminal (System Settings → Privacy & Security → Accessibility).
+
 ## See your controller as the rig sees it
 
 ```sh

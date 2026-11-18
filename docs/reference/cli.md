@@ -227,6 +227,21 @@ ableton-remote-script-mcp rig run [--build BUILD] [--name NAME] [--port PORT] [-
 | `--no-abletonmcp` | Don't use AbletonMCP even when it runs (state, events and do steps are not checked). |
 | `--json` | Print the result as JSON. |
 
+### `rig restart-live`
+
+Quit Live without saving and start it again (only when Live shows just the unsaved test Set; needs the terminal's Accessibility permission).
+
+```text
+ableton-remote-script-mcp rig restart-live [--app APP] [--build BUILD] [--title TITLE] [--wait-for WAIT_FOR]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--app APP` | The Live app (default: /Applications/Ableton Live 12 Suite.app). |
+| `--build BUILD` | Its build, for Log.txt (default: 12.4.16). |
+| `--title TITLE` | The test Set's window title (default: Untitled). |
+| `--wait-for WAIT_FOR` | Also wait until a script logs this text. |
+
 ### `rig abletonmcp`
 
 What the rig reads through AbletonMCP now: its version, the song and each track (for checking reads against what the user sees in Live).

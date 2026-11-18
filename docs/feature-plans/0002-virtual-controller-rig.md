@@ -160,8 +160,23 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     by its window id (`screencapture -l`). This works with Live behind other windows: on
     2026-11-18 it showed step 4's box around tracks 1-4. The images stay in the agent's scratchpad
     and are deleted after reading. What only the hardware shows (a display, LEDs it keeps per
-    group) stays with the user. Restarting Live is a separate question, open until the cmdAbl
-    session says how it does it.
+    group) stays with the user. Restarting Live is Decision 23.
+23. **The agent may restart Live for the test rig, never saving** (the user chose AppleScript,
+    2026-11-18). The cmdAbl session has no way to restart Live; it leaves restarts to the user.
+    `rig restart-live` does it:
+    - It acts only while Live's windows show just the test Set (`Untitled`, the unsaved Set Live
+      opens from the user's template); otherwise it does nothing.
+    - It quits Live through AppleScript without waiting for an answer.
+    - If Live asks to save, it presses the leftmost button, "Don't Save", and only if the
+      dialog's text is exactly `Save changes to "Untitled" before closing?` with three buttons.
+      Live draws that dialog itself: macOS sees three unnamed buttons, Don't Save left, Cancel
+      and Save right (Live 12.4.16).
+    - It opens the same Live app again and waits for a new session in `Log.txt`, and optionally
+      for a script's message.
+    - It needs the terminal's Accessibility permission, which the user grants.
+    Tested 2026-11-18 in 12.4.16. Without changes, Live quit with no dialog. With a change, the
+    rig answered the dialog itself. Either way, Live was back with `Rig_Identity` identified in
+    about 9 s. Saving, closing other Sets and switching control surfaces stay the user's.
 
 ## Open questions
 
