@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2 and 3 built and run in Live 2026-11-18. Frontier: step 4 (device profiles and identity)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18. Frontier: step 5 (web panel)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -308,8 +308,10 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      - Its check file: fader 1 passed. No box was drawn (the user). The reason, observed in
        the 12.4.16 index: `ControlSurface.__init__` sets `_can_enable_session_ring` only when the
        script is identifiable and has a `SessionComponent`, and the sample mapped only the
-       Mixer. The sample gained four launch buttons mapped to `Session`; the box check runs
-       again after a Live restart.
+       Mixer. The sample gained four launch buttons mapped to `Session`. After a Live restart
+       the box around tracks 1-4 was drawn (the user, 2026-11-18), so the identity reply enables
+       v3's own ring (tested). Without a reply it stays off, which was the UC4's first bug.
+   - **Done** (2026-11-18).
 5. **Web panel** — blocked by: 4.
    - **Delivers:** `rig panel <script>`: the page, the WebSocket, the "driver is in charge"
      notice, live values both ways.
