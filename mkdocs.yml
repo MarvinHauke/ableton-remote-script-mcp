@@ -34,6 +34,7 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - How it works: how-it-works.md
+  - Answers, API and MCP server: answers.md
   - Testing with the rig: test-rig.md
   - The panel's protocol: rig-panel-protocol.md
   - CLI reference: reference/cli.md

@@ -9,6 +9,11 @@ input files it was given), and scores it with the validator and `eval_names.py`.
 verdicts on the other graders are copied from the result; the verdicts of the graders about the
 validator and unknown names are overwritten with these scores, since the judge cannot run either.
 
+Each run also gets its tool calls (by tool) and tokens from its trace (`trace_usage`): the
+input, cache and output tokens and the cost the run's result reports, and the characters the
+tool results put into the context. Later rounds and the step 13 benchmark compare these
+(Decision 49 Q7).
+
 Writes `scores.json` and `scores.md` to `--out` (default: next to the result). With
 `--remove-kept` it then copies each run's trace into `<out>/traces/` and deletes the kept
 sandboxes, which hold traces with output of Live's `.pyc` files outside any ignored folder.
@@ -25,8 +30,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-from eval_names import check as check_names
-
 from ableton_remote_script_mcp.index_store import (
     attach_statements,
     default_index_dir,
@@ -34,6 +37,7 @@ from ableton_remote_script_mcp.index_store import (
     load_index,
     load_statements,
 )
+from ableton_remote_script_mcp.names import check as check_names
 from ableton_remote_script_mcp.structure_void import live_major, load_document
 from ableton_remote_script_mcp.validator import validate_folder
 
@@ -83,6 +87,41 @@ def repo_reads(trace: Path, arm: str = "with") -> list[str]:
     return hits
 
 
+def trace_usage(trace: Path) -> dict:
+    """Tool calls, tokens and cost of one run, from its trace (stream-json lines)."""
+    calls: dict[str, int] = {}
+    seen: set[str] = set()
+    result_chars = 0
+    usage: dict = {}
+    cost = None
+    try:
+        lines = trace.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return {}
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if event.get("type") == "result":
+            usage, cost = event.get("usage") or {}, event.get("total_cost_usd")
+        message = event.get("message") if isinstance(event.get("message"), dict) else {}
+        for part in message.get("content", []) if isinstance(message.get("content"), list) else []:
+            if not isinstance(part, dict):
+                continue
+            if part.get("type") == "tool_use" and part.get("id") not in seen:
+                seen.add(part.get("id"))
+                calls[part.get("name", "?")] = calls.get(part.get("name", "?"), 0) + 1
+            elif part.get("type") == "tool_result":
+                content = part.get("content")
+                result_chars += len(content if isinstance(content, str) else json.dumps(content))
+    tokens = {k: usage.get(k, 0) for k in ("input_tokens", "cache_creation_input_tokens",
+                                           "cache_read_input_tokens", "output_tokens")}
+    return {"tool_calls": sum(calls.values()), "tool_calls_by_name": dict(sorted(calls.items())),
+            "tool_result_chars": result_chars, "tokens": tokens, "total_tokens": sum(tokens.values()),
+            "cost_usd": cost}
+
+
 def unseal(kept: Path) -> Path | None:
     """The folder the run worked in, made readable (the eval command seals it with mode 000)."""
     sealed = kept / "sealed"
@@ -121,6 +160,7 @@ def score_run(run: dict, case: str, arm: str, index: dict, statements: dict | No
            "judge": {g.get("name", g.get("id", "?")): g.get("passed") for g in run.get("graders", [])}}
     trace = run.get("tracePath")
     out["repo_reads"] = repo_reads(Path(trace), arm) if trace else []
+    out["usage"] = trace_usage(Path(trace)) if trace else {}
     cwd = unseal(Path(trace).parent.parent) if trace else None
     if cwd is None:
         out["scripts"] = []
@@ -192,8 +232,9 @@ def remove_kept(result: dict, out_dir: Path) -> list[str]:
 
 def summarize(scores: dict) -> str:
     lines = [f"# Skill evals against Live {scores['live_build']}", "",
-             "| case | arm | runs | scripts | validator findings (mean) | unknown names (mean) | judge pass rate |",
-             "|---|---|---:|---:|---:|---:|---:|"]
+             ("| case | arm | runs | scripts | validator findings (mean) | unknown names (mean) | judge pass rate "
+              "| tool calls (mean) | tokens (mean) | tool result chars (mean) | cost USD (mean) |"),
+             "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for case, arms in scores["cases"].items():
         for arm, runs in arms.items():
             v = [sum(len(s["validator_findings"]) for s in r["scripts"]) for r in runs if r["scripts"]]
@@ -201,8 +242,16 @@ def summarize(scores: dict) -> str:
             judged = [p for r in runs for name, p in r["judge"].items()
                       if p is not None and not any(g in name for g in SCRIPT_GRADERS)]
             rate = f"{sum(judged) / len(judged):.0%}" if judged else "–"
+            used = [r["usage"] for r in runs if r.get("usage")]
+
+            def mean(key, used=used):
+                values = [x[key] for x in used if x.get(key) is not None]
+                return f"{statistics.mean(values):,.0f}" if values else "–"
+            costs = [x["cost_usd"] for x in used if x.get("cost_usd") is not None]
             lines.append(f"| {case} | {arm} | {len(runs)} | {sum(len(r['scripts']) for r in runs)} | "
-                         f"{statistics.mean(v) if v else '–'} | {statistics.mean(u) if u else '–'} | {rate} |")
+                         f"{statistics.mean(v) if v else '–'} | {statistics.mean(u) if u else '–'} | {rate} | "
+                         f"{mean('tool_calls')} | {mean('total_tokens')} | {mean('tool_result_chars')} | "
+                         f"{f'{statistics.mean(costs):.2f}' if costs else '–'} |")
     lines += ["", "Runs that wrote no script count in `runs` but not in the means. Unknown names are",
               "candidates: read each one (`scores.json`) before calling it invented.", ""]
     for case, arms in scores["cases"].items():

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import OrderedDict
 from pathlib import Path
 
 from .index_store import (
@@ -40,7 +41,32 @@ def _index_missing(index_dir: Path, live_build: str | None, reason: str | None =
     return {"status": "index_missing", "message": f"{what} at {where}; {BUILD_INDEX_HINT}"}
 
 
-def _open(index_dir: Path, live_build: str | None) -> tuple[dict | None, dict | None]:
+_LOADED: OrderedDict = OrderedDict()  # (file, mtime, size, with statements) -> index
+_KEEP_LOADED = 2
+
+
+def _load(index_dir: Path, live_build: str, with_statements: bool = False) -> tuple[dict, dict | None]:
+    """(index, statements) of one build, kept loaded while its files don't change, so the MCP
+    server reads a build once. With statements, a separate copy carries them on its members
+    (`attach_statements`), so the other answers stay as they are."""
+    path = index_path(index_dir, live_build)
+    st = path.stat()
+    key = (str(path), st.st_mtime_ns, st.st_size, with_statements)
+    if key in _LOADED:
+        _LOADED.move_to_end(key)
+        return _LOADED[key]
+    index = load_index(index_dir, live_build)
+    statements = load_statements(index_dir, index) if with_statements else None
+    if statements:
+        attach_statements(index, statements)
+    _LOADED[key] = (index, statements)
+    while len(_LOADED) > _KEEP_LOADED:
+        _LOADED.popitem(last=False)
+    return index, statements
+
+
+def _open(index_dir: Path, live_build: str | None,
+          with_statements: bool = False) -> tuple[dict | None, dict | None]:
     """(index, None) or (None, an index_missing answer)."""
     builds = indexed_builds(index_dir)
     if live_build is None:
@@ -50,7 +76,7 @@ def _open(index_dir: Path, live_build: str | None) -> tuple[dict | None, dict | 
     elif live_build not in builds:
         return None, _index_missing(index_dir, live_build)
     try:
-        index = load_index(index_dir, live_build)
+        index, _ = _load(index_dir, live_build, with_statements)
     except (OSError, json.JSONDecodeError) as e:
         return None, _index_missing(index_dir, live_build, f"the index for Live {live_build} is unreadable ({e})")
     if index.get("schema") != SCHEMA_VERSION:
@@ -97,27 +123,14 @@ def get_class(name: str, index_dir: Path, live_build: str | None = None) -> dict
     if missing:
         return missing
     live_build = index["live_build"]
-    classes = index["classes"]
     resolver = Resolver(index)
-    resolved_from = None
-    if name in classes:
-        keys = [name]
-    else:
-        keys = [k for k, c in classes.items() if name in (c["name"], c["qualname"], f"{c['module']}.{c['qualname']}")]
-    if not keys:  # `Live.Song.Song`: the Push 3 helper's model of it
-        keys = [k for k, c in classes.items() if c.get("proxy_of") == name]
-    if not keys and "." in name:
-        root, _, bare = name.rpartition(":") if name.startswith(PUSH3_HELPER_ROOT + ":") else (SCRIPTS_ROOT, "", name)
-        found = resolver.resolve(bare, root)
-        if found.status == "class":
-            keys, resolved_from = [found.key], {"name": name, "via": list(found.via)}
+    keys, resolved_from = find_class_keys(index, resolver, name)
     doc = load_document(index_dir, live_major(live_build))
     if not keys:
         documented = _documented_classes(doc, name)
         if not documented:
             return _not_found(live_build, f"class {name!r}")
         return {"status": "ok", "live_build": live_build, "classes": [], "documented": documented}
-    keys.sort(key=lambda k: (classes[k]["root"] != SCRIPTS_ROOT, k))
     proxies = _proxies(index)
     answer = {
         "status": "ok",
@@ -136,6 +149,26 @@ def get_class(name: str, index_dir: Path, live_build: str | None = None) -> dict
     if resolved_from:
         answer["resolved_from"] = resolved_from
     return answer
+
+
+def find_class_keys(index: dict, resolver: Resolver, name: str) -> tuple[list[str], dict | None]:
+    """The class keys a class name stands for, the Remote Scripts' first, and the re-export it
+    was found through (`get_class`'s name forms)."""
+    classes = index["classes"]
+    resolved_from = None
+    if name in classes:
+        keys = [name]
+    else:
+        keys = [k for k, c in classes.items() if name in (c["name"], c["qualname"], f"{c['module']}.{c['qualname']}")]
+    if not keys:  # `Live.Song.Song`: the Push 3 helper's model of it
+        keys = [k for k, c in classes.items() if c.get("proxy_of") == name]
+    if not keys and "." in name:
+        root, _, bare = name.rpartition(":") if name.startswith(PUSH3_HELPER_ROOT + ":") else (SCRIPTS_ROOT, "", name)
+        found = resolver.resolve(bare, root)
+        if found.status == "class":
+            keys, resolved_from = [found.key], {"name": name, "via": list(found.via)}
+    keys.sort(key=lambda k: (classes[k]["root"] != SCRIPTS_ROOT, k))
+    return keys, resolved_from
 
 
 def _framework_page(framework: dict, c: dict, index: dict) -> dict | None:
@@ -230,13 +263,14 @@ def _score(query: str, qwords: list[str], name: str, qualified: str, docstring: 
 
 
 def search(query: str, index_dir: Path, live_build: str | None = None, kind: str | None = None,
-           limit: int = 20) -> dict:
+           limit: int = 20, offset: int = 0) -> dict:
     """Classes, modules and members by name or words, best first.
 
     Ranking: exact name, qualified-name suffix, name prefix, name substring, all words in the
     name, all words in name + module + docstring. Ties: classes before modules before members;
     framework (newest generation first) before libraries before Remote Scripts; shorter names first.
-    `kind` narrows to one of SEARCH_KINDS ("member" = any class member).
+    `kind` narrows to one of SEARCH_KINDS ("member" = any class member). `offset` skips that
+    many results: the answer's `next_offset` is the next page, when there is one.
     """
     index, missing = _open(index_dir, live_build)
     if missing:
@@ -281,8 +315,13 @@ def search(query: str, index_dir: Path, live_build: str | None = None, kind: str
     if not hits:
         return _not_found(live_build, f"{kind + ' ' if kind else ''}{query!r}")
     hits.sort(key=lambda h: h[0])
-    return {"status": "ok", "live_build": live_build, "query": query, "total": len(hits),
-            "results": [h for _, h in hits[:limit]]}
+    offset = max(offset, 0)
+    page = [h for _, h in hits[offset:offset + limit]]
+    answer = {"status": "ok", "live_build": live_build, "query": query, "total": len(hits), "offset": offset,
+              "results": page}
+    if offset + len(page) < len(hits):
+        answer["next_offset"] = offset + len(page)
+    return answer
 
 
 def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> dict:
@@ -354,18 +393,21 @@ def outline_folder(folder: Path, index: dict) -> tuple[dict | None, str]:
 
 
 def _with_statements(index_dir: Path, live_build: str | None) -> tuple[dict | None, dict | None]:
-    index, missing = _open(index_dir, live_build)
+    index, missing = _open(index_dir, live_build, with_statements=True)
     if missing:
         return None, missing
     live_build = index["live_build"]
-    statements = load_statements(index_dir, index)
-    if statements is None:
+    if load_statements_cached(index_dir, live_build) is None:
         return None, _index_missing(
             index_dir, live_build,
             f"no statement summaries for Live {live_build} at {statements_path(index_dir, live_build)}"
             " (an outline needs them; build-index writes them unless --no-statements)")
-    attach_statements(index, statements)
     return index, None
+
+
+def load_statements_cached(index_dir: Path, live_build: str) -> dict | None:
+    """The statement summaries of a build loaded by `_open(..., with_statements=True)`."""
+    return _load(index_dir, live_build, True)[1]
 
 
 def outline_script(name: str, index_dir: Path, live_build: str | None = None) -> dict:
@@ -399,11 +441,34 @@ def validate_script(folder: Path, index_dir: Path, live_build: str | None = None
     folder = Path(folder).expanduser()
     if not folder.is_dir():
         return {"status": "not_found", "live_build": live_build, "message": f"no script folder at {folder}"}
-    index, missing = _open(index_dir, live_build)
+    index, missing = _open(index_dir, live_build, with_statements=True)  # the framework checks read its code
     if missing:
         return missing
-    statements = load_statements(index_dir, index)
-    if statements:
-        attach_statements(index, statements)  # the framework checks read the framework's code
     return {"status": "ok", "live_build": index["live_build"], "confidence": "observed",
             **validate_folder(folder.resolve(), index)}
+
+
+def check_names(index_dir: Path, live_build: str | None = None, folder: Path | None = None,
+                names: list[str] | None = None) -> dict:
+    """Where each API name a script folder uses, or each name of a list, is known in one build:
+    the index (observed), Ableton's scripts' calls (observed), Structure Void (documented), Python,
+    or nowhere (`names.py`). Facts, not errors: `validate` gives those."""
+    from .names import check, check_list
+
+    if (folder is None) == (names is None):
+        raise ValueError("check_names takes a folder or a list of names")
+    if folder is not None:
+        folder = Path(folder).expanduser()
+        if not folder.is_dir():
+            return {"status": "not_found", "live_build": live_build, "message": f"no script folder at {folder}"}
+    index, missing = _open(index_dir, live_build, with_statements=True)
+    if missing:
+        return missing
+    live_build = index["live_build"]
+    statements = load_statements_cached(index_dir, live_build)
+    doc = load_document(index_dir, live_major(live_build))
+    if folder is not None:
+        return {"status": "ok", "confidence": "observed", **check(folder.resolve(), index, statements, doc)}
+    resolver = Resolver(index)
+    return {"status": "ok", **check_list(names, index, statements, doc,
+                                          lambda n: find_class_keys(index, resolver, n))}

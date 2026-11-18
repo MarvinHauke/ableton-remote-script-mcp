@@ -37,9 +37,10 @@ If a script says the command or the index is missing, tell the user the command 
 | Script | What it answers |
 |---|---|
 | `scripts/lookup.sh builds` | the indexed Live builds, and installed builds with no index |
-| `scripts/lookup.sh class <Name>` | a class with its bases, MRO and every member with its signature and origin (`--own` for its own members); give the full dotted name (`_Framework.SessionComponent.SessionComponent`), since a short name matches the class in every framework generation |
+| `scripts/lookup.sh class <Name>` | a class with its bases, MRO and every member with its signature and origin (`--own` for its own members, `--member <m>` for only the ones you need); give the full dotted name (`_Framework.SessionComponent.SessionComponent`), since a short name matches the class in every framework generation |
 | `scripts/lookup.sh search <words>` | classes, modules and members by name or words (`--kind class`) |
-| `scripts/lookup.sh outline <Script>` | one of Ableton's own scripts: its classes, elements with their MIDI numbers, components and layers |
+| `scripts/lookup.sh outline <Script>` | one of Ableton's own scripts: its classes, elements with their MIDI numbers, components and layers (`--section <name>` for one part of a large one) |
+| `scripts/lookup.sh names <folder>` | every attribute and constructor keyword the script uses: known in the index (observed), on Structure Void's pages (documented), or unknown; `--names A.b C.d` checks a list |
 | `scripts/validate.sh <folder>` | findings (file, line, rule, fix) for a script folder against a build |
 | `scripts/install.sh <folder>` | validates, then copies the script into the User Library (`--replace` for a new version) |
 | `scripts/log.sh --script <Folder>` | the tracebacks and messages of that script in Live's `Log.txt` since Live last started |
@@ -50,7 +51,8 @@ Structure Void's pages, marked `documented`: say so when you use one.
 
 `lookup.sh class|search|outline`, `validate.sh` and `install.sh` take `--build <build>`, the index
 to ask (default: the newest indexed build); `log.sh --build` picks which Live build's log to read.
-Each script's header lists its options and exit codes.
+Each script's header lists its options and exit codes. Answers are capped at about 4,000 tokens;
+a line at the end says what was cut and how to get it (`--section`, `--offset`, `--full`).
 
 ## Workflow
 
@@ -86,12 +88,14 @@ Each script's header lists its options and exit codes.
 
 6. **Write the script.** Copy the template, fill in the device facts, and build only what the
    behaviour list asks for. Before using a class, method or argument, look it up; the lookup
-   shows inherited members and exact signatures. Keep the folder name a plain Python name
+   shows inherited members and exact signatures. Check many names in one call rather than one
+   lookup each:
+   `scripts/lookup.sh names --names SessionRingComponent.set_offsets Song.tracks ControlSurface.show_message`. Keep the folder name a plain Python name
    (`My_Controller`): Live imports the script by its folder name. Name the `ControlSurface`
    subclass like the folder too: a `_Framework` script's log messages start with the class
    name, a v3 script's with its module, and the log script finds both by the folder name.
 
-7. **Validate, then install.** Run `scripts/validate.sh <folder>` and fix every finding; the
+7. **Validate, check the names, then install.** Run `scripts/validate.sh <folder>` and fix every finding; the
    validator parses the code as Live's Python does and checks against the build:
    - imports and `create_instance`
    - v3 mapping keys and element names, and the component map
@@ -104,7 +108,8 @@ Each script's header lists its options and exit codes.
    An `error` is proven wrong by the index; a `warning` is likely wrong. Read the "not checked"
    list too: those names (keys of a component that answers names by pattern, such as v3's
    `MixerComponent`) are yours to look up. Names used on objects outside the mappings
-   (`self._session.set_foo(...)`) are not checked either, which is why step 6 looks them up. The index has names and signatures, not behaviour: when the
+   (`self._session.set_foo(...)`) are not checked either: run `scripts/lookup.sh names <folder>` on
+   each draft and look at every `unknown` name; a `documented` one is labelled as such in the report. The index has names and signatures, not behaviour: when the
    code relies on what a method does (which LED value it sends, whether it releases a button),
    say so in the report and put it on the checklist. Then `scripts/install.sh <folder>` (add `--replace` after
    the first time).

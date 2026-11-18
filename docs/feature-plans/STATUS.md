@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-18 (0001 steps 4 and 6 built: `diff`, `check-structure-void`; next 0001 step 11)._
+_Last updated: 2026-11-18 (0001 step 11 built: the MCP server, `check-names`, size caps; next `build-stubs`, then 0001 step 12)._
 
 ## Now
 
@@ -176,7 +176,16 @@ _Last updated: 2026-11-18 (0001 steps 4 and 6 built: `diff`, `check-structure-vo
   on the same branch: Structure Void's framework pages from its search index,
   `check-structure-void` and the comparison in `lookup class` (Decision 51). Against 12.4.16:
   2565 classes agree, 22 differ (changes since the pages' older 12.x), 34 not matched (205
-  tests). Next: step 11 (MCP server v1, with Decision 49's additions).
+  tests). Steps 4 and 6 merged into main (2026-11-18).
+- 0001 step 11 built on `feat/0001-step-11-mcp` (2026-11-18, Decision 52):
+  - the MCP server (`ableton-remote-script-mcp mcp`, 7 read-only tools, MCP SDK 2.3);
+  - the stable Python API with one versioned answer core;
+  - answers capped at about 4,000 tokens, with a `cut` note and pages or sections;
+  - `check-names` in the package and the skill;
+  - `eval_score.py` counts tool calls, tokens and cost.
+
+  213 tests; started with `uvx` over stdio against 12.4.16. Next: `build-stubs` (Decision 49
+  Q9, local only), then step 12.
 
 ## After grilling
 
