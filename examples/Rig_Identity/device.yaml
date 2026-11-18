@@ -3,4 +3,5 @@ name: the test rig's own identity
 identity:
   reply: rig
 layout:
+  - [launch_buttons]
   - [faders]

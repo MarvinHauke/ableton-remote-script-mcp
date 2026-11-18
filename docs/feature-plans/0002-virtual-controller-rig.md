@@ -305,7 +305,11 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
        `identified: 7F 06 02 7D 00 01 00 01 00 01 00 00`, then sent its start-up state.
      - So the bytes a v3 script gets lack `F0 7E` and `F7`. That's why the framework finds
        `06 02` at positions 1–2 and the id bytes from position 3 (tested).
-     - Its check file: fader 1 passed; the session box is asked of the user.
+     - Its check file: fader 1 passed. No box was drawn (the user). The reason, observed in
+       the 12.4.16 index: `ControlSurface.__init__` sets `_can_enable_session_ring` only when the
+       script is identifiable and has a `SessionComponent`, and the sample mapped only the
+       Mixer. The sample gained four launch buttons mapped to `Session`; the box check runs
+       again after a Live restart.
 5. **Web panel** — blocked by: 4.
    - **Delivers:** `rig panel <script>`: the page, the WebSocket, the "driver is in charge"
      notice, live values both ways.
