@@ -35,6 +35,7 @@ nav:
   - Getting started: getting-started.md
   - How it works: how-it-works.md
   - Testing with the rig: test-rig.md
+  - The panel's protocol: rig-panel-protocol.md
   - CLI reference: reference/cli.md
   - Known limits: limits.md
   - Develop: develop.md

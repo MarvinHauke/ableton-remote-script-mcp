@@ -22,7 +22,7 @@ listeners saw. It reports each step as passed, failed or "ask the user". The con
 elements come from `outline` of the script; a **device profile** adds layout and identity. A
 web panel shows the same controller to the user and plays it through the driver. The rig works
 in the **test Set** and never saves it. What it can't see (the session box, the hardware's own
-behaviour) stays the user's load test. Decisions 1–21 below.
+behaviour) stays the user's load test. Decisions 1–24 below.
 
 ## User Stories
 
@@ -177,6 +177,16 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     Tested 2026-11-18 in 12.4.16. Without changes, Live quit with no dialog. With a change, the
     rig answered the dialog itself. Either way, Live was back with `Rig_Identity` identified in
     about 9 s. Saving, closing other Sets and switching control surfaces stay the user's.
+
+24. **The panel's WebSocket is a contract other programs may use** (the user asked whether the
+    UC4 Editor could play through the rig instead of the panel's page, and agreed to the agent's
+    plan, 2026-11-18). The protocol is versioned (`protocol` in the model event, version 1) and
+    written down in `docs/rig-panel-protocol.md`. It sends raw bytes both ways and takes a raw
+    `send`, so a client that knows the device needs no script element names. Only pages served
+    from this machine may connect. The UC4 Editor's side (playing from its device view, Live's
+    LEDs in it) belongs to that project: the agent sends its architect a brief for its plan 0008
+    (live view) to grill, and builds nothing in that repo. The panel's own page stays, for
+    scripts whose device has no editor.
 
 ## Open questions
 

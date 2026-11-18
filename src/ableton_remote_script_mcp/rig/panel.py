@@ -40,6 +40,7 @@ from .controller import Controller
 from .ports import describe
 
 DEFAULT_PORT = 9879  # rig serve: 9878, AbletonMCP: 9877
+PROTOCOL = 1  # the WebSocket protocol's version (docs/rig-panel-protocol.md): a client checks it
 NOTICE = ("Parallel view: the test rig's driver is in charge. What `rig run` plays shows up here; "
           "what you play here goes to the same port. Live is never saved.")
 ROW = 8  # elements per row in the plain layout
@@ -91,7 +92,7 @@ def panel_model(ctl: Controller, profile=None) -> dict:
     for kind in ("button", "encoder"):
         names = [n for n in rest if ctl.elements[n].kind == kind]
         rows += [names[i:i + ROW] for i in range(0, len(names), ROW)]
-    return {"type": "model", "script": ctl.script, "folder": ctl.folder,
+    return {"type": "model", "protocol": PROTOCOL, "script": ctl.script, "folder": ctl.folder,
             "profile": profile.name if profile else None, "notice": NOTICE,
             "rows": [[group(x) for x in row] for row in rows if row],
             "unresolved": ctl.unresolved}

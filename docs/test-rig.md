@@ -185,6 +185,9 @@ sets the rows (`layout`) and how values show (`display`). Without one, the page 
 per matrix, then the single elements. If you restart `rig serve`, the panel connects again by
 itself.
 
+Another program can play through the panel too, such as an editor that already draws your
+controller: [the panel's protocol](rig-panel-protocol.md).
+
 ## What the rig can't see
 
 The rig sees MIDI, the log and, with AbletonMCP, Live's state. It can't see Live's screen (the

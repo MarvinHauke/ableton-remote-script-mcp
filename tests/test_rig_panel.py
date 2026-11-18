@@ -163,7 +163,7 @@ def test_page_plays_through_rig_serve_and_sees_live_and_the_driver(rig):
     midi, serve, panel = rig
     page = _Page(panel.server_address)
     model = page.next()
-    assert model["type"] == "model" and model["script"] == "Box"
+    assert model["type"] == "model" and model["script"] == "Box" and model["protocol"] == 1
     page.play("faders[0]", 90)
     out = page.next(lambda e: e.get("dir") == "out")
     assert out["by"] == "panel" and out["elements"] == ["faders[0]"] and out["value"] == 90
