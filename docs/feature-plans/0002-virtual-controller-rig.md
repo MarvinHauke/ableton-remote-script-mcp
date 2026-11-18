@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: grilled (2026-11-18, Decisions 1–25) — spec and steps next, when the user chooses._
+_Stage: grilled (2026-11-18, Decisions 1–21); spec and steps written 2026-11-18, for the user's approval._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -13,31 +13,72 @@ the test at all: the APC mini mk1 loses presses under LED load, so a step sequen
 load-tested on it reliably. The user wants a virtual controller that sends the script's MIDI
 and shows what Live sends back, which the user can play with and Claude can drive itself.
 
-## Design
+## Solution
 
-A proposal; grilling decides.
+A **test rig** in this repo's package, started as `ableton-remote-script-mcp rig …`. Its driver
+opens a named virtual MIDI port, plays a controller to a Remote Script the way a **check file**
+says, records what Live sends back, reads `Log.txt` and, when AbletonMCP runs, the changes its
+listeners saw. It reports each step as passed, failed or "ask the user". The controller's
+elements come from `outline` of the script; a **device profile** adds layout and identity. A
+web panel shows the same controller to the user and plays it through the driver. The rig works
+in the **test Set** and never saves it. What it can't see (the session box, the hardware's own
+behaviour) stays the user's load test. Decisions 1–21 below.
 
-- **A virtual port.** A MIDI port that Live sees like a controller: macOS's IAC Driver, or a
-  port the rig creates itself. The user picks it once as the Remote Script's input and output.
-- **A panel from the script's own facts.** `outline` already lists every element with its MIDI
-  type, channel and number. The rig builds its controls from that list (faders, encoders,
-  buttons, grids, with the device's own layout where we know it), so it works for any script,
-  not just the UC4.
-- **A web app for the user** (Web MIDI in Chrome): move a fader, press a button, and see what
-  Live sends back (LED values, encoder values) on the panel.
-- **A command-line driver for Claude:** a checklist written as data ("send CC 40 = 100 on
-  channel 13; expect …"), run against the port, with Live's MIDI replies recorded and `Log.txt`
-  read for tracebacks. Repeatable, so a fix can be checked again without the user.
-- **Live's state through AbletonMCP, optional.** AbletonMCP (the user's own server and Remote
-  Script, version 1.7.1, slot 4) reads the Set: tempo, a track's mute, solo, arm, volume, pan,
-  its clips and devices, a device's parameters. That checks what MIDI replies can't (a fader
-  moved the volume). See "Open questions" for what was found when its script was checked.
+## User Stories
 
-What it can catch: values that never come back, tracebacks (the Quant float error), wrong LED
-values (the inverted Active LEDs), mappings that drive the wrong parameter. What it can't:
-anything Live doesn't send back (the session box), and the hardware's own behaviour (the UC4's
-pickup, its per-group LED memory, its displays, a controller that drops presses). It narrows the
-hardware test; it doesn't replace it.
+1. As a script author, I want to run a script's checks without the hardware, so that a fix is
+   checked again in seconds and without the user.
+2. As a script author, I want each check to say what was sent and what came back (MIDI, state
+   changes, a traceback), so that a failure points at its cause.
+3. As the user, I want the agent to send MIDI only to the rig's own port and change only the
+   open test Set, so that my hardware and my projects are never touched.
+4. As the user, I want a web panel of the controller that shows LED and display values, so that
+   I can play a script without the hardware, while the driver stays in charge.
+5. As a script author, I want the rig to answer an identity request like the device would, so
+   that scripts that wait for one start.
+6. As a script author, I want checks for the Live → controller direction (a parameter changed in
+   Live lights an LED or updates a display), so that missing feedback is found before the
+   hardware test.
+7. As the user, I want checks no machine can see marked "ask the user", so that nothing is
+   reported as passed that wasn't checked.
+8. As a maintainer, I want the rig proven against the UC4's 14 known results, so that its
+   verdicts can be trusted for new scripts.
+
+## Implementation Decisions
+
+- **Package layout:** `src/ableton_remote_script_mcp/rig/` with `ports.py` (rtmidi2, behind a
+  small interface so tests use an in-memory port), `controller.py` (the controller model from
+  `outline` plus a device profile), `checks.py` (load and run a check file), `abletonmcp.py`
+  (socket client: version check, allow-list, repeated reads, `drain_passive_events`),
+  `report.py`, `panel/` (web page and WebSocket server). `rtmidi2` becomes an optional
+  dependency (`[rig]` extra), so the index, the validator and the MCP server don't need it.
+- **Check file (`checks.yaml`):** `requires` (what the test Set must have), then `steps`, each
+  with an id, a description, `send` (MIDI messages by element name, as `outline` names them, or
+  raw), `expect` (replies by element name with value or "none", `log: clean`, `state` changes
+  from AbletonMCP), `depends_on`, or `ask_user: <question>`. Live → controller steps use `do`
+  (an allowed AbletonMCP command) instead of `send`.
+- **Timing:** after each send the driver waits for replies until a quiet period (default
+  150 ms, configurable per step), then reads the log and drains AbletonMCP's events.
+- **Device profile (`device.yaml`):** beside the check file; identity reply bytes, panel layout,
+  display hints (absolute, relative, bipolar).
+- **Report:** printed summary plus `checks.result.json` beside the check file (git-ignored).
+- **Panel:** a static page and a WebSocket served on localhost by `rig panel`; the page shows
+  "parallel view: the driver is in charge". It renders the controller model and the last value
+  sent and received per element.
+
+## Testing Decisions
+
+- **Seam C: the rig over fakes.** An in-memory MIDI port that plays a scripted Live (replies to
+  given messages) and a fake AbletonMCP socket server. Assertions: the report's verdicts, what
+  was sent, skipped dependents, the identity reply, the allow-list (a forbidden command is never
+  sent), repeated reads until two agree, version mismatch → runs without AbletonMCP.
+- **Controller model:** built from `outline` over the hand-written test index and from the UC4
+  example against the real index (local-only).
+- **Local-only, against Live:** the step-1 spike (the user picks the port), then the UC4 check
+  file reproducing the user's 14 results (Decision 16). These run only on request, since they
+  need Live open with the test Set.
+- **Prior art:** `tests/fixtures/fake_live_bundle`-style fakes and the `local_live` marker of
+  plan 0001.
 
 ## Decisions
 
@@ -120,7 +161,44 @@ None: grilling closed 2026-11-18 (user confirmed).
 
 ## Steps
 
-Written after the grilling.
+Written 2026-11-18 by the agent from the spec (the `/to-tickets` skill is not installed here),
+for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
+
+1. **Spike: a virtual port Live sees** — blocked by: none.
+   - **Delivers:** `rig ports` (list the MIDI ports) and `rig probe` (open the virtual port
+     `ARS Test Rig`, send one message, print what comes back); `rtmidi2` as the `[rig]` extra.
+   - **Checks:** the user picks `ARS Test Rig` as input and output of a free Control Surface slot
+     with `Faderfox_UC4`; is the port listed without restarting Live? `rig probe` sends fader 1
+     (CC 40, channel 13) and receives Live's value back (the feedback the load test fixed); with
+     AbletonMCP, track 1's volume changed. If Live needs a restart or the port misbehaves, try
+     `pylibremidi`, then the IAC Driver (Decision 7), and record which.
+2. **Driver and check files, MIDI and log only** — blocked by: 1.
+   - **Delivers:** the controller model from `outline`, the check file format, `rig run` with
+     send/expect by element name, quiet-period waiting, `log: clean`, `ask_user`, `depends_on`,
+     the report and its JSON.
+   - **Checks:** seam C over the in-memory port; a first `examples/Faderfox_UC4/checks.yaml`
+     with the steps MIDI and the log can decide, run against Live (local-only).
+3. **AbletonMCP** — blocked by: 2.
+   - **Delivers:** the socket client (version, allow-list, repeated reads, events), `state`
+     expectations, `do` steps (Live → controller), `requires` checked against the test Set and
+     creating what is missing; the tested-command list procedure (Decision 6).
+   - **Checks:** seam C over the fake socket; the user sets three states by hand for the
+     tested list; the full UC4 check file reproduces the 14 results (Decision 16).
+   - **Docs:** a guide page "Testing a script with the test rig"; How it works and Getting
+     started mention the rig.
+4. **Device profiles and identity** — blocked by: 2.
+   - **Delivers:** `device.yaml` (identity reply, layout, display hints), the identity reply
+     when Live asks; the UC4 profile.
+   - **Checks:** seam C: a script that waits for identity starts only with the reply; local: a
+     v3 sample script with `identity_response_id_bytes` starts with the rig's reply (`7D`).
+5. **Web panel** — blocked by: 4.
+   - **Delivers:** `rig panel <script>`: the page, the WebSocket, the "driver is in charge"
+     notice, live values both ways.
+   - **Checks:** the panel's WebSocket protocol over the fake port (tests); the user plays the
+     UC4 script from the panel in Live.
+6. **The APC mini drum sequencer's checks** — blocked by: 3, and the sequencer's own plan.
+   - **Delivers:** its check file and device profile; the skill mentions the rig (Decision 20)
+     once the sequencer's checks pass.
 
 ## Out of scope
 
