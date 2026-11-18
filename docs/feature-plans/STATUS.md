@@ -148,7 +148,12 @@ _Last updated: 2026-11-18 (0001 step 10: the UC4 load test passed; the 9a round 
   (155 tests). Step 2 built on `feat/0002-step-2-rig-run`: `outline` of a script folder,
   `rig elements`, check files, `rig run`, `rig serve`, `examples/Faderfox_UC4/checks.yaml`
   (165 tests). In Live: 24 passed, 0 failed, 5 to ask; after a Live restart with `rig serve`
-  running, and with Live started before the port, the slot reconnects by itself. Next: step 3.
+  running, and with Live started before the port, the slot reconnects by itself. Step 3 built
+  on `feat/0002-step-3-abletonmcp`: the AbletonMCP client (allow-list, repeated reads, three
+  reads tested by hand), `state`/`events`/`do`/`requires` in check files, `rig abletonmcp`, the
+  guide page `docs/test-rig.md`. The UC4 check file in Live: 34 passed, 0 failed, 4 to ask
+  (172 tests). Next: step 4 (device profiles and identity).
+- The 0001 step 10 eval round runs (user confirmed Decision 46, 2026-11-18).
   Found: the statement summary drops a call's keywords next to `**k` (an `outline` gap).
   None of this blocks 0001's 9a round.
 - Next: one 9a round (0001 decision 46; needs the usage limit), which completes step 10 and

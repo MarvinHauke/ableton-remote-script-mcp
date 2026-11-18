@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; step 2 built and run in Live 2026-11-18. Frontier: step 3 (AbletonMCP), or 4._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2 and 3 built and run in Live 2026-11-18. Frontier: step 4 (device profiles and identity)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -249,7 +249,7 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      creating what is missing; the tested-command list procedure (Decision 6).
    - **Checks:** seam C over the fake socket; the user sets three states by hand for the
      tested list; the full UC4 check file reproduces the 14 results (Decision 16).
-   - **In work** (2026-11-18, agent; branch `feat/0002-step-3-abletonmcp`):
+   - **Built** (2026-11-18, agent; branch `feat/0002-step-3-abletonmcp`):
      - `rig/abletonmcp.py`: the client. AbletonMCP's protocol, read from its 1.7.1 script: one
        JSON object per request and per answer, with no delimiter. The client checks the version
        with `get_script_info` and refuses commands outside the allow-list before sending
@@ -276,6 +276,10 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      - The full UC4 check file in Live: 34 passed, 0 failed, 4 to ask the user (session box,
        navigation, device follow, group LEDs). This reproduces the load test's results for
        items 3-12.
+     - Docs: the site page `docs/test-rig.md` ("Testing a script with the test rig"), linked
+       from Getting started and How it works. It gives AbletonMCP no link, because the copy
+       used here may be a fork.
+   - **Done** (2026-11-18). 172 tests pass.
    - **Docs:** a guide page "Testing a script with the test rig"; How it works and Getting
      started mention the rig.
 4. **Device profiles and identity** — blocked by: 2.

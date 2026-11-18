@@ -34,6 +34,7 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - How it works: how-it-works.md
+  - Testing with the rig: test-rig.md
   - CLI reference: reference/cli.md
   - Known limits: limits.md
   - Develop: develop.md

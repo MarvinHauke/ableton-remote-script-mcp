@@ -104,6 +104,11 @@ uv run ableton-remote-script-mcp log --script My_Script
 It exits with 0 when there is no traceback and 1 when there is one. [How it
 works](how-it-works.md#loading-a-script) says how it reads the log.
 
+## Test it without the hardware
+
+The test rig plays your controller to the script over a virtual MIDI port and checks what Live
+sends back, step by step, as a check file says. [Testing with the rig](test-rig.md) shows how.
+
 ## Where the index lives
 
 By default in `~/.local/share/ableton-remote-script-mcp/index/` (or under `$XDG_DATA_HOME` when

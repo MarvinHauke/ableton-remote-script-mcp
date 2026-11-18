@@ -106,6 +106,15 @@ Live.
   also shows tracebacks whose frames are all in Live's shared packages (`_Framework`, `ableton`,
   …) as "framework-only": a broken combo, for example, fails there without naming the script.
 
+## Testing a script
+
+The tools above never send anything to Live. The one exception is the
+[test rig](test-rig.md), and only after you have picked its virtual port `ARS Test Rig` for a
+Control Surface slot. It then sends MIDI to that port only, never to your hardware's ports. It
+may change the open Set for a check, but never saves it. The rig works out each element's MIDI
+message from the script's code the way `outline` does. It decides each step from Live's MIDI
+replies and `Log.txt`, and also from Live's state when the AbletonMCP Remote Script runs.
+
 ## Fact confidence
 
 Every answer names its Live build and a confidence:

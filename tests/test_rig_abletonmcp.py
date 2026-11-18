@@ -161,7 +161,8 @@ def test_run_checks_state_events_and_do(tmp_path):
     result = _run(tmp_path, AbletonMCP(sock=live), live)
     assert {s["id"]: s["verdict"] for s in result["steps"]} == {"mute": "passed", "macro": "passed"}
     assert live.macro == 64
-    assert result["steps"][1]["untested_commands"] == ["get_device_parameters"]
+    assert result["steps"][1]["live"][0]["tested"]  # get_device_parameters is on the tested list
+    assert "untested_commands" not in result["steps"][1]
 
 
 def test_without_abletonmcp_do_steps_skip_and_state_is_not_checked(tmp_path):
