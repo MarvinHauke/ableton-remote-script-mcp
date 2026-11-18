@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0001 `build-stubs` built; README has "How to use it"; distribution stays last)._
+_Last updated: 2026-11-19 (agent team set up, 0001 Decision 54; `build-stubs` built; distribution stays last)._
 
 ## Now
 
@@ -197,7 +197,10 @@ _Last updated: 2026-11-19 (0001 `build-stubs` built; README has "How to use it";
 
 ## After grilling
 
-- Steps are built in this same session, with a `/compact` between steps (0001 decision 31).
+- Since 2026-11-19 an agent team builds (0001 Decision 54, `CLAUDE.md` "Agent team",
+  `scripts/agents.sh`): the architect plans and hands out tasks, `arsm-core` builds, the reviewer
+  reviews; docs, skill and rig agents on demand. Before that: one session with a `/compact`
+  between steps (Decision 31).
 - Order: 1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12 → 13 (13, the
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
