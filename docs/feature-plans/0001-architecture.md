@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); step 4 built 2026-11-18; the MCP design ideas grilled (Decision 49); next step 6, then 11._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); next step 11._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -750,6 +750,26 @@ meant to do, and uses only API names that exist in the Live build they target.
     holds that beta's facts, so it is only printed: tests assert no beta names, and the docs
     show the commands without output (Decision 15).
 
+51. **Structure Void's framework pages come from its search index, as a cross-check** (agent,
+    2026-11-18, step 6). Decision 45 read the runtime pages; step 6 reads the framework pages
+    (1367 Live 12 modules, 2621 classes) from the site's MkDocs search index, one 34 MB download
+    instead of 1367 page fetches. Each heading gives a class with its bases, or a member with
+    its argument names (no defaults). The download and the document read from it
+    (`structure-void-live12-framework.json`) stay in the index folder (CC BY-NC-SA 4.0).
+    - `check-structure-void` compares every page with one build's index: members only one side
+      has, argument names that differ, bases that differ. `lookup class` shows the same for one
+      class with its page link. Nothing changes the index's `observed` facts.
+    - Normalised before comparing: Python's mangled names (a page shows `__on_x`, the index
+      `_Class__on_x`), dunder attributes (`__events__`, `__doc__`: the pages leave them out), a
+      metaclass the pages list as a base, generic bases (`View[ContentType]`, which the pages
+      flatten), nested classes the pages head by their own name (matched when unique, or unique
+      with the page's bases).
+    - Against 12.4.16 on 2026-11-18: 2565 classes agree, 22 differ, 34 were not matched (most
+      are nested classes of one name, such as several `Device` colour groups). The 22 look like
+      changes between the pages' older 12.x and 12.4.16 (renamed skin entries, new arguments,
+      new bases), not gaps in the extractor.
+    - Only release builds are named in the repo; a check against a beta prints only.
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
@@ -882,6 +902,13 @@ Every step's checks include `uv run pytest` passing.
      `documented` facts with page links; lookups show where it disagrees with our index.
    - **Checks:** Seam B tests with a small extract we write ourselves (not his text);
      nothing from the import is committed.
+   - **Built** (2026-11-18, `feat/0001-step-4-diff`, with step 4): Decision 51.
+     `structure_void_framework.py` reads the search index's Live 12 framework pages;
+     `import-structure-void` now imports them with the runtime pages; `check-structure-void
+     [--build] [--under] [--json]` and `lookup class` compare them with the index. Live 12 only:
+     the site's Live 9–11 pages are left out, as this tool targets 12.4 and 13 (Decision 16).
+     Seam B tests in `tests/test_structure_void_framework.py` with a search index written by
+     hand. 205 tests.
 7. **Validator: basic checks**
    - **Blocked by:** 2
    - **Delivers:** `validate <folder> --build <build>` with findings (file, line, rule, message,

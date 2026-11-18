@@ -28,6 +28,7 @@ from .live_install import LiveInstall
 from .outline import find_script, outline_package
 from .resolve import Resolver, lineage
 from .structure_void import live_major, load_document
+from .structure_void_framework import compare_class, cross_check, load_framework
 from .validator import read_sources, validate_folder
 
 BUILD_INDEX_HINT = "run `uv run ableton-remote-script-mcp build-index` (or `--app <Live.app>` for a specific build)"
@@ -123,13 +124,45 @@ def get_class(name: str, index_dir: Path, live_build: str | None = None) -> dict
         "live_build": live_build,
         "classes": [_class_answer(index, resolver, k, proxies) for k in keys],
     }
+    framework = load_framework(index_dir, live_major(live_build))
     for c in answer["classes"]:  # a proxy model class: what Structure Void's page adds to it
         documented = doc and doc["classes"].get(c.get("proxy_of") or "")
         if documented:
             c["documented"] = _documented_entry(doc, c["proxy_of"], set(c["all_members"]))
+        page = framework and c["root"] == SCRIPTS_ROOT and _framework_page(framework, c, index)
+        if page:  # the class's framework page: where it disagrees with the index
+            c["structure_void"] = {**compare_class(c, page), "covers": framework["covers"],
+                                   "licence": framework["licence"], "confidence": "documented"}
     if resolved_from:
         answer["resolved_from"] = resolved_from
     return answer
+
+
+def _framework_page(framework: dict, c: dict, index: dict) -> dict | None:
+    """A class's entry on its module's framework page. A nested class is headed by its own name
+    (`Transport` for `Notifications.Transport`), so it is matched only when no other class of
+    that module has that name."""
+    classes = (framework["modules"].get(c["module"]) or {}).get("classes", {})
+    if c["qualname"] in classes:
+        return classes[c["qualname"]]
+    tail = c["qualname"].rsplit(".", 1)[-1]
+    if tail not in classes:
+        return None
+    same = [k for k, o in index["classes"].items() if o["module"] == c["module"] and o["root"] == c["root"]
+            and o["qualname"].rsplit(".", 1)[-1] == tail]
+    return classes[tail] if len(same) == 1 else None
+
+
+def structure_void_check(index_dir: Path, live_build: str | None = None, under: str | None = None) -> dict:
+    """Structure Void's framework pages against one build's index (`cross_check`)."""
+    index, missing = _open(index_dir, live_build)
+    if missing:
+        return missing
+    framework = load_framework(index_dir, live_major(index["live_build"]))
+    if framework is None:
+        return {"status": "not_imported", "message": "Structure Void's framework pages are not imported; run "
+                "`ableton-remote-script-mcp import-structure-void`"}
+    return cross_check(index, framework, under)
 
 
 def _documented_entry(doc: dict, key: str, have: set[str] = frozenset()) -> dict:

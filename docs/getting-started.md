@@ -31,7 +31,9 @@ uv run ableton-remote-script-mcp build-index --app "/Applications/Ableton Live 1
 ```
 
 Optionally, add Structure Void's pages on Live's own objects (song, tracks, clips, devices),
-which the index knows only partly ([How it works](how-it-works.md#lives-own-objects)):
+which the index knows only partly ([How it works](how-it-works.md#lives-own-objects)), and its
+framework pages, to check the index against
+([How it works](how-it-works.md#checked-against-structure-voids-framework-pages)):
 
 ```sh
 uv run ableton-remote-script-mcp import-structure-void

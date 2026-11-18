@@ -55,13 +55,63 @@ def _cmd_build_index(args: argparse.Namespace) -> int:
 
 
 def _cmd_import_structure_void(args: argparse.Namespace) -> int:
+    from .structure_void_framework import import_framework
+
     try:
         import_pages(Path(args.index_dir), args.live, args.refresh)
+        import_framework(Path(args.index_dir), args.live, args.refresh)
     except (OSError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
     print(f"facts from it are `documented` ({LICENCE}: they stay on this machine)")
     return 0
+
+
+def _cmd_check_structure_void(args: argparse.Namespace) -> int:
+    """Exit 0: compared; 2: no framework pages imported; 3: no index."""
+    from .query import structure_void_check
+
+    answer = structure_void_check(Path(args.index_dir), args.build, args.under)
+    if args.json:
+        print(json.dumps(answer, indent=1))
+    elif answer["status"] == "ok":
+        print(_format_sv_check(answer))
+    else:
+        print(answer["message"])
+    return {"ok": 0, "not_imported": 2, "index_missing": 3}[answer["status"]]
+
+
+def _format_sv_check(a: dict) -> str:
+    scope = f" under {a['under']}" if a["under"] else ""
+    lines = [(f"Structure Void's framework pages ({a['covers']}, documented) against Live {a['live_build']}{scope} "
+             f"(observed): {a['pages']} pages, {a['classes_agree']} classes agree, {len(a['classes_differ'])} differ, "
+             f"{len(a['classes_missing'])} not found here, {len(a['modules_missing'])} modules not found here; "
+             f"{len(a['modules_not_on_pages'])} modules here have no page."),
+             "A difference may be Structure Void's other Live build or a gap in this index: look at both."]
+    for c in a["classes_differ"]:
+        lines.append(f"  {c['class']}")
+        lines += [f"    {t}" for t in _sv_differences(c)]
+    for c in a["classes_missing"]:
+        lines.append(f"  not found here: {c['class']} ({c['reason']}; {c['source']})")
+    for m in a["modules_missing"]:
+        lines.append(f"  module not found here: {m['module']} ({m['source']})")
+    if a["modules_not_on_pages"]:
+        lines.append("  no page: " + ", ".join(a["modules_not_on_pages"]))
+    return "\n".join(lines)
+
+
+def _sv_differences(c: dict) -> list[str]:
+    out = []
+    if c["only_documented"]:
+        out.append("only on the page: " + ", ".join(c["only_documented"]))
+    if c["only_observed"]:
+        out.append("only in the index: " + ", ".join(c["only_observed"]))
+    for d in c["args_differ"]:
+        out.append(f"{d['name']}: index ({', '.join(d['observed'])}), page ({', '.join(d['documented'])})")
+    if "bases_differ" in c:
+        out.append(f"bases: index ({', '.join(c['bases_differ']['observed'])}), "
+                   f"page ({', '.join(c['bases_differ']['documented'])})")
+    return out
 
 
 def format_signature(params: list[dict]) -> str:
@@ -138,6 +188,11 @@ def _format_class(c: dict, own_only: bool) -> str:
         by_origin.setdefault(m["origin"], []).append(text)
     own = by_origin.pop(c["qualified_name"], [])
     lines += _format_documented(c["documented"], "  also on Structure Void's page") if c.get("documented") else []
+    if c.get("structure_void"):
+        sv = c["structure_void"]
+        verdict = "agrees" if sv["agrees"] else "differs"
+        lines.append(f"  Structure Void's page ({sv['covers']}, documented) {verdict}; {sv['source']}")
+        lines += [f"    {t}" for t in _sv_differences(sv)]
     if own:
         lines.append(f"  own members ({len(own)}):")
         lines.extend(f"    {t}" for t in own)
@@ -517,10 +572,18 @@ def make_parser() -> argparse.ArgumentParser:
     lb.set_defaults(func=_cmd_list_builds)
 
     sv = sub.add_parser("import-structure-void",
-                        help="fetch Structure Void's runtime pages of the Live module as a documented source")
+                        help="fetch Structure Void's reference (the Live module's runtime pages and the framework "
+                        "pages) as a documented source")
     sv.add_argument("--live", default="12", help="Live major version (default: 12)")
     sv.add_argument("--refresh", action="store_true", help="fetch the pages again instead of reusing the local copies")
     sv.set_defaults(func=_cmd_import_structure_void)
+
+    cs = sub.add_parser("check-structure-void", help="compare Structure Void's framework pages with a build's index: "
+                        "classes, members, arguments and bases that differ")
+    cs.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
+    cs.add_argument("--under", help="only this package or module and what is in it, e.g. ableton.v3")
+    cs.add_argument("--json", action="store_true", help="print the answer as JSON")
+    cs.set_defaults(func=_cmd_check_structure_void)
 
     lk = sub.add_parser("lookup", help="look something up in the index")
     lk_sub = lk.add_subparsers(dest="kind", required=True)

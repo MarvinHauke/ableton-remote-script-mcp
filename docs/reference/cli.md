@@ -43,7 +43,7 @@ ableton-remote-script-mcp list builds [--json]
 
 ## `import-structure-void`
 
-Fetch Structure Void's runtime pages of the Live module as a documented source.
+Fetch Structure Void's reference (the Live module's runtime pages and the framework pages) as a documented source.
 
 ```text
 ableton-remote-script-mcp import-structure-void [--live LIVE] [--refresh]
@@ -53,6 +53,20 @@ ableton-remote-script-mcp import-structure-void [--live LIVE] [--refresh]
 | --- | --- |
 | `--live LIVE` | Live major version (default: 12). |
 | `--refresh` | Fetch the pages again instead of reusing the local copies. |
+
+## `check-structure-void`
+
+Compare Structure Void's framework pages with a build's index: classes, members, arguments and bases that differ.
+
+```text
+ableton-remote-script-mcp check-structure-void [--build BUILD] [--under UNDER] [--json]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--under UNDER` | Only this package or module and what is in it, e.g. ableton.v3. |
+| `--json` | Print the answer as JSON. |
 
 ## `lookup`
 
