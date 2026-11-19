@@ -9,11 +9,12 @@ would take a playing clip first).
 - Bottom four rows, left half: a 4x4 bank of the Drum Rack's pads. A press plays the pad and
   selects it for the steps. Green blinking: selected; yellow: a pad with a sound; red: held.
   Scene buttons 5-6 scroll the bank up and down by a row, lit when they can.
-- A track without a Drum Rack directly on it: pads and steps dark, a step press does nothing.
+- A track without a Drum Rack (also none inside an Instrument Rack): pads and steps dark, a step press does nothing.
 - The selected MIDI track is armed for the pads (Live's auto-arm).
 - Track buttons 1-8: pages of 32 steps. The page shown is on, the playhead's page blinks.
   While the clip plays the steps follow the playhead's page; a press on another page stays
-  there until the transport starts again or the clip changes.
+  there until the transport starts again, the clip changes or the playhead's own page is
+  pressed.
 - Scene buttons 1-2: the steps' resolution one step finer or coarser (1/32, 1/16 at the start,
   1/8, 1/4), lit when there is one. Bottom four rows, right half, top row: one pad per
   resolution, the active one yellow; a press sets it. The three rows below stay dark.

@@ -143,9 +143,8 @@ steps:
       steps[0]: [1, 5]       # the note, or the playhead passing it
       track_buttons[1]: [1, 2]
     log: clean
-  # A pick that changes the page pauses following: track button 1 shows page 1 while page 2
-  # plays, then track button 2 page 2, which stays while the playhead plays page 1 again (page-two
-  # ends 10.6-11.1 s after the fire; after the stop scroll-pitch picks page 2 with track button 2).
+  # A pick of another page pauses following: track button 1 shows page 1 while page 2 plays
+  # (after the stop scroll-pitch picks page 2 with track button 2).
   - id: page-one-pick
     description: track button 1 shows page 1 while page 2 plays (page 1 of clip 3 is empty) and is on
     depends_on: [four-bar-clip]
@@ -157,20 +156,22 @@ steps:
       steps[0]: [0, 5]
       track_buttons[0]: 1
     log: clean
-  - id: page-two
-    description: track button 2 picks page 2 (steps 33-64), which stays while page 1 plays; the clip keeps its loop
+  # Decision 34: a press on the playhead's page turns following on again. page-one-pick ends
+  # about 7.5-7.6 s after the fire, with page 2 playing (s+4 to s+8); track button 2 shows it and
+  # follows again, so page 1 comes up by itself at s+8 (at most 10 s; this step ends 10.6-11.1 s).
+  - id: page-follows-again
+    description: track button 2, the playhead's page, turns following on; page 1 comes up by itself; the clip keeps its loop
     depends_on: [four-bar-clip]
     send:
       - track_buttons[1]: press
     wait: 3.0
     timeout: 3.5
     expect:
-      steps[0]: [1, 5]       # the note, or the playhead passing it
-      track_buttons[1]: [1, 2]
+      steps[0]: [0, 5]       # page 1's empty step, or the playhead passing it
+      track_buttons[0]: [1, 2]
     state:
       track 9 clip 3: {length: 16, looping: true, loop_start: 0, loop_end: 16}
     log: clean
-
   # Decision 32: the steps edit the selected slot even while another clip plays on the track
   - id: edit-other-slot
     description: with clip 3 playing, selecting scene 2 shows clip 2 (1 bar, steps 17-32 red)

@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons), 30 (resolution pads) and 31 (the page follows the playhead); the APC run gave 32 (always the selected slot)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons), 30 (resolution pads) and 31 (the page follows the playhead); the APC run gave 32 (always the selected slot), the user's test list 33-35 (nested Drum Rack, follow again, own repo)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -343,7 +343,8 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     - a track button press that changes the page pauses following, so that page can be edited
       while the clip plays (pressing the page already shown changes nothing, and following
       goes on);
-    - following starts again when the transport starts or the sequencer's clip changes;
+    - following starts again when the transport starts or the sequencer's clip changes
+      (amended by Decision 34: or a press on the playhead's page);
     - the pause is set in `_on_matrix_pressed` (12.4.16, `observed`) before v3 sets the page:
       v3's own redraw on the page change runs before any slot of ours, and would follow back;
     - the checks: `page-follows` (page 2 shows on its own while it plays), `page-one-pick`
@@ -366,6 +367,25 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     checks select each clip's scene (`select_clip_slot`) and `edit-other-slot` shows clip 2
     while clip 3 plays. Rejected (user): a created clip that doesn't start; the playing clip
     first.
+
+33. **A Drum Rack inside an Instrument Rack counts** (architect, 2026-11-19, the user's test list;
+    fixes Decision 8's "a track without a Drum Rack"). The user's Young Blood Kit is an
+    Instrument Rack with the Drum Rack inside: v3's pad bank found it, but the script's own check
+    looked only at the track's devices, so the steps stayed inert ("it seems to be hardcoded to
+    Yellow Kit"). `has_drum_rack` now uses v3's `find_drum_group_device` (12.4.16, `observed`),
+    as the pad bank does. Checked on the rig with a Young Blood Kit track (an ad-hoc check file;
+    the check file can't load a kit: the rig never sends browser commands, 0002 Decision 6).
+34. **The playhead's page turns following on again** (user, 2026-11-19, "how come I back to follow
+    mode?"; adds to Decision 31): a track button press on the page the playhead plays shows it and
+    follows again; a press on another page pauses, as before. The check file's `page-two` became
+    `page-follows-again` (page 2 pressed while it plays, page 1 comes up by itself).
+35. **The sequencer gets its own repo** (user, 2026-11-19): `APC_mini_drum_seq` next to this repo
+    (`../APC_mini_drum_seq`), MIT, with the script, `checks.yaml`, `device.yaml`, its own README
+    and a `pyrightconfig.json` for the stubs, its history carried over; released on its own, later
+    (distribution comes last). This repo keeps it at `examples/APC_mini_drum_seq` as a git
+    submodule at a pinned commit (user: "isn't a submodule better for pulling continuously?"; the
+    path stays, so the tests and the skill's reference don't change). It becomes a real-world test
+    field for the MCP. Built as its own task after this one.
 
 ## Open questions
 
