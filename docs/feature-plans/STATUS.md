@@ -201,8 +201,11 @@ _Last updated: 2026-11-19 (plan 0003 drafted, 0001 Decision 55; agent team, Deci
   (0003 Decision 2, 0002 Decision 25): `get_clip_notes`, `add_notes_to_clip` and
   `clear_notes_from_clip` are on the rig's allow-list, not yet tested. The skill has a section
   "With the MCP server" (each script's tool, `build=` always, absolute folders). 220 tests.
-  Next: register the skill and the MCP server in Claude Code, a fresh session, then grill
-  0003's other 11 questions.
+  Registered for this project (2026-11-19, the user's go, local only): the MCP server
+  `ableton-remote-script` (`claude mcp add --scope local`, connected), the skill as a link
+  `.claude/skills/ableton-remote-scripts`, and `ABLETON_REMOTE_SCRIPT_MCP` in the git-ignored
+  `.claude/settings.local.json` for its scripts (no `uv tool install`: `eval_run.sh` refuses to
+  run beside one). Next, in a fresh session: grill 0003's other 11 questions.
 
 ## After grilling
 
