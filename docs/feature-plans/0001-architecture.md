@@ -915,8 +915,9 @@ meant to do, and uses only API names that exist in the Live build they target.
          `b = ButtonControl(…)` followed by `@b.pressed` over `def b`, pyright reports "refers to
          itself" whatever type the stub gives `pressed` (`Any`, a method returning the control,
          `Self`, a generic `F -> F`). pyright special-cases only a property's `.setter`. A script
-         avoids it with `b: Any = ButtonControl(…)`, no change at runtime. **Open for the user:**
-         accept this, and say so on the "Editor setup" page (task 3), or change the examples.
+         avoids it with `b: Any = ButtonControl(…)`, no change at runtime.
+       - **Accepted** (user, 2026-11-20, "yes like suggested"): the examples stay as they are;
+         the "Editor setup" page (task 3) explains the error and the `b: Any = …` workaround.
     2. **`build-stubs --project <folder>` (core).** It writes the stubs to `<folder>/stubs`,
        creates a `pyrightconfig.json` there when there is none (`stubPath: "stubs"`,
        `pythonVersion: "3.11"`, `reportMissingModuleSource: false`; an existing one is left

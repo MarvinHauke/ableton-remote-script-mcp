@@ -385,8 +385,8 @@ _Last updated: 2026-11-20 (0001 Decision 56 task 1 built, the stubs fix; task 2 
 - **In work (0001 Decision 56):** stubs for writing scripts by hand, three tasks in order, branch
   `feat/0001-stubs-hand-dev` (from `chore/submodule-guards`, both unmerged): (1) the stubs'
   property and control-decorator fix, **built 2026-11-20** (`APC_mini_mk1_Plus` 13 → 2 errors,
-  both the control idiom, which no stub can fix: the plan's Decision 56 has the details and the
-  user's open question); (2) `build-stubs --project`, next; (3) the docs page "Editor setup".
+  both the control idiom, which no stub can fix; accepted by the user 2026-11-20, task 3's page
+  explains it and the `b: Any = …` workaround); (2) `build-stubs --project`, next; (3) the docs page "Editor setup".
 - [needs-triage] 0001 (index): the index keeps only the last `def` of a name (architect,
   2026-11-20, from task 1). `lookup class GridResolutionComponent` shows `index` as a method
   `(self, index)` with `index.setter`, not a property; controls and `@listens` slots show as
