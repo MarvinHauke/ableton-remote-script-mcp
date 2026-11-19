@@ -68,6 +68,8 @@ and committed, what is left, what you found) and ask for a fresh start.
 - Only the user operates Live. The test rig's exceptions are used only when the architect says
   it is your turn.
 - Never push, never merge, never open a pull request.
+- **The script's submodule** (`examples/APC_mini_mk1_Plus`): its own repo; branch, commit and
+  review there as `CLAUDE.md` "Working in the script's submodule" says.
 
 ## Session
 

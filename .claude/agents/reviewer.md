@@ -22,7 +22,9 @@ You run in two ways. As an in-process subagent, you return your report. As the p
 ## How to start
 
 1. See what changed: `git status --short`, `git diff --stat`, `git diff` (or against the base you
-   are given, e.g. `git diff main...HEAD`).
+   are given, e.g. `git diff main...HEAD`). When `examples/APC_mini_mk1_Plus` changed, also
+   `git -C examples/APC_mini_mk1_Plus status --short` and `diff` (`CLAUDE.md`, "Working in the
+   script's submodule").
 2. Read what you check against: `CLAUDE.md`, `docs/feature-plans/STATUS.md`, the plan the change
    belongs to (`docs/feature-plans/0001-architecture.md`: its decisions and the step being built)
    and `docs/feature-plans/GLOSSARY.md`.

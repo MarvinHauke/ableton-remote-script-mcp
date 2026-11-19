@@ -885,6 +885,32 @@ meant to do, and uses only API names that exist in the Live build they target.
       several runs, with and without the skill), once the tools are improved: the step 13
       benchmark.
 
+56. **Stubs for people who write scripts by hand** (user, 2026-11-19, "yes all three in that
+    order", on the architect's proposal after `APC_mini_mk1_Plus` gave 13 false errors with the
+    12.4.16 stubs). Three parts, one per task and in this order:
+    1. **Fix the stubs (core).** Every property-like descriptor becomes a stub `@property`, with
+       a setter when it has one, as Decision 53 already says. The known case is v3's
+       `listenable_property`: `StepResolutionComponent.index` comes out as
+       `def index(self, index)`, so `self.index - 1` is an error. The control decorators
+       (`@finer_button.pressed` above `def finer_button`) get a type pyright follows, so the
+       v3 idiom isn't a self-reference. The `MethodType` attribute writes (`subject`, `name`,
+       `looping`) are checked for the same cause. Done when basedpyright in standard mode, run
+       on the four examples, reports no error from a gap in the stubs. A test reads the
+       generated stub of a `listenable_property` with a setter.
+    2. **`build-stubs --project <folder>` (core).** It writes the stubs to `<folder>/stubs`,
+       creates a `pyrightconfig.json` there when there is none (`stubPath: "stubs"`,
+       `pythonVersion: "3.11"`, `reportMissingModuleSource: false`; an existing one is left
+       alone and the settings are printed), and adds `stubs/` to `<folder>/.gitignore` when the
+       folder is a git repo and the line is missing. `--out` and `--project` exclude each other.
+       It doesn't change the answer core, the MCP tools or the exit codes.
+    3. **A docs page "Editor setup" (docs agent).** For someone who writes a script by hand:
+       clone this repo, `build-index`, `build-stubs --project .`; then nvim (lspconfig with
+       pyright or basedpyright), VS Code (Pylance) and pylsp. It also covers stubs per project
+       and git-ignored, a rebuild after a Live update, macOS only, and what the remaining
+       errors mean. Getting started and the README link to it, and so does `APC_mini_mk1_Plus`'s
+       README, whose stubs line also needs `build-index`. pylsp stays documented, not tested
+       (Decision 53).
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).
