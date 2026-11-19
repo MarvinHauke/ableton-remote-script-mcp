@@ -351,6 +351,13 @@ _Last updated: 2026-11-19 (0003 Decisions 33-34 built, nested Drum Rack and foll
   submodule update --init` (tests that read the example: skip or a clear error); CLAUDE.md names
   the new repo and its owner; its README under the same Ableton-material rules; nothing pushed
   or published until the user says so.
+  Merged into `main` 2026-11-19 (`c91d0ab`). **Open before this task:** the name. The user finds
+  `APC_mini_drum_seq` too narrow (more functions will come). Suggested (repo / script folder):
+  `apc-mini-mk1-toolkit` / `APC_mini_mk1_Plus` (the architect's pick), `mk1-grid` / `mk1_Grid`,
+  `apc-mini-workstation` / `APC_mini_Workstation`, `apc-mini-modes` / `APC_mini_Modes`,
+  `ableton-apc-mini-mk1` / `APC_mini_mk1_Ext`, `stepgrid` / `StepGrid`. A new script folder name
+  moves the submodule path and the check files' `script:`, and the user picks it again in Live.
+  Branch for the task: `feat/0003-own-repo`.
   - **After step 5, before step 6** (user, 2026-11-19): a local disassembly (Python's `dis`) of
     12.4.16's `ableton/v3`, and the `v2` modules v3 inherits from, into `reference/`
     (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on
