@@ -417,6 +417,12 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
       `../APC_mini_mk1_Plus` is deleted. Edit, test, commit and push there, then commit the new
       pointer here. Its `stubs/` is built inside it (`build-stubs --out
       examples/APC_mini_mk1_Plus/stubs`, git-ignored there).
+    - Two guards (user, 2026-11-19, the architect's suggestion; the user asked whether a
+      submodule is right, and the architect's answer was yes, because the dependency runs one way
+      and the pin keeps this repo's tests on a known version). `.gitmodules` has
+      `branch = main`, and `git submodule update --remote --merge` follows it. This repo's local
+      config has `push.recurseSubmodules = check`, so a push of `main` here fails while the
+      pinned commit is not on GitHub. A fresh clone sets that again (`CLAUDE.md`).
 
 ## Open questions
 

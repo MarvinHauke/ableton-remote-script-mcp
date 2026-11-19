@@ -1,3 +1,4 @@
 [submodule "examples/APC_mini_mk1_Plus"]
 	path = examples/APC_mini_mk1_Plus
 	url = ../APC_mini_mk1_Plus.git
+	branch = main
