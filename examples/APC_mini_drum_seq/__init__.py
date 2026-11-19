@@ -6,7 +6,10 @@ when none plays, its clip in the selected scene (v3's target track, plan 0003 De
   note (one step long, velocity 100); on an empty slot the first press creates a 2-bar clip
   named "Drum Seq". Green: a note; yellow: the playhead; red: beyond the clip's loop end.
 - Bottom four rows, left half: a 4x4 bank of the Drum Rack's pads. A press plays the pad and
-  selects it for the steps. Green: selected; yellow: a pad with a sound.
+  selects it for the steps. Green blinking: selected; yellow: a pad with a sound; red: held.
+  Scene buttons 5-6 scroll the bank up and down by a row, lit when they can.
+- A track without a Drum Rack directly on it: pads and steps dark, a step press does nothing.
+- The selected MIDI track is armed for the pads (Live's auto-arm).
 - Track buttons 1-8: pages of 32 steps. The page shown is on, the playhead's page blinks.
 
 Device facts are in `elements.py`, LED values in `skin.py`.
@@ -20,6 +23,8 @@ from ableton.v3.control_surface import (
     ControlSurfaceSpecification,
     create_skin,
 )
+from ableton.v3.control_surface.components import AutoArmComponent
+
 from .components import (
     DrumSequencerClip,
     DrumStepSequenceComponent,
@@ -56,8 +61,21 @@ class APC_mini_drum_seq(ControlSurface):
         )
         return dependencies
 
+    def drum_group_changed(self, drum_group):
+        super().drum_group_changed(drum_group)
+        # the steps work only on a Drum Rack track: redraw them when the track's rack changes
+        # (defensive: in 12.4.16 the framework first calls this right after setup())
+        note_editor = getattr(self, "_note_editor", None)
+        if note_editor is not None:
+            note_editor.update()
+
     def setup(self):
         super().setup()
         # the pad bank's selected pad is the pitch the steps write
         self.component_map["Step_Sequence"].set_pitch_provider(self.component_map["Drum_Group"])
+        self._note_editor = self.component_map["Step_Sequence"].note_editor
+        # Pads play only on an armed track. v3 builds its auto-arm only for a controller that
+        # answers Live's identity request; the mk1 script doesn't ask, so it builds its own:
+        # the selected MIDI track gets Live's implicit arm (plan 0003 Decision 26).
+        self._drum_auto_arm = AutoArmComponent(is_enabled=True)  # not `_auto_arm`: the base uses it
         logger.info("APC mini drum sequencer ready")

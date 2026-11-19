@@ -35,6 +35,14 @@ Live 12.4.16. `observed`: in the index. `documented`: read in gluon's decompiled
 | `Clip.playing_position` and `playing_status` listeners (`@listens`) fire while a session clip plays, often enough to light every 1/16 step at 120 BPM | tested |
 | A skin name the note editor or the pad bank asks for through `LiveObjSkinEntry` has no fallback: a missing one raises `KeyError` (so the skin sets every name) | documented |
 | `MixerComponent`, `SessionComponent`, `ViewControlComponent`, `SessionNavigationComponent` depend on the session ring | observed |
+| A pad press plays its sound only on an armed track: silent unarmed, heard armed by hand and with the script's auto-arm | tested |
+| v3's `AutoArmComponent`, built by the script in `setup()` and enabled, sets the target track's implicit arm without identification | tested |
+| The framework builds its own auto-arm only with `include_auto_arming` and an identity reply | observed |
+| The auto-arm steps back while a track is armed by hand: in the 12.0 decompile (`any_track_armed`); 12.4.16's `_can_auto_arm` differs (no `any_track_armed`, a `needs_restore_auto_arm` property, slots on `exclusive_arm`), not checked | documented |
+| Live sends no LED feedback for a pad the drum group plays (`matrix_always_listenable=True`), armed or not, at `playing_feedback_velocity` 3; the script's own `DrumGroup.PadPressed` lights it | tested |
+| v3's drum group hands any `scroll_*` control to its `DrumGroupScrollComponent` (`__getattr__`), so `scroll_up_button` and `scroll_down_button` map on `Drum_Group`; one press scrolls a row of 4, rows 0-28; a button that can't scroll is off (`DefaultButton.Disabled`) | observed (the forwarding, `position_count`, `page_length`), tested (the rows, the LEDs) |
+| After the transport stops, the sequencer keeps the clip that played last on the track (not the selected scene's) and its page | tested |
+| `ControlSurface.drum_group_changed(drum_group)` is called from `__init__` right after `setup()` and on each instrument change of the target track | observed (statement order) |
 
 ## Tool findings
 
@@ -90,6 +98,10 @@ back. Fixed in step 1 unless a STATUS item is named.
 14. **A method whose body is one `return` expression has no statements** (`_button_position`):
    whether v3's loop buttons count bars or pages came from `_update_matrix`'s statements.
    Open: a STATUS item (statements for a returned expression).
+15. **`validate` can't check mapping keys a component answers by `__getattr__`** (`scroll_up_button`
+   on v3's `DrumGroupComponent`): "not checked", correctly. The forwarding was found in the
+   decompile, not by a tool, and `check_names DrumGroupComponent.set_scroll_up_button` answered
+   with v2's `SlideComponent`. Open: a STATUS item (say where a `__getattr__` forwards to).
 
 ## Rig runs
 
@@ -131,6 +143,20 @@ Three attempts:
   button 2 blinks (the playhead's page), button 1 goes off; the clip keeps `length` 16, looping,
   loop 0-16.
 - `log: clean` in every step.
+
+**Step 3, 2026-11-19, Live 12.4.16** (a fresh default Set after `rig restart-live`, track 9
+"Yellow Kit" through AbletonMCP, the user selected its scene 1 slot). Three attempts:
+- With `playing_feedback_velocity` 3 and no auto-arm: 17 passed, 3 failed. A held pad showed
+  only the script's values (5, 2), no red; the user heard nothing, also with the pad held 2 s
+  alone; armed by hand, the pad sounded, still with no red from Live. Two check mistakes: the
+  note went to clip 3 (the clip that played last), and the steps are redrawn dark (0) on a track
+  without a Drum Rack.
+- With the script's auto-arm and `PadPressed` (Decisions 26–27): 19 passed, 0 failed, 2 asked.
+  The user heard the held pad and saw track 9's arm button lit in Live's auto-arm colour.
+- Scrolling: up a row puts 40 bottom left (yellow); 18 more presses reach row 28 (scene 5 off),
+  28 down reach row 0 (scene 6 off, 5 on); a pad of the scrolled bank sets the pitch (40).
+- A new MIDI track (created through AbletonMCP, selected by Live): pads dark, a step press
+  creates no clip. `log: clean` in every step.
 
 ## The user's results
 

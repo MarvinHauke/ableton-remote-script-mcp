@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -257,6 +257,21 @@ _Last updated: 2026-11-19 (0003 step 2 done, Decisions 24–25; 0003 step 1 buil
   loses it). **Step 2 done.** Next: 0003 step 3 (the pad bank); it also takes the reviewer's
   code points: the playhead redrawn with the page, a no-op `PlayheadComponent`, `step_count`,
   a note on triplets.
+- 0003 step 3 built on `feat/0003-step-3-pad-bank` (2026-11-19, solo, branched from step 2's):
+  pad colours (selected green blinking, a sound yellow, held red from the script's skin,
+  Decision 27), scene 5–6 scroll the bank, the script's own auto-arm (Decision 26, user: pads
+  sound only on an armed track), steps dark and inert on a track without a Drum Rack, Live's
+  playhead off, and the reviewer's step-2 code points. `rig run` 19 passed, 0 failed; the user
+  heard the held pad and saw the auto-arm. Step 1's open point is answered: a pad press plays
+  its sound (on an armed track). **Step 3 done.** Next: 0003 step 4 (resolution, track choice,
+  faders), in a fresh session. Step 4 also takes the reviewer's step-3 code points:
+  - a Drum Rack added to the selected track leaves the steps empty, and a step press on a
+    track without one drops the editor's clip (`_has_clip` side effects in
+    `__on_clip_notes_changed` and `_on_pad_pressed`): re-set the clip on `drum_group_changed`;
+  - the held-pad set: clear it in `set_matrix`, no red on a track without a Drum Rack, try
+    `pressed_color`;
+  - `super().update()` in `NoPlayheadComponent`;
+  - a check that the auto-arm steps back while another track is armed by hand.
 
 ## After grilling
 
@@ -275,10 +290,10 @@ _Last updated: 2026-11-19 (0003 step 2 done, Decisions 24–25; 0003 step 1 buil
   injects and that `_get_additional_dependencies()` takes functions (a validator rule?);
   `lookup class <short name>` with many matches prints nothing but the cut note; `outline` of
   `Launchkey_MK4` shows no Specification or mappings; `get_class("Clip")` buries `Live.Clip.Clip`.
-- [needs-triage] Tool findings from 0003 step 2 (results page, 11, 13, 14): `get_class` and
+- [needs-triage] Tool findings from 0003 steps 2–3 (results page, 11, 13–15): `get_class` and
   `outline` default to the newest index, the Live 13 beta (the newest release instead?);
   `check_names` resolves bare `NoteEditorComponent` to `bar_based_sequence` first; a one-`return`
-  method has no statements.
+  method has no statements; nothing says where a `__getattr__` forwards control names to.
 - The rig can't select a track or slot (AbletonMCP 1.7.1 has no command for it), so `ask_user`
   stays for the selection. A track created through AbletonMCP is selected by Live (the user,
   2026-11-19): a check can reach a new track that way.

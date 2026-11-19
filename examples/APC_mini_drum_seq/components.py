@@ -13,6 +13,7 @@ from ableton.v3.control_surface.components import (
     GridResolutionComponent,
     LoopSelectorComponent,
     NoteEditorComponent,
+    PlayheadComponent,
     SequencerClip,
     StepSequenceComponent,
 )
@@ -58,19 +59,30 @@ class PadBankComponent(DrumGroupComponent):
     """v3's drum group selects a pad only while its select button is held, and by default its
     pads go to Live as notes without the script seeing them (`matrix_always_listenable=False`,
     observed in 12.4.16). This one listens to its pads and selects the pressed one, so a press
-    plays the pad and picks the pitch the steps write."""
+    plays the pad (on an armed track) and picks the pitch the steps write; a held pad is red."""
 
     def __init__(self, *a, **k):
+        self._held = set()  # the pads held now (their controls' ids)
         super().__init__(*a, matrix_always_listenable=True, **k)
 
     def _on_matrix_pressed(self, button):
+        self._held.add(id(button))
         pad = self._pad_for_button(button)
         if liveobj_valid(pad):
             self._do_select_pad(pad, str(pad.name))
         super()._on_matrix_pressed(button)
+        self._update_button_color(button)
 
+    def _on_matrix_released(self, button):
+        self._held.discard(id(button))
+        super()._on_matrix_released(button)
+        self._update_button_color(button)
 
-STEPS = 32  # the step buttons, one page
+    def _update_button_color(self, button):
+        """Red while held: Live sends no feedback for a played pad here (12.4.16, tested)."""
+        super()._update_button_color(button)
+        if id(button) in self._held:
+            button.color = "DrumGroup.PadPressed"
 
 
 class DrumNoteEditorComponent(NoteEditorComponent):
@@ -80,7 +92,10 @@ class DrumNoteEditorComponent(NoteEditorComponent):
     the step notes and on v3's default ones (tested, plan 0003 step 2), so this editor lights the
     playing step itself from the clip's `playing_position` (Decision 17). v3 shows the whole page
     of steps even past the loop end, where a press extends the loop (`extend_loop_for_region`);
-    an empty step outside the loop is red here (Decision 10).
+    an empty step outside the loop is red here (Decision 10). On a track without a Drum Rack
+    directly on it the steps have no clip, so they stay dark and a press does nothing
+    (Decision 8). A step's time is page time + index x step length: no triplet resolutions
+    (the scene buttons offer none).
     """
 
     def __init__(self, *a, **k):
@@ -95,6 +110,14 @@ class DrumNoteEditorComponent(NoteEditorComponent):
         self.__on_playing_position_changed.subject = self._clip
         self.__on_playing_status_changed.subject = self._clip
         self._update_playhead()
+
+    def _has_clip(self):
+        return super()._has_clip() and has_drum_rack(self._target_track.target_track)
+
+    def _update_editor_matrix(self):
+        # a page or resolution change redraws every step: the playhead's step moves with it
+        self._playhead_step = self._playing_step()
+        super()._update_editor_matrix()
 
     def _get_alternate_color_for_step(self, index, visible_steps):
         if index == self._playhead_step:
@@ -111,7 +134,7 @@ class DrumNoteEditorComponent(NoteEditorComponent):
         if not (self._has_clip() and self.song.is_playing and clip.is_playing):
             return None
         index = int((clip.playing_position - self._page_time) // self.step_length)
-        return index if 0 <= index < STEPS else None
+        return index if 0 <= index < self.step_count else None
 
     def _update_playhead(self):
         step = self._playing_step()
@@ -150,14 +173,23 @@ class PageLoopSelectorComponent(LoopSelectorComponent):
         return self._paginator.page_length
 
 
+class NoPlayheadComponent(PlayheadComponent):
+    """Live's own playhead stays off: the note editor draws the playhead (Decision 25), and a
+    later build where Live's would reach the mk1 must not draw a second one."""
+
+    def update(self):
+        self._playhead.clip = None
+
+
 class DrumStepSequenceComponent(StepSequenceComponent):
-    """v3's step sequencer with the note editor that draws the playhead, and pages on the loop
-    buttons."""
+    """v3's step sequencer with the note editor that draws the playhead, pages on the loop
+    buttons, and Live's own playhead off."""
 
     def __init__(self, *a, **k):
         super().__init__(
             *a,
             note_editor_component_type=DrumNoteEditorComponent,
             loop_selector_component_type=PageLoopSelectorComponent,
+            playhead_component_type=NoPlayheadComponent,
             **k,
         )

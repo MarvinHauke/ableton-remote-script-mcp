@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 3; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 4; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -259,6 +259,18 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     "through a `playhead_component_type`"); no contract changes. v3's `PlayheadComponent` is
     still built; step 3 replaces it with one that does nothing, so a later build where it works
     can't draw a second playhead.
+26. **The script arms the selected track for the pads** (user, 2026-11-19, step 3). A pad press
+    reaches the Drum Rack only on an armed track (tested: silent unarmed, heard armed by hand).
+    v3 builds its `AutoArmComponent` only for a controller that answers Live's identity request
+    (`include_auto_arming`, `observed`), which the mk1 script doesn't ask for; so `setup()` builds
+    one itself, enabled. It sets the selected MIDI track's implicit arm (Live's auto-arm, not
+    the record arm; tested). Whether it steps back while another track is armed by hand is
+    `documented` only (12.0; 12.4.16's `_can_auto_arm` differs), a check for step 4.
+    Rejected: arming by hand; deciding later.
+27. **A held pad is red from the script's own skin name** (architect, 2026-11-19, step 3;
+    carries out Decision 10). Live sent no feedback for a played pad, armed or not, with
+    `playing_feedback_velocity` 3 (tested), so `PadBankComponent` keeps the held pads and gives
+    them `DrumGroup.PadPressed`. The selected pad blinks green (`PadSelected` 2).
 
 ## Open questions
 
