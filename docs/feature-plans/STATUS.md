@@ -356,9 +356,9 @@ _Last updated: 2026-11-19 (0003 Decision 36 built: the sequencer in its own repo
   controller, created on GitHub as `MarvinHauke/APC_mini_mk1_Plus`) and the layout. The repo `../APC_mini_mk1_Plus` (10 commits
   of history, plus README, LICENSE, `pyrightconfig.json`) with the script in
   `APC_mini_mk1_Plus/`; here the submodule `examples/APC_mini_mk1_Plus`. Validates with 0
-  findings against 12.4.16; `uv run pytest` 246 passed (5 skip without the submodule). Not
-  pushed yet (its `origin` is set, the GitHub repo is empty); until it is, a fresh clone of
-  this repo can't fetch the submodule. So after the merge the push of `main` waits for the user (Decision 36). **For the user in Live:** `install`
+  findings against 12.4.16; `uv run pytest` 246 passed (5 skip without the submodule). The user
+  pushed it to GitHub (2026-11-19, `98161a8`, the submodule's pointer), so `main` can be pushed
+  after the merge (Decision 36's hold is lifted). **For the user in Live:** `install`
   of `examples/APC_mini_mk1_Plus/APC_mini_mk1_Plus`, restart, choose `APC_mini_mk1_Plus` as
   the Control Surface, delete the old `APC_mini_drum_seq` from the User Library's Remote Scripts.
   Next: 0003 step 6.

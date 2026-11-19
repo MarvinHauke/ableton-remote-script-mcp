@@ -411,6 +411,7 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
       `main` after merging this branch and asks the user first: a pushed `main` would point at a
       submodule nobody can fetch. CI is not affected either way: the tests skip and `docs.yml`
       doesn't check out submodules.
+      The user pushed the repo themselves (2026-11-19, `98161a8`), so the hold is lifted.
 
 ## Open questions
 
