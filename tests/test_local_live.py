@@ -280,3 +280,23 @@ def test_diff_to_another_indexed_build():
     assert d["status"] == "ok" and (d["modules"]["added"] or d["modules"]["removed"])
     same = diff_builds("12.4.16", "12.4.16", index_dir)
     assert not any(same["modules"].values()) and not any(same["classes"].values())
+
+
+def test_stubs_of_the_indexed_build(tmp_path):
+    """`build-stubs` over the user's 12.4.16 index: every stub parses, the framework's and the
+    Live module's classes are there. The stubs go to a temporary folder and are deleted."""
+    import ast
+
+    from ableton_remote_script_mcp.index_store import default_index_dir, indexed_builds
+    from ableton_remote_script_mcp.query import build_stubs
+
+    index_dir = default_index_dir()
+    if "12.4.16" not in indexed_builds(index_dir):
+        pytest.skip("the 12.4.16 index is not built here")
+    answer = build_stubs(index_dir, "12.4.16", tmp_path / "stubs")
+    assert answer["status"] == "ok" and answer["files"] > 1000
+    for f in (tmp_path / "stubs").rglob("*.pyi"):
+        ast.parse(f.read_text(encoding="utf-8"), str(f))
+    ring = (tmp_path / "stubs" / "ableton/v3/control_surface/components/session_ring.pyi").read_text()
+    assert "class SessionRingComponent(Component, Renderable):" in ring and "def set_offsets(" in ring
+    assert "class Song" in (tmp_path / "stubs" / "Live/Song.pyi").read_text()

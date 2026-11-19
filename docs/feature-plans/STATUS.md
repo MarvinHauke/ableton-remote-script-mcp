@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-18 (0001 step 11 built: the MCP server, `check-names`, size caps; next `build-stubs`, then 0001 step 12)._
+_Last updated: 2026-11-19 (agent team set up, 0001 Decision 54; `build-stubs` built; distribution stays last)._
 
 ## Now
 
@@ -186,10 +186,21 @@ _Last updated: 2026-11-18 (0001 step 11 built: the MCP server, `check-names`, si
 
   213 tests; started with `uvx` over stdio against 12.4.16. Next: `build-stubs` (Decision 49
   Q9, local only), then step 12.
+  Merged into main (2026-11-19).
+- 0001 `build-stubs` built on `feat/0001-build-stubs` (2026-11-19, Decision 53):
+  - type stubs of a build for the user's language server (1436 files for 12.4.16, local only);
+  - basedpyright flags invented names in a sample script and no stub gaps in the examples;
+  - the README's "How to use it" section: clone, index, skill, MCP server, stubs.
+
+  219 tests. The user decided (2026-11-19) that distribution (PyPI, the plugin, a release
+  workflow) is one of the last steps: improve the tool first. Step 12 waits.
 
 ## After grilling
 
-- Steps are built in this same session, with a `/compact` between steps (0001 decision 31).
+- Since 2026-11-19 (0001 Decision 54, `CLAUDE.md` "Agent team", `scripts/agents.sh`): solo mode
+  by default, one task per fresh architect session that plans and builds, with the reviewer and
+  docs as subagents; peer builders (core, skill, rig, docs, reviewer) only for parallel work. Before that: one session with a `/compact`
+  between steps (Decision 31).
 - Order: 1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12 → 13 (13, the
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 

@@ -173,6 +173,21 @@ ableton-remote-script-mcp check-names [--names NAME] [--build BUILD] [--json] [-
 | `--json` | Print the query core's answer as JSON. |
 | `--full` | The whole answer, not capped at about 4,000 tokens. |
 
+## `build-stubs`
+
+Write type stubs (.pyi) of a Live build for your editor's Python language server (local only).
+
+```text
+ableton-remote-script-mcp build-stubs [--build BUILD] [--out OUT] [--observed-only] [--json]
+```
+
+| Argument | What it does |
+| --- | --- |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--out OUT` | The folder to write (default: <index dir>/stubs/<build>); a folder of earlier stubs is replaced. |
+| `--observed-only` | Leave out the documented members (listener methods, Structure Void's Live members). |
+| `--json` | Print the answer as JSON. |
+
 ## `mcp`
 
 Run the MCP server over stdio (the lookup commands as tools).

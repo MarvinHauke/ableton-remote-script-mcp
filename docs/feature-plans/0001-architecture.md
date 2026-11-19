@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); next `build-stubs`, then step 12._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -805,6 +805,73 @@ meant to do, and uses only API names that exist in the Live build they target.
       loaded.
     - **`eval_score.py`** reads each run's tool calls (by tool), the characters of the tool
       results, and the tokens and cost from the run's result event (Decision 49 Q7).
+
+53. **How `build-stubs` writes the stubs** (agent, 2026-11-19; carries out Decision 49 Q9).
+    - **Where:** one `.pyi` per module of the Remote Scripts folder and a `Live` package. They
+      go to `<index dir>/stubs/<build>`, or `--out`. A folder of earlier stubs (it has the
+      tool's marker file) is replaced; a folder with other files is refused. Like the index,
+      the stubs never leave the machine.
+    - **What they hold:**
+      - imports as re-exports, and star imports;
+      - classes with their bases as written, nested classes inside their class;
+      - methods with their parameters: literal defaults kept, others `...`;
+      - properties, with a setter when there is one;
+      - class attributes, and the instance attributes the methods assign (`self._x`, from the
+        statement summaries).
+    - **Types are `Any` throughout,** also for attributes. With a literal type, a base's
+      `= None` made every subclass that sets it an error.
+    - **Stored functions:** a "method" without `self` (`create_mappings_function = lambda *x:
+      …`) is written as an attribute, so a subclass may set any function.
+    - **`Live`** is written from the Push 3 helper's `live_model`, without that model's own
+      base classes. Members marked `# documented` are added:
+      - the listener methods made from `__events__`;
+      - Structure Void's runtime members, when they are imported.
+
+      `--observed-only` leaves both out.
+    - **Checked with basedpyright 1.31** (standard mode, against 12.4.16, 2026-11-19):
+      - In a sample script it flagged exactly the two invented names. `Song.tracks` and the
+        documented `add_tracks_listener` resolved.
+      - The three example scripts, which load in Live: no error is a gap in the stubs. The
+        five left come from pyright reading the scripts' own code (an attribute that may be
+        `None`, and the v3 idiom `@button.pressed` above a method of the same name).
+      - pylsp/jedi is documented, not tested.
+
+54. **An agent team, as in cmdAbl** (user, 2026-11-19, "implement the full team", on the
+    agent's proposal after reading cmdAbl's `scripts/agents.sh` and agent files). **Changes
+    Decision 31** (building in the planning session, with a `/compact` between steps) and the
+    builder setup of Decision 12.
+    - Six peer sessions (`CLAUDE.md`, "Agent team"):
+      - in the default team: `arsm-architect` (opus, the lead; this session's role so far),
+        `arsm-core` (sonnet) and `arsm-reviewer` (opus);
+      - on demand: `arsm-docs`, `arsm-skill` and `arsm-rig` (sonnet).
+    - No UI agent: the only page is the rig panel, which is `arsm-rig`'s (the user asked what one
+      would be for; agent, 2026-11-19).
+    - `scripts/agents.sh` is adapted from cmdAbl's: fresh sessions by default, `--resume`,
+      `status`, `stop`, `DRY_RUN`. One change: each fresh start records its session id in the
+      git-ignored `.claude/agent-sessions/<agent>` instead of a line in the agent file.
+    - Shared-tree rules from cmdAbl: commit by path, one branch at a time chosen by the
+      architect, plans and STATUS written by the architect on the same branch. Only the
+      architect merges, when the user asks; only the user pushes.
+    - The docs and reviewer agents keep their rules and get the peer workflow (briefs, facts
+      from the builders, the review over `SendMessage`). As subagents, they work as before.
+    - **Clean sessions, as often as possible** (user, 2026-11-19, asked during the setup):
+      cmdAbl's rules, made stricter.
+      - One task, one fresh builder, stopped once its task is committed.
+      - Builders and docs are never compacted; a builder whose context grows long mid-task
+        hands over and asks for a fresh start.
+      - The reviewer starts fresh per feature.
+      - After every finished task the architect suggests a fresh architect, or else a
+        ready-to-paste `/compact` line.
+    - **Solo mode by default, peers for parallel work** (user, 2026-11-19, asking for the most
+      cost-effective setup; the agent's analysis):
+      - Every call re-sends the session's context. Cached reads are cheaper but not free, so a
+        call's cost grows with the context: short, fresh sessions are cheaper and work better.
+      - An idle session costs nothing until it is woken, but each peer adds its own base context
+        and the messages between sessions. For one task at a time that is more than one session.
+      - So `scripts/agents.sh` starts only the architect. It plans and builds one task per fresh
+        session, with `reviewer` and `docs` as subagents, which start clean and end when done.
+        `scripts/agents.sh core rig` (any of the five) starts peers when two areas move at once.
+      - To check, run one similar task both ways and compare `/cost`.
 
 ## Open questions
 

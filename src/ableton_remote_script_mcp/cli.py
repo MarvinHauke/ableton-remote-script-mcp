@@ -530,6 +530,27 @@ def _cmd_check_names(args: argparse.Namespace) -> int:
     return 1 if unknown else 0
 
 
+def _cmd_build_stubs(args: argparse.Namespace) -> int:
+    from .query import build_stubs
+
+    answer = build_stubs(Path(args.index_dir), args.build, args.out, args.observed_only)
+    if args.json:
+        print(json.dumps(answer, indent=1))
+    elif answer["status"] == "ok":
+        out = answer["out"]
+        marked = "" if not answer["documented"] else " (documented members marked `# documented`)"
+        print(f"wrote {answer['files']} stub files of Live {answer['live_build']} to {out}{marked}")
+        print("They are built from Ableton's code: keep them on this machine.")
+        print("basedpyright / pyright: in your script project's pyrightconfig.json (or [tool.basedpyright])")
+        print(f'  "stubPath": "{out}",')
+        print('  "reportMissingModuleSource": false   (Live has the modules; the stubs stand in for them)')
+        print("pylsp (jedi): in its settings")
+        print(f'  pylsp.plugins.jedi.extra_paths = ["{out}"]')
+    else:
+        print(answer["message"])
+    return {"ok": 0, "not_found": 2, "index_missing": 3}[answer["status"]]
+
+
 def _cmd_mcp(args: argparse.Namespace) -> int:  # pragma: no cover - serves stdio until the client closes it
     from .mcp_server import make_server
 
@@ -739,6 +760,16 @@ def make_parser() -> argparse.ArgumentParser:
     cn.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     cn.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
     cn.set_defaults(func=_cmd_check_names)
+
+    bs = sub.add_parser("build-stubs", help="write type stubs (.pyi) of a Live build for your editor's Python "
+                        "language server (local only)")
+    bs.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
+    bs.add_argument("--out", help="the folder to write (default: <index dir>/stubs/<build>); a folder of earlier "
+                    "stubs is replaced")
+    bs.add_argument("--observed-only", action="store_true",
+                    help="leave out the documented members (listener methods, Structure Void's Live members)")
+    bs.add_argument("--json", action="store_true", help="print the answer as JSON")
+    bs.set_defaults(func=_cmd_build_stubs)
 
     mc = sub.add_parser("mcp", help="run the MCP server over stdio (the lookup commands as tools)")
     mc.set_defaults(func=_cmd_mcp)
