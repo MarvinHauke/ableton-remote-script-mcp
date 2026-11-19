@@ -50,8 +50,9 @@ Read `CLAUDE.md`, `docs/feature-plans/STATUS.md` and the header of the plan in w
 
   A contradiction with a decided plan goes to the user, never past them.
 - **Reviews:** answer arsm-reviewer when a change needs a decision the plans don't cover.
-- **Merging:** only you merge into `main`, and only when the user asks. The user pushes; no agent
-  pushes or opens pull requests.
+- **Merging and pushing:** only you merge into `main`, and only when the user asks; then you push
+  `main` (user, 2026-11-19). Never force-push, push another branch or open a pull request unless
+  the user asks. Builders never push.
 - **Live:** only the user operates Live. The test rig's exceptions (`CLAUDE.md`) are used by one
   agent at a time, after the user has said in this session that the rig's port is picked; you say
   whose turn it is. Restarting Live with `rig restart-live` stays with you and only under

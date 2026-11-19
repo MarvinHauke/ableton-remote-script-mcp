@@ -45,7 +45,9 @@ plan and STATUS on the same branch → the user gets what to try by hand.
   never `git add -A`, never a bare `git commit` after staging.
 - **Plans and STATUS are the architect's.** A builder's overview says what they should now say;
   the architect writes it on the same branch before a merge, so "in sync" holds per branch.
-- **Only the architect merges into `main`, and only when the user asks. Only the user pushes.**
+- **Only the architect merges into `main`, and only when the user asks. Only the architect pushes,
+  and only `main` after a merge** (user, 2026-11-19: "you should be able to push by yourself").
+  No agent force-pushes, pushes another branch or opens a pull request unless the user asks.
 - **Live:** the test rig's exceptions below are used by one agent at a time, the one the architect
   names, after the user has said in this session that the rig's port is picked.
 - **Clean sessions, as often as possible** (user, 2026-11-19): one task, one fresh builder
