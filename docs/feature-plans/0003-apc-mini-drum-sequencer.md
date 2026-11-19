@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decision 29 (scene choice, resolution on two buttons)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -26,7 +26,8 @@ hardware. What it teaches goes into the skill as `tested` facts (Decision 13).
 What the 12.4.16 index offers (`observed`, looked up 2026-11-19 with the MCP server):
 - `ableton.v3.control_surface.components.step_sequence.StepSequenceComponent`: `set_step_buttons`,
   `set_loop_buttons`, `set_resolution_buttons`, `set_prev_page_button`, `set_next_page_button`,
-  `set_pitch_provider`, the property `note_editor`. Its `__init__` takes `grid_resolution`
+  `set_pitch_provider`, the property `note_editor` (Decision 29 adds our own finer and coarser
+  resolution buttons, `StepResolutionComponent`). Its `__init__` takes `grid_resolution`
   (injected), `playhead_component_type`, `playhead_notes`, `playhead_triplet_notes`,
   `playhead_channels`. The draft said it has a `playhead` property: only
   `Launchkey_MK4.step_sequence.StepSequenceComponent` adds one; the base builds its playhead
@@ -86,9 +87,10 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
   (Decision 3; which half is the builder's choice, told to the user); `track_buttons` 64–71;
   `scene_buttons` 82–89; `shift_button` 98 (unmapped in v1); `faders` CC 48–55 and
   `master_fader` CC 56. The other half of the bottom rows stays dark in v1.
-- **Mappings:** `Step_Sequence` (step buttons, loop buttons = track buttons, resolution buttons
-  = scene 1–4, pitch provider = `Drum_Group`), `Drum_Group` (pads), `Drum_Group_Scroll` (scene
-  5–6), `View_Control` (scene 7–8, prev/next track), `Mixer` (faders, master). Each name and
+- **Mappings:** `Step_Sequence` (step buttons, loop buttons = track buttons, finer and coarser
+  resolution = scene 1–2, pitch provider = `Drum_Group`), `Drum_Group` (pads), `Drum_Group_Scroll`
+  (scene 5–6), `View_Control` (scene 3–4 prev/next scene, 7–8 prev/next track), `Mixer` (faders,
+  master). Scene 1–4 were the four resolutions until Decision 29. Each name and
   key is looked up with the MCP server and passed by `validate` and `check_names`.
 - **Target:** the selected track (v3's `Target_Track`) and its clip slot in the selected scene
   (Decision 8, 15); no Drum Rack → pads dark, steps inert.
@@ -151,7 +153,8 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
 9. **The other controls** (user, 2026-11-19, Q4):
    - track buttons 1–8: v3's loop buttons, one page of 32 steps each (replaces previous/next page);
    - scene buttons 1–4: resolution 1/32, 1/16, 1/8, 1/4; 5–6: scroll the pad bank up and down by
-     a row (`DrumGroupScrollComponent`);
+     a row (`DrumGroupScrollComponent`) (1–4 amended by Decision 29: 1–2 finer and coarser,
+     3–4 previous and next scene);
    - scene buttons 7–8 and Shift: free in v1, Shift kept for the later session mode (7–8 amended
      by Decision 15: previous and next track);
    - faders 1–8: track volumes; fader 9: master volume, as on the mk1 example.
@@ -161,7 +164,8 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     - pads: the selected one green blinking, one with a sound yellow, empty off, red while held;
     - track buttons (red): the current page on, the playhead's page blinking;
     - scene buttons (green): the active resolution on, the scroll buttons on when they can scroll,
-      7–8 on when there is a track to move to (Decision 15).
+      7–8 on when there is a track to move to (Decision 15). Amended by Decision 29: 1–2 on
+      while there is a finer or coarser resolution, 3–4 while there is a scene to move to.
 11. **Fixed note length and velocity** (user, 2026-11-19, Q6): one step long, velocity 100, no
     fader for velocity in v1 (this unit's faders jump, 0001 Decision 29). Replaces the draft's
     fader 9 for velocity.
@@ -277,7 +281,8 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
 
 28. **Step 4's parts** (architect, 2026-11-19, step 4; carries out Decisions 9 and 15):
     - scene buttons 1–4 are `resolution_buttons`, a submatrix of the scene buttons
-      (`ElementsBase.add_submatrix`, `observed`), mapped on `Step_Sequence`;
+      (`ElementsBase.add_submatrix`, `observed`), mapped on `Step_Sequence` (amended by
+      Decision 29: two buttons, finer and coarser; the submatrix is gone);
     - `View_Control` takes `prev_track_button` and `next_track_button` (scene buttons 7–8), with
       the framework's session ring; `Mixer` takes `volume_controls` (faders 1–8, tracks 1–8)
       and `master_track_volume_control` (fader 9);
@@ -296,6 +301,26 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
       are red only with a Drum Rack, `NoPlayheadComponent.update` calls `super().update()`. The
       skin's `pressed_color` was not tried: the script's own red works (Decision 27).
     - the auto-arm check (Decision 26) is a test by hand: `ask_user` doesn't wait during a run.
+
+29. **The scene from the controller; the resolution on two buttons** (user, 2026-11-19, step 5's
+    panel run; amends Decisions 9 and 10). Playing on the panel, the user could move the track
+    but not the clip slot: the slot the steps edit (Decision 8) was chosen only in Live. Asked
+    for a pair of buttons, the user chose to fold the resolution into two buttons instead of
+    using Shift:
+    - scene button 1 one resolution finer, 2 one coarser (1/32, 1/16, 1/8, 1/4), each lit while
+      it can move; no button shows which resolution is on, the notes' spacing does (user, "lit
+      if it can go further", over a blink at the default). v3's `GridResolutionComponent` has
+      only one button per resolution (12.4.16, `observed`); `StepResolutionComponent` adds a
+      finer and a coarser `ButtonControl` that set its `index`, and the step sequencer forwards
+      `set_finer_resolution_button` and `set_coarser_resolution_button` to it;
+    - scene buttons 3–4: `View_Control`'s `prev_scene_button` and `next_scene_button` (12.4.16,
+      `observed`), skin names `ViewControl.Scene` and `ScenePressed`; 5–8 unchanged;
+    - Shift stays free for the later session mode (Decision 9);
+    - the checks: the resolution's LEDs at both ends and the 1/8 note, scene 2 and back with
+      `song: {selected_scene: N}` (0002 Decision 29). That the steps then edit the new scene's
+      slot is a check by hand in the panel run: in the run clip 3 still counts as the track's
+      playing clip after the stop (resolution-note writes to it), and the playing clip comes
+      first (Decision 22).
 
 ## Open questions
 
@@ -356,7 +381,8 @@ back, and the step's overview says which became a fix and which a STATUS item.
      the bank and the pitch, the scroll LEDs at the ends; on a MIDI track without a Drum Rack:
      no pad LEDs, a step press creates no clip. Whether a pad plays its sound: `ask_user`.
 4. **Resolution, track choice, faders** — blocked by: 1.
-   - **Delivers:** scene 1–4 the resolution (1/32, 1/16, 1/8, 1/4, the active one on), scene
+   - **Delivers** (as built in step 4; Decision 29 changed scene 1–4 in step 5): scene 1–4 the
+     resolution (1/32, 1/16, 1/8, 1/4, the active one on), scene
      7–8 previous and next track (`ViewControlComponent`, lit when there is one, Decision 15),
      the clip slot following Live's selected scene, faders 1–8 track volumes and fader 9 the
      master (Decision 9).
@@ -369,7 +395,8 @@ back, and the step's overview says which became a fix and which a STATUS item.
      passing, then the user's two runs (Decisions 12, 14): a short pattern on the panel, then
      the same on the APC; the results page gets both, and whether a press dropped.
    - **Checks:** `rig run` all passed; the panel shows the grid in the APC's colours; the user's
-     list (playhead, pads, pages, track choice, no dropped presses while the playhead runs).
+     list (playhead, pads, pages, track and scene choice, no dropped presses while the playhead
+     runs). Decision 29 (the scene buttons, the resolution on two) came out of the panel run.
      ReceiveMIDI only if a press seems missing. Unit-only findings stay on the results page.
 6. **Into the skill** — blocked by: 5.
    - **Delivers:** a `tested` section "A step sequencer" in the v3 reference (the components,

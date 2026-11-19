@@ -1,4 +1,4 @@
-# The drum sequencer's checks for `ableton-remote-script-mcp rig run` (plan 0003 steps 1-4; each
+# The drum sequencer's checks for `ableton-remote-script-mcp rig run` (plan 0003 steps 1-5; each
 # step of the plan adds its own, Decision 20). Run it in the test Set with a MIDI track 9 that
 # has a Drum Rack with a kit, its slots in scenes 1-3 empty and no clip playing on it (the
 # sequencer edits a playing clip first, plan 0003 Decision 22). The rig selects track 9 and its
@@ -272,16 +272,15 @@ steps:
       pads[12]: 2
     log: clean
 
-  # Step 4: the resolution (scene buttons 1-4: 1/32, 1/16, 1/8, 1/4; 1/16 at the start). The
-  # clip is still clip 3 (4 bars), on page 2 since page-two: track button 1 goes back to page 1.
+  # Step 4: the resolution, step 5 (Decision 29): scene button 1 one step finer, 2 one step
+  # coarser (1/32, 1/16, 1/8, 1/4; 1/16 at the start), each lit while it can move. Live sends an
+  # LED value only when it changes, so 1/8 shows in the note it writes. The clip is still clip 3
+  # (4 bars), on page 2 since page-two: track button 1 goes back to page 1.
   - id: resolution-eighth
-    description: scene button 3 sets 1/8 and is on, scene button 2 goes off
+    description: scene button 2 sets 1/8
     send:
       - track_buttons[0]: press
-      - scene_buttons[2]: press
-    expect:
-      scene_buttons[2]: 1
-      scene_buttons[1]: 0
+      - scene_buttons[1]: press
     log: clean
   - id: resolution-note
     description: at 1/8 step 2 writes a note at beat 0.5, one step (0.5 beats) long
@@ -298,13 +297,52 @@ steps:
     state:
       track 9 clip 3: {notes: [[37, 8.0, 0.25, 100]]}
     log: clean
-  - id: resolution-back
-    description: scene button 2 sets 1/16 again
+  - id: resolution-coarsest
+    description: scene button 2 sets 1/4 and goes off, there is no coarser one
     send:
       - scene_buttons[1]: press
     expect:
+      scene_buttons[1]: 0
+    log: clean
+  - id: resolution-finest
+    description: scene button 1 three times sets 1/32 and goes off; scene button 2 is lit again
+    send:
+      - scene_buttons[0]: press
+      - scene_buttons[0]: press
+      - scene_buttons[0]: press
+    expect:
+      scene_buttons[0]: 0
       scene_buttons[1]: 1
+    log: clean
+  - id: resolution-back
+    description: scene button 2 sets 1/16 again; scene button 1 is lit again
+    send:
+      - scene_buttons[1]: press
+    expect:
+      scene_buttons[0]: 1
+    log: clean
+
+  # Step 5 (Decision 29): scene buttons 3-4 select the previous and next scene, the slot the
+  # steps edit when no clip plays on the track. Scene 1 is selected since select-track. Clip 3
+  # still counts as playing after the stop (resolution-note writes to it), so that the steps
+  # follow the scene is checked by hand, in the panel run.
+  - id: scene-next
+    description: scene button 4 selects scene 2; scene button 3 lights, there is a scene above
+    send:
+      - scene_buttons[3]: press
+    expect:
+      scene_buttons[2]: 1
+    state:
+      song: {selected_track: 9, selected_scene: 2}
+    log: clean
+  - id: scene-prev
+    description: scene button 3 selects scene 1 again and goes off
+    send:
+      - scene_buttons[2]: press
+    expect:
       scene_buttons[2]: 0
+    state:
+      song: {selected_track: 9, selected_scene: 1}
     log: clean
 
   # Live selects a track AbletonMCP creates: track 10, a MIDI track without a Drum Rack

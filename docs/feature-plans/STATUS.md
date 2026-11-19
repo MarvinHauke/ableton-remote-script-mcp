@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -302,6 +302,15 @@ _Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 
   `stop_playback`. **First task done.** Next: step 5's main part, the user's pattern on the panel
   (`rig panel`), then on the APC (Decisions 12, 14), in a fresh session. Before a run: delete
   track 9's three clips and track 10 (or restart Live without saving); keep track 9.
+- 0003 step 5, main part on `feat/0003-step-5-hardware` (2026-11-19, solo; from `main` after
+  the merge `948e3f5`). In the panel run the user could move the track but not the clip slot:
+  **0003 Decision 29** (user): scene buttons 1–2 the resolution finer and coarser (lit while they
+  can move, `StepResolutionComponent`), 3–4 previous and next scene (`View_Control`), 5–8 and
+  Shift unchanged. `checks.yaml`'s resolution steps rewritten, `scene-next` and `scene-prev`
+  added; that the steps follow the scene is a check by hand (clip 3 still counts as playing in
+  the run). Validator and `check-names` clean on 12.4.16, 242 tests, reviewed. Next: `install
+  --replace`, `rig restart-live`, track 9 again through AbletonMCP, `rig run`; then the user's
+  panel run and the APC run (Decisions 12, 14), with the results page.
 
 ## After grilling
 

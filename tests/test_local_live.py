@@ -272,8 +272,8 @@ def test_drum_seq_controller_model(index_dir):
     assert ctl.element("steps[0]").key == (0x90, 56) and ctl.element("steps[31]").key == (0x90, 39)
     assert ctl.element("pads[0]").key == (0x90, 24) and ctl.element("pads[15]").key == (0x90, 3)
     assert ctl.element("master_fader").key == (0xB0, 56)
-    # step 4: scene buttons 1-4 are also the resolution buttons, a submatrix (no new elements)
-    assert ctl.submatrices == {"resolution_buttons": [f"scene_buttons[{i}]" for i in range(4)]}
+    # step 5 (plan 0003 Decision 29): the resolution is two scene buttons, no submatrix any more
+    assert ctl.submatrices == {}
 
 
 @pytest.mark.local_live

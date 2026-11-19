@@ -8,6 +8,7 @@ v3's `StepSequenceComponent` depends on a `grid_resolution` and its note editor 
 """
 
 from ableton.v3.base import listens
+from ableton.v3.control_surface.controls import ButtonControl
 from ableton.v3.control_surface.components import (
     DrumGroupComponent,
     GridResolutionComponent,
@@ -26,13 +27,40 @@ from ableton.v3.live import get_bar_length, liveobj_valid
 CLIP_BARS = 2  # 8 beats in 4/4
 CLIP_NAME = "Drum Seq"
 
-# Scene buttons 1-4 choose these (step 4); the steps start at 1/16, so 32 steps are 2 bars in 4/4
+# Scene buttons 1-2 step through these, finer and coarser (Decision 29); the steps start at 1/16,
+# so 32 steps are 2 bars in 4/4
 RESOLUTIONS = tuple(r for r in GRID_RESOLUTIONS if not r.is_triplet)  # 1/32, 1/16, 1/8, 1/4
 DEFAULT_RESOLUTION = 1  # 1/16
 
 
+class StepResolutionComponent(GridResolutionComponent):
+    """v3's grid resolution with a finer and a coarser button instead of one button per
+    resolution (12.4.16 has no such buttons, observed; its `index` setter does the rest). Each is
+    lit while there is a resolution to move to, like the scroll buttons."""
+
+    finer_button = ButtonControl(color="NoteEditor.Resolution.Step",
+                                 pressed_color="NoteEditor.Resolution.StepPressed")
+    coarser_button = ButtonControl(color="NoteEditor.Resolution.Step",
+                                   pressed_color="NoteEditor.Resolution.StepPressed")
+
+    @finer_button.pressed
+    def finer_button(self, _):
+        self.index = max(self.index - 1, 0)
+
+    @coarser_button.pressed
+    def coarser_button(self, _):
+        self.index = min(self.index + 1, len(self._resolutions) - 1)
+
+    def _update_resolution_buttons(self):
+        # the base calls this from its __init__ and whenever the index changes; `_resolutions`
+        # is the base's own list
+        super()._update_resolution_buttons()
+        self.finer_button.enabled = self.index > 0
+        self.coarser_button.enabled = self.index < len(self._resolutions) - 1
+
+
 def create_grid_resolution():
-    return GridResolutionComponent(resolutions=RESOLUTIONS, default_index=DEFAULT_RESOLUTION)
+    return StepResolutionComponent(resolutions=RESOLUTIONS, default_index=DEFAULT_RESOLUTION)
 
 
 def has_drum_rack(track):
@@ -111,7 +139,7 @@ class DrumNoteEditorComponent(NoteEditorComponent):
     an empty step outside the loop is red here (Decision 10). On a track without a Drum Rack
     directly on it the steps have no clip, so they stay dark and a press does nothing
     (Decision 8). A step's time is page time + index x step length: no triplet resolutions
-    (the scene buttons offer none).
+    (the resolution buttons offer none).
     """
 
     def __init__(self, *a, **k):
@@ -213,7 +241,7 @@ class NoPlayheadComponent(PlayheadComponent):
 
 class DrumStepSequenceComponent(StepSequenceComponent):
     """v3's step sequencer with the note editor that draws the playhead, pages on the loop
-    buttons, and Live's own playhead off."""
+    buttons, a finer and a coarser resolution button, and Live's own playhead off."""
 
     def __init__(self, *a, **k):
         super().__init__(
@@ -223,3 +251,9 @@ class DrumStepSequenceComponent(StepSequenceComponent):
             playhead_component_type=NoPlayheadComponent,
             **k,
         )
+
+    def set_finer_resolution_button(self, button):
+        self._grid_resolution.finer_button.set_control_element(button)
+
+    def set_coarser_resolution_button(self, button):
+        self._grid_resolution.coarser_button.set_control_element(button)
