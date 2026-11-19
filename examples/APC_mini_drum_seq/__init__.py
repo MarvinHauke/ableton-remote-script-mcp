@@ -11,6 +11,9 @@ when none plays, its clip in the selected scene (v3's target track, plan 0003 De
 - A track without a Drum Rack directly on it: pads and steps dark, a step press does nothing.
 - The selected MIDI track is armed for the pads (Live's auto-arm).
 - Track buttons 1-8: pages of 32 steps. The page shown is on, the playhead's page blinks.
+- Scene buttons 1-4: the steps' resolution, 1/32, 1/16 (at the start), 1/8, 1/4; the active one
+  is on. Scene buttons 7-8: the previous and next track, lit when there is one.
+- Faders 1-8: the volumes of tracks 1-8 (Live's box shows them); fader 9: the master volume.
 
 Device facts are in `elements.py`, LED values in `skin.py`.
 """
@@ -27,6 +30,7 @@ from ableton.v3.control_surface.components import AutoArmComponent
 
 from .components import (
     DrumSequencerClip,
+    FaderRingComponent,
     DrumStepSequenceComponent,
     PadBankComponent,
     create_grid_resolution,
@@ -42,6 +46,8 @@ class Specification(ControlSurfaceSpecification):
     elements_type = Elements
     control_surface_skin = create_skin(skin=Skin)
     create_mappings_function = create_mappings
+    session_ring_component_type = FaderRingComponent  # on without an identity reply: a box on tracks 1-8
+    link_session_ring_to_track_selection = False  # the default (observed 12.4.16): the faders stay on 1-8
     component_map = {"Step_Sequence": DrumStepSequenceComponent, "Drum_Group": PadBankComponent}
 
 
@@ -63,11 +69,11 @@ class APC_mini_drum_seq(ControlSurface):
 
     def drum_group_changed(self, drum_group):
         super().drum_group_changed(drum_group)
-        # the steps work only on a Drum Rack track: redraw them when the track's rack changes
-        # (defensive: in 12.4.16 the framework first calls this right after setup())
+        # the steps work only on a Drum Rack track: read the clip again when the track's rack
+        # changes (defensive: in 12.4.16 the framework first calls this right after setup())
         note_editor = getattr(self, "_note_editor", None)
         if note_editor is not None:
-            note_editor.update()
+            note_editor.refresh_clip()
 
     def setup(self):
         super().setup()

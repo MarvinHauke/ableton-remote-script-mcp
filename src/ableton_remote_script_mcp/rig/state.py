@@ -17,7 +17,7 @@ parameter 1); the rig turns it into AbletonMCP's 0-based `track_index`, `clip_in
         send: {active_buttons[0]: press}
         state:
           track 1: {mute: true}               # get_track_info: mute, solo, arm, volume, panning, name
-          song: {is_playing: false}           # get_session_info: tempo, is_playing, ...
+          song: {is_playing: false}           # get_session_info: tempo, is_playing, master_track, ...
           track 2 device 1: {Macro 1: 64}     # get_device_parameters, by parameter name
           track 1 clip 1:                     # the clip in scene 1's slot (step 6b, Decisions 25, 27)
             notes: [[36, 0, 0.25, 100]]       # pitch, start, length[, velocity]; in any order
@@ -31,7 +31,8 @@ parameter 1); the rig turns it into AbletonMCP's 0-based `track_index`, `clip_in
           - add_notes_to_clip: {track: 1, clip: 1, notes: [[38, 1, 0.25, 100]]}
         expect: {rack_encoders[0]: 64}
 
-A number matches within `TOLERANCE`; `true`, `false` and text match exactly.
+A number matches within `TOLERANCE`; `true`, `false` and text match exactly; a nested field
+matches the fields it names.
 """
 
 from __future__ import annotations
@@ -159,6 +160,8 @@ def _same_notes(want: list, got) -> bool:
 
 
 def _same(want, got) -> bool:
+    if isinstance(want, dict):  # a nested field (`master_track: {volume: 1.0}`): the fields it names
+        return isinstance(got, dict) and all(k in got and _same(w, got[k]) for k, w in want.items())
     if isinstance(want, bool) or isinstance(got, bool) or isinstance(want, str):
         return want == got
     if isinstance(want, (int, float)) and isinstance(got, (int, float)):

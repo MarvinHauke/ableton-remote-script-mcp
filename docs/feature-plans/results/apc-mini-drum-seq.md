@@ -38,11 +38,18 @@ Live 12.4.16. `observed`: in the index. `documented`: read in gluon's decompiled
 | A pad press plays its sound only on an armed track: silent unarmed, heard armed by hand and with the script's auto-arm | tested |
 | v3's `AutoArmComponent`, built by the script in `setup()` and enabled, sets the target track's implicit arm without identification | tested |
 | The framework builds its own auto-arm only with `include_auto_arming` and an identity reply | observed |
-| The auto-arm steps back while a track is armed by hand: in the 12.0 decompile (`any_track_armed`); 12.4.16's `_can_auto_arm` differs (no `any_track_armed`, a `needs_restore_auto_arm` property, slots on `exclusive_arm`), not checked | documented |
+| The auto-arm steps back while a track is armed by hand: track 9's auto-arm went off while the user armed track 1 (12.4.16's `_can_auto_arm` differs from 12.0's `any_track_armed`, the behaviour is the same) | tested (by hand, step 4) |
 | Live sends no LED feedback for a pad the drum group plays (`matrix_always_listenable=True`), armed or not, at `playing_feedback_velocity` 3; the script's own `DrumGroup.PadPressed` lights it | tested |
 | v3's drum group hands any `scroll_*` control to its `DrumGroupScrollComponent` (`__getattr__`), so `scroll_up_button` and `scroll_down_button` map on `Drum_Group`; one press scrolls a row of 4, rows 0-28; a button that can't scroll is off (`DefaultButton.Disabled`) | observed (the forwarding, `position_count`, `page_length`), tested (the rows, the LEDs) |
 | After the transport stops, the sequencer keeps the clip that played last on the track (not the selected scene's) and its page | tested |
 | `ControlSurface.drum_group_changed(drum_group)` is called from `__init__` right after `setup()` and on each instrument change of the target track | observed (statement order) |
+| v3's note editor reads a clip's notes only when its clip changes (`set_clip`) or its notes change; with no Drum Rack the script's `_has_clip` is false, so the script re-sets the clip in `drum_group_changed` (`refresh_clip`) for a rack added later | observed (statements); the re-set not checked on the rig |
+| `ElementsBase.add_submatrix(matrix, name, columns=(start, stop), rows=…)` names a part of a matrix as another element (`resolution_buttons` = scene buttons 1-4); `StepSequenceComponent.set_resolution_buttons` hands it to the `GridResolutionComponent`'s radio buttons (`resolution_buttons`, `checked_index`), whose index picks from the script's four resolutions | observed (signatures, statements), tested |
+| At 1/8 a step press writes a note one step long (`[40, 0.5, 0.5, 100]` on step 2); the active resolution's button is on (1), the others off | tested |
+| The framework builds the session ring when a component depends on it (`session_ring` among the injected dependencies, `_create_session_ring`), disabled; it is enabled only on an identity reply, so the script's `FaderRingComponent` enables itself and Live draws the box | observed (`_create_session_ring`), documented (the lazy injection, 12.0), tested (the box) |
+| `ControlSurfaceSpecification.link_session_ring_to_track_selection` (and `…_scene_selection`) default to `False`; only with one of them set does registering a `ViewControlComponent` link the ring to the selection (`SessionRingSelectionLinking`) | observed, tested (the faders stay on tracks 1-8) |
+| `MixerComponent` with `volume_controls` and `master_track_volume_control` (keys it answers by `__getattr__`): faders 1-8 set tracks 1-8's volumes (absolute, CC/127), fader 9 the master | tested |
+| `ViewControlComponent`'s `prev_track_button` and `next_track_button` select the previous and next of Live's visible tracks, then the returns and the master (`all_visible_tracks`); a button with no track to move to is off; the sequencer and the pads follow the selection | observed (names), documented (the track list, 12.0), tested (the moves and LEDs) |
 
 ## Tool findings
 
@@ -103,6 +110,22 @@ back. Fixed in step 1 unless a STATUS item is named.
    decompile, not by a tool, and `check_names DrumGroupComponent.set_scroll_up_button` answered
    with v2's `SlideComponent`. Open: a STATUS item (say where a `__getattr__` forwards to).
 
+16. **`check_names` doesn't know an attribute `add_button_matrix` creates** (`self.scene_buttons`
+   in `add_submatrix(self.scene_buttons, ...)`): "unknown attribute scene_buttons". The element
+   attributes come from `_create_attribute_name` at run time; the validator's element reader
+   knows them. Open: a STATUS item.
+17. **The rig's controller model didn't read `add_submatrix`** ("built by add_submatrix, which
+   the rig doesn't read"). Fixed in step 4: `Controller.submatrices` names the part of a matrix
+   built before it; no new elements, the panel unchanged. A slice past the matrix stops at its
+   edge; a matrix with rows of different lengths is unresolved (the reviewer).
+18. **A nested `state` field couldn't be checked**: `get_session_info` gives the master's volume
+   as `master_track: {name, volume, panning}`, compared whole and exactly. Fixed in step 4: a
+   nested field matches the fields it names, numbers within the tolerance.
+19. **`rig run` ran an old copy of the script and didn't say so**: Live loads the copy in the
+   User Library, which `install --replace` writes; after a `rig restart-live` without it the
+   first step-4 run tested step 3's code (20 passed, 10 failed: no reply from any new control).
+   Open: a STATUS item (warn when the installed copy differs from the check file's `script:`).
+
 ## Rig runs
 
 **Step 1, 2026-11-19, Live 12.4.16** (the test Set with track 9 "Yellow Kit", a Drum Rack; the
@@ -157,6 +180,22 @@ Three attempts:
   28 down reach row 0 (scene 6 off, 5 on); a pad of the scrolled bank sets the pitch (40).
 - A new MIDI track (created through AbletonMCP, selected by Live): pads dark, a step press
   creates no clip. `log: clean` in every step.
+
+**Step 4, 2026-11-19, Live 12.4.16** (a fresh default Set after `install --replace` and
+`rig restart-live`, track 9 "Yellow Kit" through AbletonMCP, the user selected its scene 1 slot).
+The first run used step 3's installed copy (finding 19). The second: 29 passed, 0 failed,
+3 asked; all of steps 1-3 still pass. The third, after the review (the ring's link to the
+selection set explicitly, a check for it): 30 passed, 0 failed, 3 asked.
+- Resolution: scene button 3 sets 1/8 (on; button 2 off); step 2 then writes `[40, 0.5, 0.5,
+  100]` in clip 3 (the clip that played last); scene button 2 sets 1/16 again.
+- Track choice: from track 10 scene button 7 selects track 9 (the selected pad blinks green
+  again), scene button 8 track 10 (pads dark); nine presses more reach track 1, where scene
+  button 7 is off; scene button 8 lights it again.
+- Faders: with track 10 selected, fader 1 at 90 gives track 1 0.709 (the ring stays on tracks
+  1-8); fader 1 at 100 gives track 1 a volume of 0.787, fader 8 at 64 track 8 0.504, fader 9
+  at 127 the master 1.0.
+- The user saw the box around tracks 1-8, and, by hand, track 9's auto-arm go off while track 1
+  was armed. `log: clean` in every step.
 
 ## The user's results
 

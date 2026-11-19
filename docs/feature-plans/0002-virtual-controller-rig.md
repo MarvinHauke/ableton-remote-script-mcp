@@ -206,6 +206,12 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     `loop_end`, which no other allowed command reports, and only with `include_notes` and
     `include_params` off. A read, so it joins `READS`; like every command it is labelled
     untested until it read back a state the user set by hand.
+28. **Two additions for plan 0003 step 4** (architect, 2026-11-19, 0003 Decision 28; no contract
+    changes: the panel's model and protocol stay as they are). A nested `state` field matches the
+    fields it names, numbers within the tolerance (`song: {master_track: {volume: 1.0}}`, from
+    `get_session_info`). The controller model reads `add_submatrix` as another name for a part of
+    a matrix built before it (`Controller.submatrices`; no new elements, so the panel and the
+    check names are unchanged).
 
 ## Open questions
 

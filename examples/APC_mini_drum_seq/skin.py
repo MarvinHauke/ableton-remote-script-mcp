@@ -44,6 +44,10 @@ class Skin:
         Navigation = OFF
         NavigationPressed = ON
 
+    class ViewControl:  # scene buttons 7-8: off when there is no track to move to
+        Track = ON
+        TrackPressed = ON
+
     class DrumGroup:  # the 4x4 pad bank
         PadPressed = RED  # our pad bank's name (components.py): a held pad
         PadSelected = GREEN_BLINK

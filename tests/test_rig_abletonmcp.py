@@ -64,7 +64,9 @@ class FakeLive:
             return {"status": "error", "message": "Python argument types in None(Song)"}
         if command == "get_session_info":
             return {"status": "success", "result": {"track_count": 2, "return_track_count": 1, "tempo": 120.0,
-                                                     "is_playing": False}}
+                                                     "is_playing": False,
+                                                     "master_track": {"name": "Master", "volume": 0.85,
+                                                                      "panning": 0.0}}}
         if command == "get_track_info":
             return {"status": "success", "result": self.tracks[params["track_index"]]}
         if command == "get_device_parameters":
@@ -266,6 +268,18 @@ def test_clip_state_reads_notes_in_any_order_and_velocity_is_optional():
     live.notes[(0, 0)] = [{"pitch": 36, "start_time": 0.0, "duration": 0.25, "velocity": 100.0, "mute": True}]
     muted, = check_state(mcp, {"track 1 clip 1": {"notes": [[36, 0, 0.25]]}})
     assert not muted["ok"] and muted["got"] == [[36, 0.0, 0.25, 100.0, "muted"]]
+
+
+def test_a_nested_field_matches_the_fields_it_names_within_the_tolerance():
+    from ableton_remote_script_mcp.rig.state import check_state
+
+    mcp = AbletonMCP(sock=FakeLive())
+    good, bad = check_state(mcp, {"song": {"master_track": {"volume": 0.852}, "tempo": 120}}), \
+        check_state(mcp, {"song": {"master_track": {"volume": 1.0}}})
+    assert [(r["state"], r["ok"]) for r in good] == [("song master_track", True), ("song tempo", True)]
+    assert not bad[0]["ok"] and bad[0]["got"]["volume"] == 0.85
+    missing, = check_state(mcp, {"song": {"master_track": {"mute": False}}})
+    assert not missing["ok"]
 
 
 def test_an_empty_slot_reads_as_no_clip_and_reads_no_notes():

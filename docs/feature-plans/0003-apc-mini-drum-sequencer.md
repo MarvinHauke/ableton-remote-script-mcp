@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 4; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -101,7 +101,8 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
 
 ## Testing Decisions
 
-- **No new package code is planned** (two fixes found in step 1: Decision 23). The script is an example, so its seams are the existing
+- **No new package code is planned** (two fixes found in step 1: Decision 23; two rig
+  additions in step 4: Decision 28). The script is an example, so its seams are the existing
   ones: `validate` and `check-names` (no errors, no unknown names), `outline` of the folder,
   and the rig.
 - **Local-only tests** (`local_live`, like the UC4 example's): the example validates clean
@@ -267,10 +268,34 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     the record arm; tested). Whether it steps back while another track is armed by hand is
     `documented` only (12.0; 12.4.16's `_can_auto_arm` differs), a check for step 4.
     Rejected: arming by hand; deciding later.
+    Checked in step 4 (2026-11-19, the user, by hand): track 9's auto-arm went off while track 1
+    was armed by hand (`tested`).
 27. **A held pad is red from the script's own skin name** (architect, 2026-11-19, step 3;
     carries out Decision 10). Live sent no feedback for a played pad, armed or not, with
     `playing_feedback_velocity` 3 (tested), so `PadBankComponent` keeps the held pads and gives
     them `DrumGroup.PadPressed`. The selected pad blinks green (`PadSelected` 2).
+
+28. **Step 4's parts** (architect, 2026-11-19, step 4; carries out Decisions 9 and 15):
+    - scene buttons 1–4 are `resolution_buttons`, a submatrix of the scene buttons
+      (`ElementsBase.add_submatrix`, `observed`), mapped on `Step_Sequence`;
+    - `View_Control` takes `prev_track_button` and `next_track_button` (scene buttons 7–8), with
+      the framework's session ring; `Mixer` takes `volume_controls` (faders 1–8, tracks 1–8)
+      and `master_track_volume_control` (fader 9);
+    - the session ring enables itself (`FaderRingComponent`, as in the UC4 example): the
+      framework enables it only on an identity reply, and the box shows which tracks the faders
+      reach. It never moves: no session navigation in v1, and `link_session_ring_to_track_selection`
+      stays `False` (the default, `observed`; set in the Specification so it reads as meant, and
+      checked: fader 1 sets track 1 while track 10 is selected). Rejected: the ring disabled, which
+      works but leaves the faders' tracks unmarked and the validator's `session-ring` warning;
+    - two rig additions the checks needed, no contract changed (the check file's format grows,
+      the panel's model and protocol stay as they are): a nested `state` field matches the
+      fields it names (the master's volume, `song: {master_track: {volume: 1.0}}`), and the
+      controller model reads `add_submatrix` (`Controller.submatrices`, no new elements);
+    - the reviewer's step-3 code points: the clip is re-set on `drum_group_changed`, a step press
+      without a Drum Rack is inert (`_on_pad_pressed`), the held pads clear in `set_matrix` and
+      are red only with a Drum Rack, `NoPlayheadComponent.update` calls `super().update()`. The
+      skin's `pressed_color` was not tried: the script's own red works (Decision 27).
+    - the auto-arm check (Decision 26) is a test by hand: `ask_user` doesn't wait during a run.
 
 ## Open questions
 

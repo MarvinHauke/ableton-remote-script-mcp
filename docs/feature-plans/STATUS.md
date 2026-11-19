@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -272,6 +272,19 @@ _Last updated: 2026-11-19 (0003 step 3 done, Decisions 26–27; 0003 step 2 done
     `pressed_color`;
   - `super().update()` in `NoPlayheadComponent`;
   - a check that the auto-arm steps back while another track is armed by hand.
+- 0003 step 4 built on `feat/0003-step-4-resolution-tracks-faders` (2026-11-19, solo, branched
+  from step 3's): scene 1–4 the resolution (a submatrix of the scene buttons), scene 7–8 the
+  previous and next track (`View_Control`), faders 1–8 tracks 1–8 and fader 9 the master
+  (`Mixer`), the session ring enabled for the faders' box (0003 Decision 28), and the reviewer's
+  step-3 code points. Two rig additions: a nested `state` field, `add_submatrix` in the
+  controller model (0002 Decision 28). `rig run` 30 passed, 0 failed (after a first run on the
+  stale installed copy, finding 19); the user saw the box and, by hand, the auto-arm give way to
+  a track armed by hand. **Step 4 done.** Next: 0003 step 5 (the full check file, then the
+  user's pattern on the panel and on the APC), in a fresh session. Before a rig run: `install
+  examples/APC_mini_drum_seq --replace`, then `rig restart-live`. To try in step 5 (the user,
+  2026-11-19): spare the user the scene 1 click. Live selects a track AbletonMCP creates, and a
+  fresh Set may already have scene 1 selected; if not, a clip created and deleted in that slot
+  may move the selection there (untested).
 
 ## After grilling
 
@@ -294,6 +307,9 @@ _Last updated: 2026-11-19 (0003 step 3 done, Decisions 26–27; 0003 step 2 done
   `outline` default to the newest index, the Live 13 beta (the newest release instead?);
   `check_names` resolves bare `NoteEditorComponent` to `bar_based_sequence` first; a one-`return`
   method has no statements; nothing says where a `__getattr__` forwards control names to.
+- [needs-triage] Tool findings from 0003 step 4 (results page, 16 and 19): `check_names` calls an
+  attribute `add_button_matrix` creates (`self.scene_buttons`) unknown; `rig run` doesn't notice
+  that the installed copy in the User Library is older than the check file's `script:` folder.
 - The rig can't select a track or slot (AbletonMCP 1.7.1 has no command for it), so `ask_user`
   stays for the selection. A track created through AbletonMCP is selected by Live (the user,
   2026-11-19): a check can reach a new track that way.

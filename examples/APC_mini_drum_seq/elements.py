@@ -33,6 +33,8 @@ class Elements(ElementsBase):
         # track buttons: red LEDs; scene buttons: green LEDs, top to bottom
         self.add_button_matrix([range(64, 72)], "Track_Buttons", msg_type=MIDI_NOTE_TYPE)
         self.add_button_matrix([range(82, 90)], "Scene_Buttons", msg_type=MIDI_NOTE_TYPE)
+        # scene buttons 1-4: the steps' resolution (columns 0-3 of the one-row matrix)
+        self.add_submatrix(self.scene_buttons, "Resolution_Buttons", columns=(0, 4))
         self.add_button(98, "Shift_Button", msg_type=MIDI_NOTE_TYPE)  # no LED
         self.add_encoder_matrix([range(48, 56)], "Faders")
         self.add_encoder(56, "Master_Fader")

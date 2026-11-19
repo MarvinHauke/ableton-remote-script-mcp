@@ -15,6 +15,7 @@ from ableton.v3.control_surface.components import (
     NoteEditorComponent,
     PlayheadComponent,
     SequencerClip,
+    SessionRingComponent,
     StepSequenceComponent,
 )
 from ableton.v3.control_surface.components.grid_resolution import GRID_RESOLUTIONS
@@ -25,7 +26,7 @@ from ableton.v3.live import get_bar_length, liveobj_valid
 CLIP_BARS = 2  # 8 beats in 4/4
 CLIP_NAME = "Drum Seq"
 
-# Scene buttons 1-4 choose these (step 2); the steps start at 1/16, so 32 steps are 2 bars in 4/4
+# Scene buttons 1-4 choose these (step 4); the steps start at 1/16, so 32 steps are 2 bars in 4/4
 RESOLUTIONS = tuple(r for r in GRID_RESOLUTIONS if not r.is_triplet)  # 1/32, 1/16, 1/8, 1/4
 DEFAULT_RESOLUTION = 1  # 1/16
 
@@ -37,6 +38,17 @@ def create_grid_resolution():
 def has_drum_rack(track):
     """Whether a Drum Rack sits directly on the track (one inside another rack is not found)."""
     return liveobj_valid(track) and any(device.can_have_drum_pads for device in track.devices)
+
+
+class FaderRingComponent(SessionRingComponent):
+    """The framework's session ring: tracks 1-8 for the faders (the mixer reads its tracks from
+    it) and the track pager of the scene buttons. It is built disabled and enabled only for a
+    controller that answers Live's identity request, which the mk1 script doesn't ask for; so it
+    enables itself, and Live draws a box around the faders' tracks. Nothing moves it."""
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.set_enabled(True)
 
 
 class DrumSequencerClip(SequencerClip):
@@ -65,6 +77,10 @@ class PadBankComponent(DrumGroupComponent):
         self._held = set()  # the pads held now (their controls' ids)
         super().__init__(*a, matrix_always_listenable=True, **k)
 
+    def set_matrix(self, matrix):
+        self._held.clear()  # a release lost with the old matrix must not keep a pad red
+        super().set_matrix(matrix)
+
     def _on_matrix_pressed(self, button):
         self._held.add(id(button))
         pad = self._pad_for_button(button)
@@ -81,8 +97,8 @@ class PadBankComponent(DrumGroupComponent):
     def _update_button_color(self, button):
         """Red while held: Live sends no feedback for a played pad here (12.4.16, tested)."""
         super()._update_button_color(button)
-        if id(button) in self._held:
-            button.color = "DrumGroup.PadPressed"
+        if id(button) in self._held and liveobj_valid(self._drum_group_device):
+            button.color = "DrumGroup.PadPressed"  # without a Drum Rack the pads stay dark
 
 
 class DrumNoteEditorComponent(NoteEditorComponent):
@@ -113,6 +129,19 @@ class DrumNoteEditorComponent(NoteEditorComponent):
 
     def _has_clip(self):
         return super()._has_clip() and has_drum_rack(self._target_track.target_track)
+
+    def refresh_clip(self):
+        """Read the clip again: v3 reads the notes only when the clip changes, and with no Drum
+        Rack `_has_clip` is false, so a rack added to the track would leave the steps empty.
+        The control surface calls this when the track's Drum Rack changes."""
+        clip = self._sequencer_clip.clip
+        self.set_clip(None)
+        self.set_clip(clip)
+
+    def _on_pad_pressed(self, pad):
+        # without a Drum Rack a step is inert: v3 would try to create a clip and drop its own
+        if has_drum_rack(self._target_track.target_track):
+            super()._on_pad_pressed(pad)
 
     def _update_editor_matrix(self):
         # a page or resolution change redraws every step: the playhead's step moves with it
@@ -178,6 +207,7 @@ class NoPlayheadComponent(PlayheadComponent):
     later build where Live's would reach the mk1 must not draw a second one."""
 
     def update(self):
+        super().update()
         self._playhead.clip = None
 
 
