@@ -386,6 +386,10 @@ _Last updated: 2026-11-19 (0001 Decision 56, stubs for writing by hand, next; 00
   `feat/0001-stubs-hand-dev` (from `chore/submodule-guards`, both unmerged): (1) the stubs'
   property and control-decorator fix, (2) `build-stubs --project`, (3) the docs page
   "Editor setup". The finding below is task 1's input.
+- [idea, validate/install] (user's run, 2026-11-19): `install examples/APC_mini_mk1_Plus` (the
+  repo root) gave `create-instance` "no __init__.py". When the folder has none but exactly one
+  subfolder that has one, say "did you mean `<folder>/<sub>`?". Also: without `--build` the
+  newest indexed build (13.0b25) was used, while Live 12.4.16 is the one in use.
 - [finding, build-stubs] (architect, 2026-11-19, on `APC_mini_mk1_Plus` with the 12.4.16
   stubs): the imports resolve, but pyright and basedpyright report 13 false errors.
   - A property with a setter (`listenable_property`, e.g. `StepResolutionComponent.index`) comes
