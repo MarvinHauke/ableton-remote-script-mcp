@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons), 30 (resolution pads) and 31 (the page follows the playhead); the APC run gave 32 (always the selected slot), the user's test list 33-35 (nested Drum Rack, follow again, own repo)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons), 30 (resolution pads) and 31 (the page follows the playhead); the APC run gave 32 (always the selected slot), the user's test list 33-35 (nested Drum Rack, follow again, own repo); Decision 36 (the repo `APC_mini_mk1_Plus`, the script `APC_mini_mk1_Plus`, a submodule) built 2026-11-19 on `feat/0003-own-repo`; next: step 6._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -386,6 +386,31 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     submodule at a pinned commit (user: "isn't a submodule better for pulling continuously?"; the
     path stays, so the tests and the skill's reference don't change). It becomes a real-world test
     field for the MCP. Built as its own task after this one.
+36. **Its name and layout** (2026-11-19; the name: user, "lets use your recommendation pick",
+    from the architect's suggestions; one repo per controller: user; the layout: architect).
+    This changes Decision 35's name and path. One repo per controller, so this one is for the
+    APC mini mk1 only, with more modes to come.
+    - Repo `APC_mini_mk1_Plus` (user, 2026-11-19: created on GitHub as
+      `MarvinHauke/APC_mini_mk1_Plus`, in place of the architect's `apc-mini-mk1-toolkit`), cloned
+      at `../APC_mini_mk1_Plus`. The script folder, Live's Control Surface name and the class are
+      `APC_mini_mk1_Plus` too.
+    - In the repo: `APC_mini_mk1_Plus/` holds the script, `checks.yaml` and `device.yaml` (the rig
+      finds them beside the script, `script: .` unchanged). README, LICENSE (MIT),
+      `pyrightconfig.json` (stubs in a git-ignored `stubs/`) and `.gitignore` sit at the root, so
+      they don't land in the User Library.
+    - Here: a submodule at `examples/APC_mini_mk1_Plus`, the script at
+      `examples/APC_mini_mk1_Plus/APC_mini_mk1_Plus`. `.gitmodules` has the relative URL
+      `../APC_mini_mk1_Plus.git` (it resolves against `origin` to
+      `git@github.com:MarvinHauke/APC_mini_mk1_Plus.git`; until that repo is pushed, only this
+      checkout, whose local config points at the sibling, can update it). Tests that read the script skip with `git submodule update --init` as the reason.
+    - Its history (10 commits) was carried over with `git subtree split`. In Live the user picks
+      `APC_mini_mk1_Plus` once, after `install` of the new folder; the old installed
+      `APC_mini_drum_seq` can be deleted from the User Library.
+    - Pushing (architect, 2026-11-19): the script's repo is pushed only when the user says so. Until
+      its GitHub repo has the commits, the architect holds the push of
+      `main` after merging this branch and asks the user first: a pushed `main` would point at a
+      submodule nobody can fetch. CI is not affected either way: the tests skip and `docs.yml`
+      doesn't check out submodules.
 
 ## Open questions
 

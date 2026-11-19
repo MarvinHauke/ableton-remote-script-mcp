@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 Decisions 33-34 built, nested Drum Rack and follow again; Decision 35, its own repo, next; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -351,13 +351,17 @@ _Last updated: 2026-11-19 (0003 Decisions 33-34 built, nested Drum Rack and foll
   submodule update --init` (tests that read the example: skip or a clear error); CLAUDE.md names
   the new repo and its owner; its README under the same Ableton-material rules; nothing pushed
   or published until the user says so.
-  Merged into `main` 2026-11-19 (`c91d0ab`). **Open before this task:** the name. The user finds
-  `APC_mini_drum_seq` too narrow (more functions will come). Suggested (repo / script folder):
-  `apc-mini-mk1-toolkit` / `APC_mini_mk1_Plus` (the architect's pick), `mk1-grid` / `mk1_Grid`,
-  `apc-mini-workstation` / `APC_mini_Workstation`, `apc-mini-modes` / `APC_mini_Modes`,
-  `ableton-apc-mini-mk1` / `APC_mini_mk1_Ext`, `stepgrid` / `StepGrid`. A new script folder name
-  moves the submodule path and the check files' `script:`, and the user picks it again in Live.
-  Branch for the task: `feat/0003-own-repo`.
+  Merged into `main` 2026-11-19 (`c91d0ab`).
+- 0003 Decision 36 on `feat/0003-own-repo` (2026-11-19, solo): the name (user: one repo per
+  controller, created on GitHub as `MarvinHauke/APC_mini_mk1_Plus`) and the layout. The repo `../APC_mini_mk1_Plus` (10 commits
+  of history, plus README, LICENSE, `pyrightconfig.json`) with the script in
+  `APC_mini_mk1_Plus/`; here the submodule `examples/APC_mini_mk1_Plus`. Validates with 0
+  findings against 12.4.16; `uv run pytest` 246 passed (5 skip without the submodule). Not
+  pushed yet (its `origin` is set, the GitHub repo is empty); until it is, a fresh clone of
+  this repo can't fetch the submodule. So after the merge the push of `main` waits for the user (Decision 36). **For the user in Live:** `install`
+  of `examples/APC_mini_mk1_Plus/APC_mini_mk1_Plus`, restart, choose `APC_mini_mk1_Plus` as
+  the Control Surface, delete the old `APC_mini_drum_seq` from the User Library's Remote Scripts.
+  Next: 0003 step 6.
   - **After step 5, before step 6** (user, 2026-11-19): a local disassembly (Python's `dis`) of
     12.4.16's `ableton/v3`, and the `v2` modules v3 inherits from, into `reference/`
     (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on
