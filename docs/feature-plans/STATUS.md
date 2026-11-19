@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -162,7 +162,7 @@ _Last updated: 2026-11-19 (plan 0003 drafted, 0001 Decision 55; agent team, Deci
   check: the user plays the UC4 script from the panel. Played 2026-11-18: the controls reached
   Live. The panel's WebSocket became a contract (Decision 24, `docs/rig-panel-protocol.md`), and
   the UC4 Editor's architect got a brief for its plan 0008 (play through the rig). Step 5 done and merged
-  (2026-11-18). Next for 0002: step 6, once the APC sequencer has its own plan.
+  (2026-11-18). Next for 0002: step 6 (its LED panel first; the checks once 0003's steps are written).
 - The 0001 step 10 eval round ran (user confirmed Decision 46, 2026-11-18). With the skill:
   100% of the graders in all three cases, 0 findings. Without it: no v3 script got the session box
   or the UC4's value feedback. The login expired partway through, so the v3 cases ran a second
@@ -205,7 +205,11 @@ _Last updated: 2026-11-19 (plan 0003 drafted, 0001 Decision 55; agent team, Deci
   `ableton-remote-script` (`claude mcp add --scope local`, connected), the skill as a link
   `.claude/skills/ableton-remote-scripts`, and `ABLETON_REMOTE_SCRIPT_MCP` in the git-ignored
   `.claude/settings.local.json` for its scripts (no `uv tool install`: `eval_run.sh` refuses to
-  run beside one). Next, in a fresh session: grill 0003's other 11 questions.
+  run beside one). 0003 grilled (2026-11-19, Decisions 3–16): one pad at a time on v3's
+  components, `examples/APC_mini_drum_seq/`, the APC a normal test device again until its hardware check shows otherwise (Decision 12),
+  the panel draws LED colours (0002 Decision 26, an addition to protocol 1, in 0002 step 6), a
+  fixed clip preset. A one-run `uc4-mixer-v3` check after the skill's MCP section: with 9/9,
+  without 7/9 (Decision 7). Next, in a fresh session: 0003's spec and steps.
 
 ## After grilling
 

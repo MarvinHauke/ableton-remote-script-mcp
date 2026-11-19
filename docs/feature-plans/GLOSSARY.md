@@ -157,7 +157,7 @@ log state to expect, which steps to ask the user about).
 
 **Device profile**:
 What the test rig knows about one controller beyond its elements: its layout for the panel, its
-identity reply, display hints.
+identity reply, display hints, LED colours (0002 Decision 26).
 
 **Test Set**:
 The Set open in Live that the test rig may change (from the user's `devSetup` template); it is

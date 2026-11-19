@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6 (needs plan 0003, the APC sequencer's plan: a draft since 2026-11-19, blocked until its steps are written)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6 (needs plan 0003, the APC sequencer's plan: grilled 2026-11-19, blocked until its steps are written)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -9,8 +9,9 @@ _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 Every behaviour check of a Remote Script needs the user, the hardware and a round of "press
 this, what lights up?". The UC4 load test took two sessions, and three of its four bugs showed
 only as wrong values or a traceback, which a machine can see. Some hardware can't be trusted for
-the test at all: the APC mini mk1 loses presses under LED load, so a step sequencer can't be
-load-tested on it reliably. The user wants a virtual controller that sends the script's MIDI
+the test at all: the APC mini mk1 lost presses under LED load, so a step sequencer couldn't be
+load-tested on it reliably (since `OptimizedControlSurface` none seen, not yet confirmed: 0003
+Decision 12). The user wants a virtual controller that sends the script's MIDI
 and shows what Live sends back, which the user can play with and Claude can drive itself.
 
 ## Solution
@@ -60,11 +61,11 @@ behaviour) stays the user's load test. Decisions 1–24 below.
 - **Timing:** after each send the driver waits for replies until a quiet period (default
   150 ms, configurable per step), then reads the log and drains AbletonMCP's events.
 - **Device profile (`device.yaml`):** beside the check file; identity reply bytes, panel layout,
-  display hints (absolute, relative, bipolar).
+  display hints (absolute, relative, bipolar), LED colours (Decision 26).
 - **Report:** printed summary plus `checks.result.json` beside the check file (git-ignored).
 - **Panel:** a static page and a WebSocket served on localhost by `rig panel`; the page shows
   "parallel view: the driver is in charge". It renders the controller model and the last value
-  sent and received per element.
+  sent and received per element, in the profile's LED colours where it gives them (Decision 26).
 
 ## Testing Decisions
 
@@ -193,6 +194,13 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     each joins the "tested" list only after it read back, or set, a state the user made or
     checked by hand in Live. Still never sent: deleting clips, the browser, rating and
     dataset consent. How check files state a clip's notes is part of step 6.
+26. **The panel draws LED colours from the device profile** (user, 2026-11-19, plan 0003
+    Decision 14, "yes to a-d"). `device.yaml` may give a `leds` map, value → colour and
+    blinking, per element or matrix; the panel draws them, so it can stand in for a grid
+    controller. The colours reach the page as a new optional field per element in the `model`
+    message: an addition, still protocol 1, and `docs/rig-panel-protocol.md` gains the rule that
+    clients ignore fields they don't know. The UC4 Editor's architect gets a one-line note.
+    Changes Decision 24's contract by that field and the rule on unknown fields only.
 
 ## Open questions
 
@@ -383,9 +391,11 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
        answers a press with a quick 0/127 pair and then the settled value about 40 ms later.
        The user then saw it working after the servers were restarted.
    - **Done** (2026-11-18, the user).
-6. **The APC mini drum sequencer's checks** — blocked by: 3, and plan 0003's steps (0003 is a draft since 2026-11-19).
-   - **Delivers:** its check file and device profile; the skill mentions the rig (Decision 20)
-     once the sequencer's checks pass.
+6. **The APC mini drum sequencer's checks** — blocked by: 3; the checks also by plan 0003's steps
+   (0003 grilled 2026-11-19). The LED panel needs only 3 and 5.
+   - **Delivers:** the panel's LED colours (Decision 26: `leds` in `device.yaml`, the `model`
+     field, the protocol page's rule on unknown fields), then the sequencer's check file and
+     device profile; the skill mentions the rig (Decision 20) once the sequencer's checks pass.
 
 ## Out of scope
 
