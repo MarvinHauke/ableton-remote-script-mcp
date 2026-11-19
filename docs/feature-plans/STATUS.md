@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -323,6 +323,12 @@ _Last updated: 2026-11-19 (0003 Decision 31 built, the page follows the playhead
     review, install, restart, track 9, `rig run`; the user tries the follow on the panel, then
     the APC run (Decisions 12, 14), with the results page. `rig run` 2026-11-19: 39 passed,
     0 failed, 2 asked (the three page checks pass).
+  - The user's panel checks of Decision 31: the steps follow, a picked page holds while the
+    clip plays.
+  - **0002 Decision 30** (user, from the panel run): the panel holds buttons, Shift-click once
+    (until the next plain click is released), Cmd-click until clicked again, Esc releases all;
+    a `?` cheat sheet. The page still sends only 127 and 0, no protocol change; the latch logic
+    is tested in node (`tests/test_rig_panel.py`, skipped without node).
   - **After step 5, before step 6** (user, 2026-11-19): a local disassembly (Python's `dis`) of
     12.4.16's `ableton/v3`, and the `v2` modules v3 inherits from, into `reference/`
     (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on
@@ -339,6 +345,9 @@ _Last updated: 2026-11-19 (0003 Decision 31 built, the page follows the playhead
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [needs-triage] 0002 panel: the pads (`role=button`) have no `tabindex`, so the keyboard can't
+  reach them (reviewer, 2026-11-19, Decision 30's review; older than it).
 
 - [needs-triage] 0001 (index, MCP): the order of what a method does (which slots `__init__`
   registers, which method calls which) is not in the index; 0003 step 5 needed it twice and read

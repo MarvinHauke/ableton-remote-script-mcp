@@ -212,11 +212,25 @@ to it. A website open in your browser can't play into Live.
 
 - **Buttons** are pads. They send 127 while you hold them and 0 when you let go, and light up
   with the value Live sends back.
+  A mouse presses one button at a time, so the panel can also hold buttons, for gestures that
+  need two at once (for example holding one track button and pressing another):
+  - **Shift-click** holds a button once. It stays pressed until the next plain click on another
+    button has been released, then lets go.
+  - **Cmd-click** (Ctrl on other systems) holds it until you click it again, so you can hold
+    several while clicking others.
+  - **A plain click on a held button** releases it. **Esc** releases all of them. Held buttons
+    are marked ⇧, or ⌘ (Ctrl).
+  - Example: Shift-click track button 1, then click track button 2. The script sees 2 pressed
+    while 1 is held, then 1 is released.
 - **Encoders** are sliders. A bipolar one shows its value from the centre. A relative one has −
   and + buttons; hold Shift for steps of 10.
+- **The ? button** in the header, or the `?` key, opens a cheat sheet of these gestures. Esc
+  closes it.
 - **Each control** shows the last value played into Live (↑) and the last value Live sent
   back (↓).
 - **The log** at the bottom lists every message on the port, with the element it belongs to.
+
+The page still sends only presses and releases, so holding changes nothing in the protocol.
 
 The page is a parallel view, and the rig's driver is in charge. While `rig run` plays a check
 file, its messages show up on the page, marked "driver". A `device.yaml` in the script's folder

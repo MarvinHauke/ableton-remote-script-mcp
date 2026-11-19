@@ -269,3 +269,59 @@ def test_only_pages_from_this_machine_may_connect(rig):
     assert _Page(panel.server_address, origin="http://localhost:5173").next()["type"] == "model"
     with pytest.raises(AssertionError):
         _Page(panel.server_address, origin="https://example.com")
+
+
+def _node():
+    import glob
+    import shutil
+
+    found = os.environ.get("NODE") or shutil.which("node")
+    if found:
+        return found
+    nvm = sorted(glob.glob(str(Path.home() / ".nvm/versions/node/*/bin/node")))  # any version will do
+    return nvm[-1] if nvm else None
+
+
+def _latch_run(script: str) -> list:
+    """Runs the page's latch logic (between `// latch:start` and `// latch:end`) in node."""
+    import json
+    import subprocess
+    from importlib import resources
+
+    node = _node()
+    if not node:
+        pytest.skip("no node on PATH or under ~/.nvm (set NODE)")
+    page = resources.files("ableton_remote_script_mcp.rig").joinpath("panel.html").read_text()
+    code = page.split("// latch:start", 1)[1].split("// latch:end", 1)[0].split("\n", 1)[1]
+    program = code + """
+const sent = [], marks = [];
+const l = makeLatches((n, v) => sent.push([n, v]), (n, how) => marks.push([n, how]));
+""" + script + "\nconsole.log(JSON.stringify({sent, marks}));"
+    out = subprocess.run([node, "-e", program], capture_output=True, text=True, check=True).stdout
+    return json.loads(out)
+
+
+def test_shift_click_holds_a_button_until_the_next_plain_click_is_released():
+    """plan 0002 Decision 30: hold track button 1, press 2 (v3's loop gesture), then 1 lets go."""
+    r = _latch_run('l.down("a", "once"); l.up("a"); l.down("b", null); l.up("b");')
+    assert r["sent"] == [["a", 127], ["b", 127], ["b", 0], ["a", 0]]
+    assert r["marks"] == [["a", "once"], ["a", None]]
+
+
+def test_cmd_click_holds_until_clicked_again_and_survives_other_clicks():
+    r = _latch_run('l.down("a", "hold"); l.down("b", "hold"); l.down("c", null); l.up("c");'
+                   'l.down("a", null); l.up("a");')
+    assert r["sent"] == [["a", 127], ["b", 127], ["c", 127], ["c", 0], ["a", 0]]
+    assert r["marks"][-1] == ["a", None]
+
+
+def test_a_click_on_a_held_button_releases_it_and_escape_releases_all():
+    r = _latch_run('l.down("a", "once"); l.down("a", null); l.up("a");'
+                   'l.down("b", "once"); l.down("c", "hold"); l.releaseAll();')
+    assert r["sent"] == [["a", 127], ["a", 0], ["b", 127], ["c", 127], ["b", 0], ["c", 0]]
+
+
+def test_a_redraw_releases_a_plain_press_too():
+    """A new model detaches the pressed pad, which then never gets its pointerup."""
+    r = _latch_run('l.down("a", null); l.releaseAll(); l.up("a");')
+    assert r["sent"] == [["a", 127], ["a", 0]]
