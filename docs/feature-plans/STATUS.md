@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -210,6 +210,17 @@ _Last updated: 2026-11-19 (plan 0003 grilled, Decisions 1–16; 0002 Decision 26
   the panel draws LED colours (0002 Decision 26, an addition to protocol 1, in 0002 step 6), a
   fixed clip preset. A one-run `uc4-mixer-v3` check after the skill's MCP section: with 9/9,
   without 7/9 (Decision 7). Next, in a fresh session: 0003's spec and steps.
+- 0003 spec and steps written on `docs/plan-0003-drum-sequencer` (2026-11-19, the architect;
+  steps wait for the user's approval). The API facts were looked up with the MCP server
+  (12.4.16, `observed`): the v3 base `StepSequenceComponent` has no `playhead` property, it
+  builds a `PlayheadComponent` that hands the lighting to Live's own playhead (Decision 17:
+  v3's first, our own if it doesn't reach the mk1). 0002 step 6 split into 6a (panel LED
+  colours) and 6b (a clip's notes in check files); order 0002 6a → 6b → 0003 1–7, the LED
+  colours before the first rig checks as Decision 14 says (Decision 19). Three tool findings for 0003 step 1's list: `get_class("Clip")` cuts
+  `Live.Clip.Clip` behind skin and notification classes named `Clip`; `Launchkey_MK4`'s outline
+  shows no mappings; `lookup class` crashes (`KeyError: 'all_members'`, `cli.py`
+  `_format_class`) on a cut answer, e.g. `Live.Clip.Clip`. Next: the user approves the steps,
+  then 0002 step 6a in a fresh session.
 
 ## After grilling
 

@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6 (needs plan 0003, the APC sequencer's plan: grilled 2026-11-19, blocked until its steps are written)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6a, then 6b (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -391,11 +391,26 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
        answers a press with a quick 0/127 pair and then the settled value about 40 ms later.
        The user then saw it working after the servers were restarted.
    - **Done** (2026-11-18, the user).
-6. **The APC mini drum sequencer's checks** — blocked by: 3; the checks also by plan 0003's steps
-   (0003 grilled 2026-11-19). The LED panel needs only 3 and 5.
-   - **Delivers:** the panel's LED colours (Decision 26: `leds` in `device.yaml`, the `model`
-     field, the protocol page's rule on unknown fields), then the sequencer's check file and
-     device profile; the skill mentions the rig (Decision 20) once the sequencer's checks pass.
+6. **The APC mini drum sequencer's checks** — split in two around plan 0003's steps (0003
+   Decision 19, architect, 2026-11-19). The sequencer's check file and device profile grow in
+   0003's steps 1–5 (0003 Decision 20), no longer here.
+   - **6a. LED colours in the panel** — blocked by: 5. Before 0003 step 1 (0003 Decision 14).
+     - **Delivers:** Decision 26: `leds` in `device.yaml` (value → colour and blinking, per
+       element or matrix), the new optional field per element in the `model` message, the rule
+       in `docs/rig-panel-protocol.md` that clients ignore unknown fields, the page drawing them;
+       the one-line note to the UC4 Editor's architect.
+     - **Checks:** seam C (a profile's `leds` reaches the `model` message; a profile without
+       them gives the message as before); the protocol page's check; the user sees a profile's
+       colours on the page with `Rig_Identity` or the sequencer.
+   - **6b. A clip's notes in check files** — blocked by: 3. Before 0003 step 1.
+     - **Delivers:** Decision 25: a `state` target `track N clip M` (`notes` as pitch, start,
+       length, velocity; `length`, `looping`, `name`) read with `get_clip_notes` and the clip
+       info; `do` with `add_notes_to_clip` and `clear_notes_from_clip`; `requires` names a Drum
+       Rack track and an empty slot when they are missing (never creates the Drum Rack).
+     - **Checks:** seam C over the fake socket; the user sets two notes by hand in a test-Set
+       clip, the rig reads them back, and `get_clip_notes` joins `TESTED`; an add and a clear
+       read back and checked by the user join it too.
+   - The skill mentions the rig (Decision 20) in 0003 step 6.
 
 ## Out of scope
 
