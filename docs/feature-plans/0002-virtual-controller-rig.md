@@ -225,7 +225,9 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     source of `Live` API usage and as a reference script for `outline_reference_script`.
     Confirmed (user, 2026-11-19): AbletonMCP is a reference as well as a test tool. Its facts
     stay `documented` until the index or the rig checks them, and are double-checked for a
-    better way before the skill builds on them.
+    better way before the skill builds on them. The skill may contain what comes from it (its
+    API usage, patterns, MIT code with the licence notice) once verified: `observed` in the
+    index or `tested` on the rig (user, 2026-11-19).
 
 ## Open questions
 
