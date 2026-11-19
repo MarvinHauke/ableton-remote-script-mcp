@@ -321,7 +321,13 @@ _Last updated: 2026-11-19 (0003 Decision 31 built, the page follows the playhead
     clip plays, a page pick pauses it until the transport starts or the clip changes
     (`PageLoopSelectorComponent`); `page-follows` and `page-one-pick` added, `page-two` picks page 2 by hand and it stays. Next:
     review, install, restart, track 9, `rig run`; the user tries the follow on the panel, then
-    the APC run (Decisions 12, 14), with the results page.
+    the APC run (Decisions 12, 14), with the results page. `rig run` 2026-11-19: 39 passed,
+    0 failed, 2 asked (the three page checks pass).
+  - **After step 5, before step 6** (user, 2026-11-19): a local disassembly (Python's `dis`) of
+    12.4.16's `ableton/v3`, and the `v2` modules v3 inherits from, into `reference/`
+    (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on
+    three facts this step needed (the loop selector's slot order, `_update_matrix`, the note
+    editor's `set_clip`), and step 6's facts are to be checked against 12.4.16.
 
 ## After grilling
 
@@ -333,6 +339,10 @@ _Last updated: 2026-11-19 (0003 Decision 31 built, the page follows the playhead
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [needs-triage] 0001 (index, MCP): the order of what a method does (which slots `__init__`
+  registers, which method calls which) is not in the index; 0003 step 5 needed it twice and read
+  the `.pyc` bytecode by hand. A statements feature for the MCP? Touches the index schema: grill.
 
 - [needs-triage] Tool findings from 0003 step 1 (results page, findings 3 and 5–10): `element-name`
   gives up on `**dict` in `add_…` calls; `check_names` counts instance attributes of a mixin's
