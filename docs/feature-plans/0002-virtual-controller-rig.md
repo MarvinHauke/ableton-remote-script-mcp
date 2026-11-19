@@ -223,6 +223,9 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     and deleting a clip in the slot to move the selection (not known to move it, and it changes
     the Set for nothing). AbletonMCP's code is MIT: it may also serve as a cited, `documented`
     source of `Live` API usage and as a reference script for `outline_reference_script`.
+    Confirmed (user, 2026-11-19): AbletonMCP is a reference as well as a test tool. Its facts
+    stay `documented` until the index or the rig checks them, and are double-checked for a
+    better way before the skill builds on them.
 
 ## Open questions
 

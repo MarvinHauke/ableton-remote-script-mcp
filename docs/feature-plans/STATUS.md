@@ -288,6 +288,9 @@ _Last updated: 2026-11-19 (0002 Decision 29, the rig selects the slot; 0003 step
   in the rig, the command on the allow-list (`do: {select_clip_slot: {track: 9, scene: 1}}` or
   similar), `song: {selected_track: …, selected_scene: …}` in `state`, and `checks.yaml` without
   the `select-track` question (the track-choice checks can then read the selection too).
+  Also (user, 2026-11-19): AbletonMCP as a reference (a local clone under `reference/` or its
+  path for `outline_reference_script`); its facts `documented`, double-checked before the skill
+  uses them.
 
 ## After grilling
 
