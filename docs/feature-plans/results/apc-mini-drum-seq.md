@@ -1,6 +1,7 @@
 # Results: the APC mini mk1 drum sequencer (plan 0003)
 
-The script is `examples/APC_mini_drum_seq/`, built step by step with the skill and the MCP server
+The script is `examples/APC_mini_mk1_Plus/APC_mini_mk1_Plus/` (until Decision 36,
+`examples/APC_mini_drum_seq/`; now a submodule, the repo `APC_mini_mk1_Plus`), built step by step with the skill and the MCP server
 (`ableton-remote-script`, Live 12.4.16). This page holds the facts it relies on, the tool
 findings, the rig runs and the user's panel and hardware results (Decision 18).
 

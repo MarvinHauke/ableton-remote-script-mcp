@@ -19,6 +19,13 @@ from ableton_remote_script_mcp.query import (
 )
 
 LIVE_12_4_16 = Path("/Applications/Ableton Live 12 Suite.app")
+# The APC mini mk1 script lives in its own repo, a submodule here (plan 0003 Decisions 35-36).
+EXAMPLES = Path(__file__).parent.parent / "examples"
+MK1_PLUS = "APC_mini_mk1_Plus/APC_mini_mk1_Plus"
+needs_mk1_plus = pytest.mark.skipif(
+    not (EXAMPLES / MK1_PLUS / "__init__.py").exists(),
+    reason="the submodule examples/APC_mini_mk1_Plus is not checked out: git submodule update --init",
+)
 SPEC = "ableton.v3.control_surface.control_surface_specification.ControlSurfaceSpecification"
 
 
@@ -191,7 +198,7 @@ def test_skill_template_is_clean_in_12_4_16(index_dir, tmp_path, name):
 
 
 @pytest.mark.local_live
-@pytest.mark.parametrize("name", ["APC_mini_mk1", "Faderfox_UC4", "Rig_Identity", "APC_mini_drum_seq"])
+@pytest.mark.parametrize("name", ["APC_mini_mk1", "Faderfox_UC4", "Rig_Identity", pytest.param(MK1_PLUS, marks=needs_mk1_plus)])
 def test_example_is_clean_in_12_4_16(index_dir, name):
     folder = Path(__file__).parent.parent / "examples" / name
     answer = validate_script(folder, index_dir, "12.4.16")
@@ -211,12 +218,13 @@ def test_session_ring_warning_without_identity_in_12_4_16(index_dir, tmp_path):
 
 
 @pytest.mark.local_live
+@needs_mk1_plus
 def test_session_ring_warning_only_with_a_component_that_needs_the_ring_in_12_4_16(index_dir, tmp_path):
     """plan 0003 step 1: the drum sequencer without its mixer, track choice and own ring maps no
     component that depends on the session ring, so the missing identity reply draws no warning;
     a mixer section brings it back."""
-    folder = tmp_path / "APC_mini_drum_seq"
-    shutil.copytree(Path(__file__).parent.parent / "examples/APC_mini_drum_seq", folder)
+    folder = tmp_path / "APC_mini_mk1_Plus"
+    shutil.copytree(EXAMPLES / MK1_PLUS, folder)
     init = folder / "__init__.py"
     init.write_text("\n".join(line for line in init.read_text().splitlines()
                               if not line.lstrip().startswith("session_ring_component_type")))
@@ -262,11 +270,12 @@ def test_uc4_controller_model(index_dir):
 
 
 @pytest.mark.local_live
+@needs_mk1_plus
 def test_drum_seq_controller_model(index_dir):
     """plan 0003 step 1: the rig reads the sequencer's grid rows, top row first."""
     from ableton_remote_script_mcp.rig.controller import controller_for_folder
 
-    ctl, why = controller_for_folder(Path(__file__).parent.parent / "examples/APC_mini_drum_seq", index_dir, "12.4.16")
+    ctl, why = controller_for_folder(EXAMPLES / MK1_PLUS, index_dir, "12.4.16")
     assert ctl is not None, why
     assert len(ctl.elements) == 78 and not ctl.unresolved  # 74, and the 4 resolution pads (Decision 30)
     assert ctl.element("steps[0]").key == (0x90, 56) and ctl.element("steps[31]").key == (0x90, 39)
@@ -278,7 +287,7 @@ def test_drum_seq_controller_model(index_dir):
 
 
 @pytest.mark.local_live
-@pytest.mark.parametrize("name", ["Faderfox_UC4", "APC_mini_drum_seq"])
+@pytest.mark.parametrize("name", ["Faderfox_UC4", pytest.param(MK1_PLUS, marks=needs_mk1_plus)])
 def test_example_check_file_names_its_elements(index_dir, name):
     from ableton_remote_script_mcp.rig.checks import (
         check_names,
@@ -298,7 +307,7 @@ def test_example_check_file_names_its_elements(index_dir, name):
 
 
 @pytest.mark.local_live
-@pytest.mark.parametrize("name", ["Faderfox_UC4", "Rig_Identity", "APC_mini_drum_seq"])
+@pytest.mark.parametrize("name", ["Faderfox_UC4", "Rig_Identity", pytest.param(MK1_PLUS, marks=needs_mk1_plus)])
 def test_example_device_profiles_name_their_elements(index_dir, name):
     from ableton_remote_script_mcp.rig.controller import controller_for_folder
     from ableton_remote_script_mcp.rig.profile import check_profile_names, load_profile
