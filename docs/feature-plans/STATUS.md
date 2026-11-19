@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0001 Decision 56, stubs for writing by hand, next; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-20 (0001 Decision 56 task 1 built, the stubs fix; task 2 next; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -382,10 +382,16 @@ _Last updated: 2026-11-19 (0001 Decision 56, stubs for writing by hand, next; 00
 
 ## Small items
 
-- **Next (0001 Decision 56):** stubs for writing scripts by hand, three tasks in order, branch
+- **In work (0001 Decision 56):** stubs for writing scripts by hand, three tasks in order, branch
   `feat/0001-stubs-hand-dev` (from `chore/submodule-guards`, both unmerged): (1) the stubs'
-  property and control-decorator fix, (2) `build-stubs --project`, (3) the docs page
-  "Editor setup". The finding below is task 1's input.
+  property and control-decorator fix, **built 2026-11-20** (`APC_mini_mk1_Plus` 13 → 2 errors,
+  both the control idiom, which no stub can fix: the plan's Decision 56 has the details and the
+  user's open question); (2) `build-stubs --project`, next; (3) the docs page "Editor setup".
+- [needs-triage] 0001 (index): the index keeps only the last `def` of a name (architect,
+  2026-11-20, from task 1). `lookup class GridResolutionComponent` shows `index` as a method
+  `(self, index)` with `index.setter`, not a property; controls and `@listens` slots show as
+  methods; a `NamedTuple`'s fields (annotations) are missing. The stubs work around all three;
+  the index fix changes its content (a rebuild): grill.
 - [idea, validate/install] (user's run, 2026-11-19): `install examples/APC_mini_mk1_Plus` (the
   repo root) gave `create-instance` "no __init__.py". When the folder has none but exactly one
   subfolder that has one, say "did you mean `<folder>/<sub>`?". Also: without `--build` the
@@ -397,7 +403,7 @@ _Last updated: 2026-11-19 (0001 Decision 56, stubs for writing by hand, next; 00
   - A control's decorator (`@finer_button.pressed` over `def finer_button`) reads as a
     self-reference, and `MethodType` attribute writes fail (`subject`, `name`, `looping`).
   - Fix in the stubs (emit a property, give controls a `pressed` decorator type) before the user
-    relies on them.
+    relies on them. Done 2026-11-20, except the control idiom (above).
 - [todo, APC_mini_mk1_Plus] (user, 2026-11-19): the LICENSE holder becomes `MarvinHauke` with that
   repo's next commit.
 - [idea, later] From the user's test list (0003 results page): pad preview as an option; the

@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand in work (Decision 56, task 1 built 2026-11-20); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -897,6 +897,26 @@ meant to do, and uses only API names that exist in the Live build they target.
        `looping`) are checked for the same cause. Done when basedpyright in standard mode, run
        on the four examples, reports no error from a gap in the stubs. A test reads the
        generated stub of a `listenable_property` with a setter.
+       - **Built 2026-11-20** (architect, solo). The cause was the index: it keeps the last `def`
+         of a name, so three kinds of member came out as plain methods. The stubs now read them
+         from their decorators:
+         - `@<name>.setter` (or `.deleter`): a `@property` with its setter (123 in 12.4.16);
+         - `@<name>.<event>` (a control's handler under the control's own name, `@matrix.released`)
+           and `@listens`, `@listens_group`, `@subject_slot(_group)`, `@lazy_attribute`: an
+           attribute, since at runtime it is the control or the slot (`.subject` can be set);
+         - a `NamedTuple` (its fields are annotations, which the index doesn't hold): a plain
+           class that takes any arguments and has any attribute.
+
+         pyright 1.1.404 and basedpyright 1.31 (standard mode) on the four examples against
+         12.4.16: `APC_mini_mk1_Plus` 13 → 2 errors, the other three 5 as before, `Rig_Identity` 0.
+         All 7 come from pyright reading the scripts' own code: an attribute that may be `None`
+         (3), and the control idiom (4).
+       - **The control idiom can't be fixed in the stubs** (architect, 2026-11-20, tried): for
+         `b = ButtonControl(…)` followed by `@b.pressed` over `def b`, pyright reports "refers to
+         itself" whatever type the stub gives `pressed` (`Any`, a method returning the control,
+         `Self`, a generic `F -> F`). pyright special-cases only a property's `.setter`. A script
+         avoids it with `b: Any = ButtonControl(…)`, no change at runtime. **Open for the user:**
+         accept this, and say so on the "Editor setup" page (task 3), or change the examples.
     2. **`build-stubs --project <folder>` (core).** It writes the stubs to `<folder>/stubs`,
        creates a `pyrightconfig.json` there when there is none (`stubPath: "stubs"`,
        `pythonVersion: "3.11"`, `reportMissingModuleSource: false`; an existing one is left

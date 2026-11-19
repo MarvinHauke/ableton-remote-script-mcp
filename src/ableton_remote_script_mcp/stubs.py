@@ -11,6 +11,9 @@ What a stub holds, all from the index (`observed`):
   their class, methods with their parameters (literal defaults kept, others `...`), properties
   (with a setter when there is one), class attributes, and the instance attributes its methods
   assign (`self._x = …`, from the statement summaries);
+- the members the index keeps as methods although they aren't (it holds the last `def` of a
+  name): a property read from its `@<name>.setter`, controls and listener slots as attributes,
+  and a `NamedTuple` (whose fields the index lacks) as a class that takes any field;
 - the listener methods the framework makes from a class's `__events__` or
   `__subject_events__` (`add_<e>_listener` and so on), marked `documented`.
 
@@ -123,10 +126,42 @@ def _stored_function(m: dict) -> bool:
     return not params or params[0].get("kind") in ("var_positional", "var_keyword", "keyword_only")
 
 
+# Decorators that make a method into an object the class keeps under its name: a listener slot
+# (`self._on_x.subject = …`) or a lazily computed attribute
+_SLOT_DECORATORS = {"listens", "listens_group", "subject_slot", "subject_slot_group", "lazy_attribute"}
+_PROPERTY_PARTS = {"setter", "getter", "deleter"}
+
+
+def _decorator_head(decorator: str) -> str:
+    return re.split(r"[(\[]", decorator, maxsplit=1)[0].strip()
+
+
+def is_slot_or_control(name: str, m: dict) -> bool:
+    """A "method" that is an object at runtime: a listener slot (`@listens(…)`) or a control whose
+    handler was written under the control's own name (`@play_button.pressed` above
+    `def play_button`; the control's decorator gives the control back). A handler under another
+    name (`@jog.pressed` above `def _on_jog`) is the control too, but stays a method: nobody
+    reads it, and it causes no error."""
+    for d in m.get("decorators", []):
+        head = _decorator_head(d)
+        if head in _SLOT_DECORATORS:
+            return True
+        owner, _, part = head.partition(".")
+        if owner == name and part and part not in _PROPERTY_PARTS:
+            return True
+    return False
+
+
 def _method(name: str, m: dict, indent: str) -> list[str]:
     kind = m.get("kind")
     decorators = m.get("decorators", [])
     lines = []
+    # A property whose getter isn't `@property` (v3's `listenable_property`): the index keeps the
+    # last `def` of the name, the setter, so the getter is read from its `@<name>.setter`
+    # (a `.deleter` or `.getter` last most likely follows a setter, so it keeps one)
+    if any(f"{name}.{part}" in decorators for part in _PROPERTY_PARTS):
+        m = {**m, "kind": "property", "params": [{"name": "self"}], "setter": True}
+        kind = "property"
     is_property = kind == "property" or "listenable_property" in decorators
     if is_property:
         lines.append(f"{indent}@property")
@@ -141,6 +176,12 @@ def _method(name: str, m: dict, indent: str) -> list[str]:
     if is_property and m.get("setter"):
         lines += [f"{indent}@{name}.setter", f"{indent}def {name}(self, value: Any) -> None: ..."]
     return lines
+
+
+_NAMED_TUPLE = {"__init__": "def __init__(self, *a: Any, **k: Any) -> None: ...  # fields not in the index",
+                "__getattr__": "def __getattr__(self, name: str) -> Any: ...",
+                "__iter__": "def __iter__(self) -> Any: ...",
+                "__getitem__": "def __getitem__(self, i: Any) -> Any: ..."}
 
 
 class _Writer:
@@ -163,16 +204,23 @@ class _Writer:
 
     def _class(self, c: dict, nested: dict[str, list[dict]], indent: str, live: bool) -> list[str]:
         bases = [b for b in (self._base(b, live) for b in c.get("bases", [])) if b]
+        # A NamedTuple's fields are annotations, which the index doesn't hold: written as a plain
+        # class that takes any arguments and has any attribute, not one with no fields
+        named_tuple = any(b.get("resolved") == "typing.NamedTuple" for b in c.get("bases", []))
+        if named_tuple:
+            bases = [b for b in bases if b.rsplit(".", 1)[-1] != "NamedTuple"]
         head = f"{indent}class {c['name']}" + (f"({', '.join(bases)})" if bases else "") + ":"
         inner = indent + "    "
         body = _doc(c.get("docstring"), inner)
         children = nested.get(c["qualname"], [])
         child_names = {k["name"] for k in children}
         members = c.get("members", {})
+        if named_tuple:
+            body += [f"{inner}{line}" for name, line in _NAMED_TUPLE.items() if name not in members]
         for name, m in members.items():
             if not _ok(name) or name in child_names:
                 continue
-            if m.get("kind") == "attribute" or _stored_function(m):
+            if m.get("kind") == "attribute" or _stored_function(m) or is_slot_or_control(name, m):
                 body.append(f"{inner}{name}: Any")
             else:
                 body += _method(name, m, inner)

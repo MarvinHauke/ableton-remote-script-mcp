@@ -96,3 +96,27 @@ def test_parameters_defaults_and_stored_functions():
                                            {"call": "f", "target": "self._y, self._z"},
                                            {"store": "self._x.child", "value": "2"}]}}
     assert instance_attributes(members) == ["_x", "_y", "_z"]
+
+
+
+def test_members_the_index_keeps_as_methods(stubs):
+    """0001 Decision 56: the index keeps the last `def` of a name. A `listenable_property` with a
+    setter is read from its `@<name>.setter`; a control's handler under the control's own name
+    and a listener slot are objects at runtime, so attributes; a NamedTuple takes any field."""
+    _, out = stubs
+    grid = read(out, "ableton/v3/control_surface/components/grid_resolution.pyi")
+    assert ("    @property\n    def index(self) -> Any: ...\n"
+            "    @index.setter\n    def index(self, value: Any) -> None: ...") in grid
+    assert "    resolution_buttons: Any" in grid
+    assert "    _GridResolutionComponent__on_clip_changed: Any" in grid
+    assert "class GridEntry:\n    def __init__(self, *a: Any, **k: Any) -> None: ...  # fields not in the index" in grid
+
+
+def test_property_parts_and_handlers_under_another_name():
+    from ableton_remote_script_mcp.stubs import _method, is_slot_or_control
+
+    deleter = {"kind": "method", "params": [{"name": "self"}], "decorators": ["value.deleter"]}
+    assert "    @value.setter" in _method("value", deleter, "    ")  # a deleter follows a setter
+    # `@jog.pressed def _on_jog` is the control at runtime too; written as a method (no error)
+    handler = {"kind": "method", "params": [{"name": "self"}, {"name": "b"}], "decorators": ["jog.pressed"]}
+    assert not is_slot_or_control("_on_jog", handler)
