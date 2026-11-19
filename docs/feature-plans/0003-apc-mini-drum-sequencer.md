@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 1 on `feat/0003-step-1-tracer` (0002 steps 6a and 6b are built)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 1 on `feat/0003-step-1-tracer`: built, loaded in Live, rig run next._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -101,7 +101,7 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
 
 ## Testing Decisions
 
-- **No new package code is planned.** The script is an example, so its seams are the existing
+- **No new package code is planned** (two fixes found in step 1: Decision 23). The script is an example, so its seams are the existing
   ones: `validate` and `check-names` (no errors, no unknown names), `outline` of the folder,
   and the rig.
 - **Local-only tests** (`local_live`, like the UC4 example's): the example validates clean
@@ -226,6 +226,17 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     user in Live says so in its checks, and the user is asked once per step.
 21. **The steps are approved as written** (user, 2026-11-19): order and content as in Steps;
     step 1 is built on `feat/0003-step-1-tracer`, branched from 0002 step 6b's branch.
+22. **The clip: the track's playing clip first, as v3 does** (user, 2026-11-19, step 1 review;
+    amends Decision 8). v3's target track takes the clip that plays on the selected track and
+    the selected scene's slot only when none plays (`documented`, 12.0 decompile; checked on the
+    rig). The script keeps v3's behaviour, which Ableton's own sequencers have. Rejected: a target
+    track class of our own that always takes the selected slot.
+23. **Two package fixes in step 1** (architect, 2026-11-19, step 1; amends Testing Decisions'
+    "no new package code"): `lookup class` prints a class whose answer was cut instead of raising
+    `KeyError`, and the validator's `session-ring` warning fires only when a mapped component
+    depends on the session ring (`@depends(session_ring=…)` along its MRO) or the mappings can't
+    be read. Neither changes a contract: the answer core, the MCP tools and the exit codes are
+    as before. Narrows plan 0001 step 10's rule (0001 Decision 48).
 
 ## Open questions
 

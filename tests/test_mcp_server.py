@@ -142,3 +142,16 @@ def test_a_tool_and_the_skill_script_give_the_same_answer(index_dir):
                              text=True, check=False, env=env)
         _, result = _call(index_dir, tool, arguments)
         assert json.loads(run.stdout) == result.structured_content, script_args
+
+
+def test_the_cli_prints_a_class_whose_answer_was_cut(index_dir):
+    # 0003 step 1: `lookup class Live.Clip.Clip` raised KeyError 'all_members' when the cap took
+    # the member lists out of the class
+    from ableton_remote_script_mcp.cli import _format_class
+
+    for max_tokens in (150, 300, 600):
+        answer = api.lookup(RING, OLD, max_tokens=max_tokens, index_dir=index_dir)
+        assert answer["cut"]["fields"]
+        for c in answer["classes"]:
+            text = _format_class(c, own_only=False)
+            assert c["qualified_name"] in text

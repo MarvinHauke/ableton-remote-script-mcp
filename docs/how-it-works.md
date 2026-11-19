@@ -78,7 +78,7 @@ classes as `outline` would show them, without running anything.
 | `override-signature` | error | A method that overrides one of the framework's methods but can't take the arguments the framework's signature allows: too few or too many positional arguments, or keyword arguments that don't match. A renamed parameter is fine. `__init__` is yours to call and isn't checked. |
 | `component-guard` | error | An element or component built in a control surface's `__init__` outside `with self.component_guard():`, also through a method `__init__` calls. v3's `setup()` and the Elements class are exempt: the framework runs them inside the guard. |
 | `disconnect-base` | warning | A `disconnect` that doesn't call the `disconnect` it overrides, so the framework's clean-up doesn't run. |
-| `session-ring` | warning | A v3 Specification with no identity reply and the framework's own session ring: the framework enables the ring only after the controller is identified, so Live draws no session box. |
+| `session-ring` | warning | A v3 Specification with no identity reply and the framework's own session ring: the framework enables the ring only after the controller is identified, so Live draws no session box. Only when a mapped component uses the ring (the mixer, the session, view control), or the mappings can't be read. |
 
 Every close name the index has is offered with the finding (`close: num_tracks`). What a rule
 can't decide is listed as *not checked*, with the reason. Some examples:

@@ -75,7 +75,8 @@ class SessionRingComponent(SessionRingBase):
 ```
 
 and set `session_ring_component_type = SessionRingComponent` in the Specification. The validator
-warns when a Specification has neither (`session-ring`).
+warns when a Specification has neither and a mapped component depends on the ring
+(`session-ring`).
 `link_session_ring_to_scene_selection` moves the box only for selections made through the
 script's `View_Control` (`scene_encoder`, `prev_scene_button`, …), not for clicks in Live
 (`observed` in 12.4.16's `SessionRingSelectionLinking`, `tested` on the UC4).

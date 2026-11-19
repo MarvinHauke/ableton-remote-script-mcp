@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 steps approved, Decision 21, step 1 next on `feat/0003-step-1-tracer`; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -236,9 +236,17 @@ _Last updated: 2026-11-19 (0003 steps approved, Decision 21, step 1 next on `fea
   user drew read back, an add and a clear seen by the user; `get_clip_notes`,
   `get_session_snapshot`, `add_notes_to_clip` and `clear_notes_from_clip` joined `TESTED`.
   Plan 0002's steps are done except 6a's look at the colours (with 0003 step 1).
-- 0003 steps approved by the user (2026-11-19, Decision 21). Next: 0003 step 1 (the tracer) on
-  `feat/0003-step-1-tracer`, in a fresh architect session. Not yet in `main`: 0003's spec,
-  0002 6a and 6b (merge when the user asks).
+- 0003 steps approved by the user (2026-11-19, Decision 21); 0003's spec and 0002 6a and 6b
+  merged into main.
+- 0003 step 1 built on `feat/0003-step-1-tracer` (2026-11-19, solo): `examples/APC_mini_drum_seq/`
+  (v3 `StepSequenceComponent` on the top four rows, a pad bank of our own that selects the pad it
+  plays, the clip preset, `grid_resolution` and `sequencer_clip` injected as `const`),
+  `device.yaml` with the LED colours, a first `checks.yaml`, the results page
+  [results/apc-mini-drum-seq.md](results/apc-mini-drum-seq.md) with 10 tool findings. Two package
+  fixes (Decision 23): `lookup class` on a cut answer, `session-ring` only for components that use
+  the ring. The clip is v3's: the playing one first (Decision 22, user). 235 tests. Loaded in Live
+  12.4.16 on `ARS Test Rig`, no traceback. Next: the rig run (waits for the user's go), then the
+  results into the page.
 
 ## After grilling
 
@@ -250,6 +258,13 @@ _Last updated: 2026-11-19 (0003 steps approved, Decision 21, step 1 next on `fea
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [needs-triage] Tool findings from 0003 step 1 (results page, findings 3 and 5–10): `element-name`
+  gives up on `**dict` in `add_…` calls; `check_names` counts instance attributes of a mixin's
+  `__init__` (`component_map`) as not members; no tool says which dependencies the framework
+  injects and that `_get_additional_dependencies()` takes functions (a validator rule?);
+  `lookup class <short name>` with many matches prints nothing but the cut note; `outline` of
+  `Launchkey_MK4` shows no Specification or mappings; `get_class("Clip")` buries `Live.Clip.Clip`.
 
 - [grilled] **MCP server design ideas for step 11, from the user's sources (2026-11-17):**
   Zhang, Kraska, Khattab, *Recursive Language Models* (arxiv.org/abs/2512.24601), Zhang's blog

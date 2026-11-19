@@ -1,0 +1,82 @@
+# The drum sequencer's checks for `ableton-remote-script-mcp rig run` (plan 0003 step 1; each
+# step of the plan adds its own, Decision 20). Run it in the test Set with a MIDI track 9 that
+# has a Drum Rack with a kit, its slot in scene 1 empty and no clip playing on it (the sequencer
+# edits a playing clip first, plan 0003 Decision 22). The rig can't select a track: select track 9
+# and its scene 1 slot before the run. It changes the Set (a clip is created and played) and
+# never saves.
+#
+# Live sends an LED value only when it changes, so the pad steps first select another pad.
+# The pads assume the Drum Rack shows its default bank: C1 (36) is the bottom-left pad, pads[12]
+# (the matrix lists its rows top first), and 37 is pads[13] (documented: v3's drum group puts the
+# lowest pad bottom left; this run tests it).
+
+script: .
+build: 12.4.16
+settle: 1.5
+requires:
+  drum_racks: [9]
+  empty_slots: [{track: 9, scene: 1}]
+steps:
+  - id: select-track
+    description: the sequencer works on the selected track and scene
+    ask_user: Were track 9 (the Drum Rack) and its empty slot in scene 1 selected in Session View when the run started?
+
+  - id: pad-select-other
+    description: a pad press selects that pad (green)
+    send:
+      - pads[13]: press
+    expect:
+      pads[13]: 1
+    log: clean
+  - id: pad-select-first
+    description: C1 is selected; the other pad shows it has a sound (yellow)
+    send:
+      - pads[12]: press
+    expect:
+      pads[12]: 1
+      pads[13]: 5
+    log: clean
+
+  - id: step-creates-clip
+    description: on an empty slot, a step press creates the "Drum Seq" clip (2 bars, looping) with the step's note
+    send:
+      - steps[0]: press
+    expect:
+      steps[0]: 1
+    state:
+      track 9 clip 1:
+        has_clip: true
+        name: Drum Seq
+        length: 8
+        looping: true
+        notes: [[36, 0, 0.25, 100]]
+    log: clean
+  - id: step-clears
+    description: a second press clears the step's note and its LED
+    send:
+      - steps[0]: press
+    expect:
+      steps[0]: 0
+    state:
+      track 9 clip 1: {notes: []}
+    log: clean
+
+  - id: pad-changes-pitch
+    description: after a pad press the steps write that pad's pitch
+    send:
+      - pads[13]: press
+      - steps[4]: press
+    expect:
+      steps[4]: 1
+    state:
+      track 9 clip 1: {notes: [[37, 1.0, 0.25, 100]]}
+    log: clean
+  - id: step-clears-again
+    description: the step is cleared again, so the clip ends empty
+    send:
+      - steps[4]: press
+    expect:
+      steps[4]: 0
+    state:
+      track 9 clip 1: {notes: []}
+    log: clean
