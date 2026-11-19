@@ -203,7 +203,7 @@ def test_run_checks_state_events_and_do(tmp_path):
     assert {s["id"]: s["verdict"] for s in result["steps"]} == {"mute": "passed", "macro": "passed"}
     assert live.macro == 64
     assert result["steps"][1]["live"][0]["tested"]  # get_device_parameters is on the tested list
-    assert "untested_commands" not in result["steps"][1]
+    assert result["steps"][1]["untested_commands"] == ["set_device_parameter"]  # a write, not yet seen in Live
 
 
 def test_without_abletonmcp_do_steps_skip_and_state_is_not_checked(tmp_path):
@@ -331,3 +331,79 @@ steps:
     assert {s["id"]: s["verdict"] for s in result["steps"]} == {"add": "passed", "clear": "passed"}
     assert "untested_commands" not in result["steps"][0]
     assert live.notes[(0, 0)] == []
+
+
+class SelectingLive(FakeLive):
+    """The user's fork (plan 0002 Decision 29): `select_clip_slot` and the selection in session info."""
+
+    def __init__(self, capable=True):
+        super().__init__()
+        self.capable, self.selection = capable, (0, 0)
+
+    def answer(self, command, params):
+        if command == "get_script_info":
+            return {"status": "success", "result": {**INFO, "capabilities": ["get_session_info"]
+                                                    + (["select_clip_slot"] if self.capable else [])}}
+        if command == "select_clip_slot":
+            track, scene = self.selection
+            self.selection = (params.get("track_index", track), params.get("scene_index", scene))
+            return {"status": "success", "result": {}}
+        answer = super().answer(command, params)
+        if command == "get_session_info":
+            track, scene = self.selection
+            answer["result"].update({"selected_track_index": track, "selected_track_name": "Main" if track is None else f"{track + 1}",
+                                     "selected_scene_index": scene})
+        return answer
+
+
+def test_do_selects_a_track_and_scene_counting_from_one():
+    assert parse_do({"select_clip_slot": {"track": 9, "scene": 1}}, "t") == [
+        ("select_clip_slot", {"track_index": 8, "scene_index": 0})]
+    assert parse_do({"select_clip_slot": {"scene": 3}}, "t") == [("select_clip_slot", {"scene_index": 2})]
+    with pytest.raises(StateError, match="track.*scene"):
+        parse_do({"select_clip_slot": {"clip": 1}}, "t")
+
+
+def test_the_selection_is_set_and_read_back_counting_from_one():
+    from ableton_remote_script_mcp.rig.state import check_state
+
+    live = SelectingLive()
+    mcp = AbletonMCP(sock=live)
+    mcp.call("select_clip_slot", track_index=1, scene_index=1)
+    good = check_state(mcp, {"song": {"selected_track": 2, "selected_scene": 2}})
+    assert [(r["state"], r["ok"], r["tested"]) for r in good] == [
+        ("song selected_track", True, False), ("song selected_scene", True, False)]  # untested until seen in Live
+    live.selection = (None, 0)  # a return track or the master: no index, so its name
+    master, = check_state(mcp, {"song": {"selected_track": "Main"}})
+    assert master["ok"]
+
+
+def test_select_needs_an_abletonmcp_that_has_it():
+    live = SelectingLive(capable=False)
+    mcp = AbletonMCP(sock=live)
+    with pytest.raises(AbletonMCPError, match="select_clip_slot"):
+        mcp.call("select_clip_slot", track_index=0)
+    assert "select_clip_slot" not in {r["type"] for r in live.sent}
+
+
+def test_a_run_names_the_untested_selection_fields_and_the_write(tmp_path):
+    path = tmp_path / "checks.yaml"
+    path.write_text("settle: 0.01\nsteps:\n  - id: select\n    do:\n      - select_clip_slot: {track: 2, scene: 1}\n"
+                    "    state:\n      song: {selected_track: 2, tempo: 120}\n"
+                    "  - id: only-do\n    do:\n      - select_clip_slot: {scene: 2}\n")
+    from ableton_remote_script_mcp.rig.controller import Controller
+    live = SelectingLive()
+    result = run_checks(load_check_file(path), Controller("Box", str(tmp_path)), MemoryPort(reply=lambda m: []),
+                        quiet_wait=lambda p, q, t, **k: wait_quiet(p, 0.01, 0.1), sleep=lambda _: None,
+                        say=lambda *_: None, mcp=AbletonMCP(sock=live), mcp_note="")
+    select, only_do = result["steps"]
+    assert select["verdict"] == "passed" and live.selection == (1, 1)
+    assert select["untested_commands"] == ["get_session_info selected_track", "select_clip_slot"]
+    assert only_do["untested_commands"] == ["select_clip_slot"]
+
+
+def test_without_the_forks_fields_the_selection_fails_and_says_why():
+    from ableton_remote_script_mcp.rig.state import NO_SELECTION, check_state
+
+    row, = check_state(AbletonMCP(sock=FakeLive()), {"song": {"selected_track": 9}})
+    assert not row["ok"] and row["got"] == NO_SELECTION

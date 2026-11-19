@@ -44,6 +44,7 @@ from pathlib import Path
 
 from .controller import Controller, Element
 from .ports import describe, parse_message, wait_quiet
+from .abletonmcp import TESTED
 from .state import (
     StateError,
     check_events,
@@ -346,11 +347,14 @@ def _run_step(step: Step, ctl: Controller, port, log: LogWatch | None, sleep, qu
                 what = r.get("state") or r.get("event")
                 reasons.append(f"{what}: expected {r.get('expected', 'it')}, got {r['got']}"
                                if "state" in r else f"no event {what} during the step")
-        untested = sorted({r["command"] for r in live if r.get("tested") is False})
-        if untested:
-            result["untested_commands"] = untested
+        result["untested_commands"] = sorted({r.get("untested_as", r["command"])
+                                              for r in live if r.get("tested") is False})
     elif step.state or step.events:
         result["not_checked"] = [*(f"state {k}" for k in step.state), *(f"event {e['type']}" for e in step.events)]
+    if mcp is not None:  # the writes too (plan 0002 Decision 25)
+        untested = set(result.pop("untested_commands", [])) | {c for c, _ in step.do if c not in TESTED}
+        if untested:
+            result["untested_commands"] = sorted(untested)
     if step.log_clean and log:
         tracebacks = log.new_tracebacks()
         result["tracebacks"] = [t["text"] for t in tracebacks]

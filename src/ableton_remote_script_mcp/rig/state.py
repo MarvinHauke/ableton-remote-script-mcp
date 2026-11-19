@@ -18,6 +18,7 @@ parameter 1); the rig turns it into AbletonMCP's 0-based `track_index`, `clip_in
         state:
           track 1: {mute: true}               # get_track_info: mute, solo, arm, volume, panning, name
           song: {is_playing: false}           # get_session_info: tempo, is_playing, master_track, ...
+          song: {selected_track: 9, selected_scene: 1}  # Live's selection (a return or the master: its name)
           track 2 device 1: {Macro 1: 64}     # get_device_parameters, by parameter name
           track 1 clip 1:                     # the clip in scene 1's slot (step 6b, Decisions 25, 27)
             notes: [[36, 0, 0.25, 100]]       # pitch, start, length[, velocity]; in any order
@@ -29,6 +30,7 @@ parameter 1); the rig turns it into AbletonMCP's 0-based `track_index`, `clip_in
         do:
           - set_device_parameter: {track: 2, device: 1, parameter: 2, value: 64}
           - add_notes_to_clip: {track: 1, clip: 1, notes: [[38, 1, 0.25, 100]]}
+          - select_clip_slot: {track: 9, scene: 1}   # Live's selected track and scene (Decision 29)
         expect: {rack_encoders[0]: 64}
 
 A number matches within `TOLERANCE`; `true`, `false` and text match exactly; a nested field
@@ -53,6 +55,10 @@ NO_CLIP = "(no clip)"
 DEFAULT_VELOCITY = 100  # AbletonMCP's own default for a note without one
 REQUIRE_KEYS = {"tracks", "returns", "devices", "clips", "drum_racks", "empty_slots"}
 CLIP_LENGTH = 4.0  # beats, for a clip `requires` creates
+# Fields of a tested read that came later (the fork's selection, Decision 29): untested until a
+# value the user saw in Live was read back.
+UNTESTED_FIELDS = {"get_session_info": {"selected_track", "selected_scene"}}
+NO_SELECTION = "(no selection: needs an AbletonMCP with select_clip_slot)"
 
 
 class StateError(ValueError):
@@ -68,7 +74,12 @@ def parse_do(raw, where: str) -> list[tuple[str, dict]]:
         (command, params), = item.items()
         if command not in WRITES:
             raise StateError(f"{where}: `do` takes {', '.join(sorted(WRITES))}; not `{command}`")
+        if command == "select_clip_slot" and (not isinstance(params, dict) or not params
+                                              or set(params) - {"track", "scene"}):
+            raise StateError(f"{where}: select_clip_slot takes `track` and/or `scene`")
         params = to_params(params or {}, where)
+        if command == "select_clip_slot" and "clip_index" in params:
+            params["scene_index"] = params.pop("clip_index")
         if command == "add_notes_to_clip":
             notes = params.get("notes")
             if not isinstance(notes, list) or not notes:
@@ -206,11 +217,24 @@ def read_clip(mcp, track: int, slot: int, names) -> dict:
     return got
 
 
+def _song(info: dict) -> dict:
+    """Session info with Live's selection counted from 1, as a check file names it (`selected_track`,
+    `selected_scene`; a selected return track or the master by its name). The fork's fields only."""
+    out = dict(info)
+    if "selected_track_index" in info:
+        i = info["selected_track_index"]
+        out["selected_track"] = info.get("selected_track_name") if i is None else i + 1
+    if "selected_scene_index" in info:
+        i = info["selected_scene_index"]
+        out["selected_scene"] = None if i is None else i + 1
+    return out
+
+
 def read_state(mcp, key: str, names=()) -> dict:
     """The fields of one `state` key, from AbletonMCP's reads."""
     m = STATE_KEY.match(key)
     if m[1] is None:
-        return mcp.read("get_session_info")
+        return _song(mcp.read("get_session_info"))
     if m[2] is None:
         return mcp.read("get_track_info", track_index=int(m[1]) - 1)
     if m[2] == "clip":
@@ -231,10 +255,14 @@ def check_state(mcp, state: dict) -> list[dict]:
         empty_slot = got.get("has_clip") is False and " clip " in key
         for name, want in fields.items():
             command = field_command(key, name)
-            have = got.get(name, NO_CLIP if empty_slot else "(no such field)")
+            missing = (NO_CLIP if empty_slot else NO_SELECTION if name in UNTESTED_FIELDS.get(command, ())
+                       else "(no such field)")
+            have = got.get(name, missing)
             ok = _same_notes(want, have) if name == "notes" and " clip " in key else _same(want, have)
+            late = name in UNTESTED_FIELDS.get(command, ())
             results.append({"state": f"{key} {name}", "expected": want, "got": have, "ok": ok,
-                            "command": command, "tested": command in TESTED})
+                            "command": command, "tested": command in TESTED and not late,
+                            **({"untested_as": f"{command} {name}"} if late else {})})
     return results
 
 

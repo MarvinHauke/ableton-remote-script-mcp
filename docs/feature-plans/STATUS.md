@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0002 Decision 29, the rig selects the slot; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -291,6 +291,15 @@ _Last updated: 2026-11-19 (0002 Decision 29, the rig selects the slot; 0003 step
   Also (user, 2026-11-19): AbletonMCP as a reference (a local clone under `reference/` or its
   path for `outline_reference_script`); its facts `documented`, double-checked before the skill
   uses them.
+- 0003 step 5, first task built on `feat/0003-step-5-rig-selection` (2026-11-19, solo; 0002
+  Decision 29): the rig sets and reads Live's selection (`select_clip_slot`, `song:
+  {selected_track, selected_scene}`), `checks.yaml`'s `select-track` is a `do` with its state
+  read back, and the track-choice steps read the selected track. The fork's half is committed on
+  its own branch `feat/select-clip-slot` (from `cmdabl-testing`; the user merges and pushes).
+  242 tests here, 59 in the fork. Still open: the user installs the fork's script into the User
+  Library (`AbletonMCP/__init__.py`) and reloads it in Live; then a `rig run`; once the user saw
+  the selection move in Live, `select_clip_slot` and the two fields join `TESTED`. Then step 5's
+  main part: the full check file passing, the user's pattern on the panel and on the APC.
 
 ## After grilling
 

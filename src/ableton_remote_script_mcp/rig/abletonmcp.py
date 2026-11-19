@@ -6,7 +6,7 @@ Protocol (AbletonMCP 1.7.1, read from its `__init__.py`): the client writes one 
 `{"status": "success", "result": ...}` or `{"status": "error", "message": ...}` on the same
 connection. Reads run off Live's main thread; writes are scheduled on it.
 
-Only the commands in `ALLOWED` are ever sent (Decisions 6, 25, 27); never its rating, dataset-consent,
+Only the commands in `ALLOWED` are ever sent (Decisions 6, 25, 27, 29); never its rating, dataset-consent,
 browser or clip-deleting commands. A read is repeated until two answers agree, because a first read after the user
 reopened Live failed once (`Boost.Python.ArgumentError … None(Song)`, 2026-11-18). With another
 script version, or no socket, the rig runs without AbletonMCP.
@@ -24,8 +24,12 @@ READS = {"get_script_info", "get_session_info", "get_track_info", "get_device_pa
          "get_session_snapshot"}  # only for a clip's looping, loop_start, loop_end: Decision 27
 WRITES = {"create_midi_track", "create_audio_track", "create_clip", "set_tempo", "set_device_parameter",
           "fire_clip", "stop_clip", "start_playback", "stop_playback",
-          "add_notes_to_clip", "clear_notes_from_clip"}  # the notes three: Decision 25
+          "add_notes_to_clip", "clear_notes_from_clip",  # the notes three: Decision 25
+          "select_clip_slot"}  # the user's fork only: Decision 29
 ALLOWED = READS | WRITES
+# Commands the upstream 1.7.1 script lacks: sent only when `get_script_info` lists them among its
+# `capabilities` (the user's fork, MarvinHauke/ableton-mcp, keeps the version 1.7.1).
+NEEDS_CAPABILITY = {"select_clip_slot"}
 
 # Commands whose answer was checked against a state the user set by hand in Live (Decision 6),
 # with the evidence. A command not listed here is used, but its result is labelled untested.
@@ -66,6 +70,9 @@ class AbletonMCP:
         """One command; its `result`. Raises Forbidden before sending anything not allowed."""
         if command not in ALLOWED:
             raise Forbidden(f"the rig never sends AbletonMCP's `{command}` (plan 0002 Decision 6)")
+        if command in NEEDS_CAPABILITY and command not in (getattr(self, "info", None) or {}).get("capabilities", []):
+            raise AbletonMCPError(f"this AbletonMCP doesn't list `{command}` in its capabilities "
+                                  "(MarvinHauke/ableton-mcp has it)")
         self._sock.sendall(json.dumps({"type": command, "params": params}).encode("utf-8"))
         buffer = b""
         decoder = json.JSONDecoder()

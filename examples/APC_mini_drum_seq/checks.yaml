@@ -1,10 +1,11 @@
 # The drum sequencer's checks for `ableton-remote-script-mcp rig run` (plan 0003 steps 1-4; each
 # step of the plan adds its own, Decision 20). Run it in the test Set with a MIDI track 9 that
 # has a Drum Rack with a kit, its slots in scenes 1-3 empty and no clip playing on it (the
-# sequencer edits a playing clip first, plan 0003 Decision 22). The rig can't select a track:
-# select track 9 and its scene 1 slot before the run. It changes the Set (three clips are created
-# and played, the transport is stopped, a MIDI track 10 is added at the end, the selected track
-# moves, faders set the volumes of tracks 1 and 8 and the master) and never saves;
+# sequencer edits a playing clip first, plan 0003 Decision 22). The rig selects track 9 and its
+# scene 1 slot itself, with an AbletonMCP that has `select_clip_slot` (plan 0002 Decision 29);
+# with upstream 1.7.1 the steps that set or read the selection fail. It changes the Set (three
+# clips are created and played, the transport is stopped, a MIDI track 10 is added at the end,
+# the selected track moves, faders set the volumes of tracks 1 and 8 and the master) and never saves;
 # delete the three clips and track 10 by hand before the next run, or restart Live.
 #
 # Live sends an LED value only when it changes, so the pad steps first select another pad.
@@ -20,8 +21,12 @@ requires:
   empty_slots: [{track: 9, scene: 1}, {track: 9, scene: 2}, {track: 9, scene: 3}]
 steps:
   - id: select-track
-    description: the sequencer works on the selected track and scene
-    ask_user: Were track 9 (the Drum Rack) and its empty slot in scene 1 selected in Session View when the run started?
+    description: the rig selects track 9 (the Drum Rack) and its empty slot in scene 1; the sequencer works on them
+    do:
+      - select_clip_slot: {track: 9, scene: 1}
+    state:
+      song: {selected_track: 9, selected_scene: 1}
+    log: clean
 
   - id: pad-select-other
     description: a pad press selects that pad (green blinking)
@@ -314,6 +319,7 @@ steps:
       pads[12]: 0
       steps[0]: 0
     state:
+      song: {selected_track: 10}
       track 10 clip 1: {has_clip: false}
     log: clean
 
@@ -327,6 +333,8 @@ steps:
       - scene_buttons[6]: press
     expect:
       pads[12]: 2
+    state:
+      song: {selected_track: 9}
     log: clean
   - id: track-next
     description: scene button 8 selects track 10 again; no Drum Rack, so the pads go dark
@@ -334,6 +342,8 @@ steps:
       - scene_buttons[7]: press
     expect:
       pads[12]: 0
+    state:
+      song: {selected_track: 10}
     log: clean
   - id: fader-stays
     description: with track 10 selected, fader 1 still sets track 1 (the ring doesn't follow the selection)
@@ -357,6 +367,8 @@ steps:
     timeout: 5.0
     expect:
       scene_buttons[6]: 0
+    state:
+      song: {selected_track: 1}
     log: clean
   - id: track-second
     description: scene button 8 selects track 2, and scene button 7 is on again
@@ -364,6 +376,8 @@ steps:
       - scene_buttons[7]: press
     expect:
       scene_buttons[6]: 1
+    state:
+      song: {selected_track: 2}
     log: clean
 
   # Step 4: the faders, absolute: only the volume they reach is checked (0001 Decision 29)
