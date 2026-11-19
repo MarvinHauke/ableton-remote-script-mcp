@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0001 Decision 56, stubs for writing by hand, next; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -382,6 +382,10 @@ _Last updated: 2026-11-19 (0003 Decision 36 built: the sequencer in its own repo
 
 ## Small items
 
+- **Next (0001 Decision 56):** stubs for writing scripts by hand, three tasks in order, branch
+  `feat/0001-stubs-hand-dev` (from `chore/submodule-guards`, both unmerged): (1) the stubs'
+  property and control-decorator fix, (2) `build-stubs --project`, (3) the docs page
+  "Editor setup". The finding below is task 1's input.
 - [finding, build-stubs] (architect, 2026-11-19, on `APC_mini_mk1_Plus` with the 12.4.16
   stubs): the imports resolve, but pyright and basedpyright report 13 false errors.
   - A property with a setter (`listenable_property`, e.g. `StepResolutionComponent.index`) comes
