@@ -250,3 +250,20 @@ stops; tracks 1-8 of the test Set each had one). After the fix (`rig run`: 40 pa
 Yellow Kit, 40 passed with the 808 Core Kit on track 9), the user: "its working right now. Also
 switching the rack." No dropped press was reported: the old drops are explained by the plain
 `ControlSurface`'s LED flood, not the unit (Decision 12).
+
+**The user's test list, 2026-11-19, Live 12.4.16** (16 points, critical first):
+- works: the steps edit the selected clip while another plays (Decision 32); an empty slot
+  while playing creates a running clip; following comes back after a transport restart; the
+  loop gesture on the APC; a picked page holds; the panel's Shift-click, Cmd-click, Esc and `?`;
+  a return or master track selected; the last scene; no dropped press.
+- a new clip starts at once, legato (v3's `create_sequencer_clip` fires it with
+  `force_legato=True` and no quantization, 12.4.16 bytecode): it runs in phase with the playing
+  clip, which the user heard as "quantized, with the next upbeat".
+- not working: notes on a track with the Young Blood Kit, an Instrument Rack around a Drum Rack;
+  fixed by Decision 33 (rig: 40 passed with the Yellow Kit, 5 passed on a Young Blood Kit track).
+- no pad preview on the APC: the APC's input had Track off (the architect's advice, wrong); the
+  rig's port has it on. With Track on, Live plays the pads on the armed track.
+- in Arrangement View the steps edit the clicked clip, but the playhead and following don't run
+  (they read the clip's playing position; not in this plan's scope).
+- wishes for later: pad preview as an option; auto-duplicating the content the first time the
+  loop gets longer (as Elektron does); a way back to following (Decision 34).

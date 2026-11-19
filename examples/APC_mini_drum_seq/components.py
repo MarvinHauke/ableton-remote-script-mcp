@@ -21,6 +21,7 @@ from ableton.v3.control_surface.components import (
     TargetTrackComponent,
 )
 from ableton.v3.control_surface.components.grid_resolution import GRID_RESOLUTIONS
+from ableton.v3.control_surface.instrument_finder import find_drum_group_device
 from ableton.v3.control_surface.skin import LiveObjSkinEntry
 from ableton.v3.live import get_bar_length, liveobj_changed, liveobj_valid, scene_index
 
@@ -66,8 +67,9 @@ def create_grid_resolution():
 
 
 def has_drum_rack(track):
-    """Whether a Drum Rack sits directly on the track (one inside another rack is not found)."""
-    return liveobj_valid(track) and any(device.can_have_drum_pads for device in track.devices)
+    """Whether the track has a Drum Rack, also inside an Instrument Rack (v3's finder, as the pad
+    bank uses it; plan 0003 Decision 33)."""
+    return liveobj_valid(track) and liveobj_valid(find_drum_group_device(track))
 
 
 class FaderRingComponent(SessionRingComponent):
@@ -154,8 +156,8 @@ class DrumNoteEditorComponent(NoteEditorComponent):
     playing step itself from the clip's `playing_position` (Decision 17). v3 shows the whole page
     of steps even past the loop end, where a press extends the loop (`extend_loop_for_region`);
     an empty step outside the loop is red here (Decision 10). On a track without a Drum Rack
-    directly on it the steps have no clip, so they stay dark and a press does nothing
-    (Decision 8). A step's time is page time + index x step length: no triplet resolutions
+    (on it or inside its Instrument Rack) the steps have no clip, so they stay dark and a press
+    does nothing (Decision 8). A step's time is page time + index x step length: no triplet resolutions
     (the resolution buttons offer none).
     """
 
@@ -244,8 +246,8 @@ class PageLoopSelectorComponent(LoopSelectorComponent):
 
     While the clip plays, the steps follow the playhead to its page (Decision 31; v3's loop
     selector has no follow, 12.4.16, observed). A track button press that changes the page
-    pauses it, so that page can be edited; it follows again when the transport starts or the
-    clip changes."""
+    pauses it, so that page can be edited; it follows again when the transport starts, the
+    clip changes or the playhead's own page is pressed (Decision 34)."""
 
     def __init__(self, *a, **k):
         self._following = True
@@ -266,7 +268,10 @@ class PageLoopSelectorComponent(LoopSelectorComponent):
         page_time = self._paginator.page_time
         following, self._following = self._following, False
         super()._on_matrix_pressed(button)
-        if self._paginator.page_time == page_time:
+        editing = self.delete_button.is_pressed or self._clipboard.is_copying  # no page change
+        if not editing and self._paginator.page_time == self._playhead_page_time():
+            self._following = True  # the playhead's page: follow again
+        elif self._paginator.page_time == page_time:
             self._following = following  # the same page, or a held step: no pause
 
     def _on_is_playing_changed(self):
@@ -278,13 +283,17 @@ class PageLoopSelectorComponent(LoopSelectorComponent):
         self._follow_playhead()
         super()._update_matrix()
 
-    def _follow_playhead(self):
+    def _playhead_page_time(self):
+        """The start of the page the playhead is on, or None while the clip doesn't play."""
         clip = self._clip
-        if not (self._following and self.song.is_playing and liveobj_valid(clip) and clip.is_playing):
-            return
+        if not (self.song.is_playing and liveobj_valid(clip) and clip.is_playing):
+            return None
         page_length = self._paginator.page_length
-        page_time = (clip.playing_position // page_length) * page_length
-        if page_time != self._paginator.page_time:
+        return (clip.playing_position // page_length) * page_length
+
+    def _follow_playhead(self):
+        page_time = self._playhead_page_time() if self._following else None
+        if page_time is not None and page_time != self._paginator.page_time:
             self._paginator.page_time = page_time  # its slot redraws: the outer draw repeats it
 
 

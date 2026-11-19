@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 Decisions 33-34 built, nested Drum Rack and follow again; Decision 35, its own repo, next; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -339,6 +339,18 @@ _Last updated: 2026-11-19 (0003 Decision 32 built, the steps edit the selected s
     restart, `rig run`, then the rest of the APC run.
   - After Decision 32: `rig run` 40 passed (Yellow Kit), 40 passed (808 Core Kit on track 9).
     The user on the APC: working, also with another rack. **Step 5 done** (results page).
+    Merged into `main` 2026-11-19 (`440f4c9`).
+- 0003 after step 5 on `feat/0003-nested-drum-rack` (2026-11-19, solo): the user's test list
+  (results page). **Decision 33**: a Drum Rack inside an Instrument Rack counts (v3's
+  `find_drum_group_device`). **Decision 34**: the playhead's page turns following on again.
+  `rig run` 40 passed (Yellow Kit), an ad-hoc check 5 passed on a Young Blood Kit track (before
+  the review's delete/copy guard in `_on_matrix_pressed`, not yet run in Live).
+  **Decision 35** (user): the sequencer in its own repo `../APC_mini_drum_seq`, a submodule here
+  at `examples/APC_mini_drum_seq`: the next task, then 0003 step 6. For that task (reviewer):
+  `.gitmodules` with a relative or remote URL, never a home path; a fresh clone needs `git
+  submodule update --init` (tests that read the example: skip or a clear error); CLAUDE.md names
+  the new repo and its owner; its README under the same Ableton-material rules; nothing pushed
+  or published until the user says so.
   - **After step 5, before step 6** (user, 2026-11-19): a local disassembly (Python's `dis`) of
     12.4.16's `ableton/v3`, and the `v2` modules v3 inherits from, into `reference/`
     (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on
@@ -355,6 +367,10 @@ _Last updated: 2026-11-19 (0003 Decision 32 built, the steps edit the selected s
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [idea, later] From the user's test list (0003 results page): pad preview as an option; the
+  first loop extension duplicates the content (Elektron); playhead and following in Arrangement
+  View; a new clip's launch quantization (v3 starts it at once, legato).
 
 - [idea, later] Step locks for the drum sequencer (user, 2026-11-19, after 0003 step 5; out of
   0003's scope): hold a step, faders 1-8 set macros 1-8 of the track's rack as clip automation
