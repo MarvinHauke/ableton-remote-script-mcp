@@ -379,6 +379,16 @@ _Last updated: 2026-11-19 (0003 Decision 36 built: the sequencer in its own repo
 
 ## Small items
 
+- [finding, build-stubs] (architect, 2026-11-19, on `APC_mini_mk1_Plus` with the 12.4.16
+  stubs): the imports resolve, but pyright and basedpyright report 13 false errors.
+  - A property with a setter (`listenable_property`, e.g. `StepResolutionComponent.index`) comes
+    out as a plain method `def index(self, index)`.
+  - A control's decorator (`@finer_button.pressed` over `def finer_button`) reads as a
+    self-reference, and `MethodType` attribute writes fail (`subject`, `name`, `looping`).
+  - Fix in the stubs (emit a property, give controls a `pressed` decorator type) before the user
+    relies on them.
+- [todo, APC_mini_mk1_Plus] (user, 2026-11-19): the LICENSE holder becomes `MarvinHauke` with that
+  repo's next commit.
 - [idea, later] From the user's test list (0003 results page): pad preview as an option; the
   first loop extension duplicates the content (Elektron); playhead and following in Arrangement
   View; a new clip's launch quantization (v3 starts it at once, legato).
