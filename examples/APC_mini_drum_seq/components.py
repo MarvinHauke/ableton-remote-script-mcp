@@ -34,9 +34,10 @@ DEFAULT_RESOLUTION = 1  # 1/16
 
 
 class StepResolutionComponent(GridResolutionComponent):
-    """v3's grid resolution with a finer and a coarser button instead of one button per
+    """v3's grid resolution with a finer and a coarser button beside its one button per
     resolution (12.4.16 has no such buttons, observed; its `index` setter does the rest). Each is
-    lit while there is a resolution to move to, like the scroll buttons."""
+    lit while there is a resolution to move to, like the scroll buttons; the pads of v3's own
+    radio group show which one is on (Decision 30)."""
 
     finer_button = ButtonControl(color="NoteEditor.Resolution.Step",
                                  pressed_color="NoteEditor.Resolution.StepPressed")

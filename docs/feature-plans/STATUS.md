@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -308,9 +308,14 @@ _Last updated: 2026-11-19 (0003 Decision 29 built, scene choice and the resoluti
   can move, `StepResolutionComponent`), 3–4 previous and next scene (`View_Control`), 5–8 and
   Shift unchanged. `checks.yaml`'s resolution steps rewritten, `scene-next` and `scene-prev`
   added; that the steps follow the scene is a check by hand (clip 3 still counts as playing in
-  the run). Validator and `check-names` clean on 12.4.16, 242 tests, reviewed. Next: `install
-  --replace`, `rig restart-live`, track 9 again through AbletonMCP, `rig run`; then the user's
-  panel run and the APC run (Decisions 12, 14), with the results page.
+  the run). Validator and `check-names` clean on 12.4.16, 242 tests, reviewed. `rig run`
+  2026-11-19 after `install --replace` and `rig restart-live`: 35 passed, 0 failed, 2 asked
+  (the user: pad heard, track 9 armed, the box on 1-8); `create_midi_track` and `stop_playback`
+  joined `TESTED` (the user saw track 10 and the stopped transport).
+  - **0003 Decision 30** (user, during the panel run): the resolution's own pads, notes 28–31
+    (the right half's top row), v3's `resolution_buttons`, the active one yellow; two
+    `resolution-pad` checks. Next: install, restart, track 9, `rig run`; then the user's panel
+    run and the APC run (Decisions 12, 14), with the results page.
 
 ## After grilling
 

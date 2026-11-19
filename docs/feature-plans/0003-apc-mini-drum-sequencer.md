@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decision 29 (scene choice, resolution on two buttons)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons) and 30 (resolution pads)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -86,11 +86,13 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
   matrix in the order v3's note editor expects; `pads` = the bottom four rows' left half as 4×4
   (Decision 3; which half is the builder's choice, told to the user); `track_buttons` 64–71;
   `scene_buttons` 82–89; `shift_button` 98 (unmapped in v1); `faders` CC 48–55 and
-  `master_fader` CC 56. The other half of the bottom rows stays dark in v1.
+  `master_fader` CC 56; `resolution_pads` = notes 28–31, the right half's top row, 1×4
+  (Decision 30). The right half's three lower rows stay dark in v1.
 - **Mappings:** `Step_Sequence` (step buttons, loop buttons = track buttons, finer and coarser
   resolution = scene 1–2, pitch provider = `Drum_Group`), `Drum_Group` (pads), `Drum_Group_Scroll`
   (scene 5–6), `View_Control` (scene 3–4 prev/next scene, 7–8 prev/next track), `Mixer` (faders,
-  master). Scene 1–4 were the four resolutions until Decision 29. Each name and
+  master). Scene 1–4 were the four resolutions until Decision 29; the resolution pads (notes
+  28–31) are `resolution_buttons` since Decision 30. Each name and
   key is looked up with the MCP server and passed by `validate` and `check_names`.
 - **Target:** the selected track (v3's `Target_Track`) and its clip slot in the selected scene
   (Decision 8, 15); no Drum Rack → pads dark, steps inert.
@@ -166,6 +168,7 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     - scene buttons (green): the active resolution on, the scroll buttons on when they can scroll,
       7–8 on when there is a track to move to (Decision 15). Amended by Decision 29: 1–2 on
       while there is a finer or coarser resolution, 3–4 while there is a scene to move to.
+    - Amended by Decision 30: the resolution pads, the active one yellow, the others off.
 11. **Fixed note length and velocity** (user, 2026-11-19, Q6): one step long, velocity 100, no
     fader for velocity in v1 (this unit's faders jump, 0001 Decision 29). Replaces the draft's
     fader 9 for velocity.
@@ -308,7 +311,7 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     for a pair of buttons, the user chose to fold the resolution into two buttons instead of
     using Shift:
     - scene button 1 one resolution finer, 2 one coarser (1/32, 1/16, 1/8, 1/4), each lit while
-      it can move; no button shows which resolution is on, the notes' spacing does (user, "lit
+      it can move; no button shows which resolution is on (amended by Decision 30), the notes' spacing does (user, "lit
       if it can go further", over a blink at the default). v3's `GridResolutionComponent` has
       only one button per resolution (12.4.16, `observed`); `StepResolutionComponent` adds a
       finer and a coarser `ButtonControl` that set its `index`, and the step sequencer forwards
@@ -321,6 +324,15 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
       slot is a check by hand in the panel run: in the run clip 3 still counts as the track's
       playing clip after the stop (resolution-note writes to it), and the playing clip comes
       first (Decision 22).
+
+30. **The resolution on its own pads** (user, 2026-11-19, step 5's panel run, "bottom-right pad
+    row"; amends Decision 29's "no button shows which resolution is on"). The user couldn't tell
+    whether a note was missing or the resolution was wrong. The top row of the bottom four rows'
+    right half (notes 28–31, dark until now) is v3's own `resolution_buttons` radio group, one
+    pad per resolution, 1/32, 1/16, 1/8, 1/4: the active one yellow, the others off, a press sets
+    it. Scene buttons 1–2 stay as finer and coarser. The three rows below stay dark. The panel's
+    profile puts the pads in the pad bank's row (the panel draws each group as one line of
+    cells, no matrix shape); no rig or protocol change.
 
 ## Open questions
 
@@ -396,7 +408,8 @@ back, and the step's overview says which became a fix and which a STATUS item.
      the same on the APC; the results page gets both, and whether a press dropped.
    - **Checks:** `rig run` all passed; the panel shows the grid in the APC's colours; the user's
      list (playhead, pads, pages, track and scene choice, no dropped presses while the playhead
-     runs). Decision 29 (the scene buttons, the resolution on two) came out of the panel run.
+     runs). Decisions 29 (the scene buttons, the resolution on two) and 30 (the resolution pads)
+     came out of the panel run.
      ReceiveMIDI only if a press seems missing. Unit-only findings stay on the results page.
 6. **Into the skill** — blocked by: 5.
    - **Delivers:** a `tested` section "A step sequencer" in the v3 reference (the components,

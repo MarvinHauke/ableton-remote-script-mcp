@@ -12,8 +12,10 @@ when none plays, its clip in the selected scene (v3's target track, plan 0003 De
 - The selected MIDI track is armed for the pads (Live's auto-arm).
 - Track buttons 1-8: pages of 32 steps. The page shown is on, the playhead's page blinks.
 - Scene buttons 1-2: the steps' resolution one step finer or coarser (1/32, 1/16 at the start,
-  1/8, 1/4), lit when there is one. Scene buttons 3-4: the previous and next scene, the slot
-  the steps edit; 7-8: the previous and next track; each lit when there is one to move to.
+  1/8, 1/4), lit when there is one. Bottom four rows, right half, top row: one pad per
+  resolution, the active one yellow; a press sets it. The three rows below stay dark.
+- Scene buttons 3-4: the previous and next scene, the slot the steps edit; 7-8: the previous
+  and next track; each lit when there is one to move to.
 - Faders 1-8: the volumes of tracks 1-8 (Live's box shows them); fader 9: the master volume.
 
 Device facts are in `elements.py`, LED values in `skin.py`.

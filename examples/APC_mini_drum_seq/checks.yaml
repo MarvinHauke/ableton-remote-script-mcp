@@ -272,15 +272,19 @@ steps:
       pads[12]: 2
     log: clean
 
-  # Step 4: the resolution, step 5 (Decision 29): scene button 1 one step finer, 2 one step
-  # coarser (1/32, 1/16, 1/8, 1/4; 1/16 at the start), each lit while it can move. Live sends an
-  # LED value only when it changes, so 1/8 shows in the note it writes. The clip is still clip 3
-  # (4 bars), on page 2 since page-two: track button 1 goes back to page 1.
+  # Step 4: the resolution, step 5 (Decisions 29-30): scene button 1 one step finer, 2 one step
+  # coarser (1/32, 1/16, 1/8, 1/4; 1/16 at the start), each lit while it can move; the four
+  # resolution pads show the active one in yellow (5), and a press sets it. Live sends an LED
+  # value only when it changes, so 1/8 shows in the pads and the note it writes. The clip is
+  # still clip 3 (4 bars), on page 2 since page-two: track button 1 goes back to page 1.
   - id: resolution-eighth
-    description: scene button 2 sets 1/8
+    description: scene button 2 sets 1/8; its pad is yellow, 1/16's goes off
     send:
       - track_buttons[0]: press
       - scene_buttons[1]: press
+    expect:
+      resolution_pads[2]: 5
+      resolution_pads[1]: 0
     log: clean
   - id: resolution-note
     description: at 1/8 step 2 writes a note at beat 0.5, one step (0.5 beats) long
@@ -303,6 +307,8 @@ steps:
       - scene_buttons[1]: press
     expect:
       scene_buttons[1]: 0
+      resolution_pads[3]: 5
+      resolution_pads[2]: 0
     log: clean
   - id: resolution-finest
     description: scene button 1 three times sets 1/32 and goes off; scene button 2 is lit again
@@ -313,6 +319,8 @@ steps:
     expect:
       scene_buttons[0]: 0
       scene_buttons[1]: 1
+      resolution_pads[0]: 5
+      resolution_pads[3]: 0
     log: clean
   - id: resolution-back
     description: scene button 2 sets 1/16 again; scene button 1 is lit again
@@ -320,6 +328,25 @@ steps:
       - scene_buttons[1]: press
     expect:
       scene_buttons[0]: 1
+      resolution_pads[1]: 5
+      resolution_pads[0]: 0
+    log: clean
+  - id: resolution-pad
+    description: the 1/4 pad sets 1/4 (scene button 2 goes off), the 1/16 pad sets 1/16 again
+    send:
+      - resolution_pads[3]: press
+    expect:
+      resolution_pads[3]: 5
+      resolution_pads[1]: 0
+      scene_buttons[1]: 0
+    log: clean
+  - id: resolution-pad-back
+    send:
+      - resolution_pads[1]: press
+    expect:
+      resolution_pads[1]: 5
+      resolution_pads[3]: 0
+      scene_buttons[1]: 1
     log: clean
 
   # Step 5 (Decision 29): scene buttons 3-4 select the previous and next scene, the slot the

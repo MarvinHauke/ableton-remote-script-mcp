@@ -24,12 +24,15 @@ class Elements(ElementsBase):
             msg_type=MIDI_NOTE_TYPE,
         )
         # The bottom four rows' left half: a 4x4 bank of drum pads (the lowest pad bottom left,
-        # as on Live's Drum Rack); the right half stays dark.
+        # as on Live's Drum Rack); the right half's top row is the resolution pads, below.
         self.add_button_matrix(
             [range(24, 28), range(16, 20), range(8, 12), range(0, 4)],
             "Pads",
             msg_type=MIDI_NOTE_TYPE,
         )
+        # The right half's top row: one pad per resolution, 1/32, 1/16, 1/8, 1/4 (Decision 30);
+        # the three rows below stay dark.
+        self.add_button_matrix([range(28, 32)], "Resolution_Pads", msg_type=MIDI_NOTE_TYPE)
         # track buttons: red LEDs; scene buttons: green LEDs, top to bottom
         self.add_button_matrix([range(64, 72)], "Track_Buttons", msg_type=MIDI_NOTE_TYPE)
         self.add_button_matrix([range(82, 90)], "Scene_Buttons", msg_type=MIDI_NOTE_TYPE)

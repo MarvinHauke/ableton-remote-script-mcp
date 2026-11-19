@@ -268,10 +268,11 @@ def test_drum_seq_controller_model(index_dir):
 
     ctl, why = controller_for_folder(Path(__file__).parent.parent / "examples/APC_mini_drum_seq", index_dir, "12.4.16")
     assert ctl is not None, why
-    assert len(ctl.elements) == 74 and not ctl.unresolved
+    assert len(ctl.elements) == 78 and not ctl.unresolved  # 74, and the 4 resolution pads (Decision 30)
     assert ctl.element("steps[0]").key == (0x90, 56) and ctl.element("steps[31]").key == (0x90, 39)
     assert ctl.element("pads[0]").key == (0x90, 24) and ctl.element("pads[15]").key == (0x90, 3)
     assert ctl.element("master_fader").key == (0xB0, 56)
+    assert ctl.element("resolution_pads[0]").key == (0x90, 28) and ctl.element("resolution_pads[3]").key == (0x90, 31)
     # step 5 (plan 0003 Decision 29): the resolution is two scene buttons, no submatrix any more
     assert ctl.submatrices == {}
 

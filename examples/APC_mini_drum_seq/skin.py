@@ -33,7 +33,7 @@ class Skin:
         class Resolution:  # scene buttons 1-2: off when there is no finer or coarser one
             Step = ON  # our resolution's names (components.py)
             StepPressed = ON
-            Selected = ON  # v3's one-button-per-resolution group, not mapped here
+            Selected = YELLOW  # the resolution pads (Decision 30): the active one yellow
             NotSelected = OFF
 
     class LoopSelector:  # the track buttons: one page each
