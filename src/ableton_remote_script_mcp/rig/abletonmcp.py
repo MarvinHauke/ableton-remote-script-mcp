@@ -55,6 +55,10 @@ TESTED = {
                    "and 16) and seen by the user",
     "fire_clip": "2026-11-19, Live 12.4.16: the two clips played: the playhead's LEDs moved over the 1-bar "
                  "clip's steps, and the user heard the kit",
+    "create_midi_track": "2026-11-19, Live 12.4.16: track 10 added at the end, read back as the selected "
+                         "track (no-drum-rack) and seen by the user",
+    "stop_playback": "2026-11-19, Live 12.4.16: is_playing read false after the run's stop, and the user saw "
+                     "the transport stopped",
 }
 
 

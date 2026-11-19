@@ -43,6 +43,20 @@ main { padding: 12px 16px 24px; display: grid; gap: 12px; }
 .pad { width: 52px; height: 40px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); cursor: pointer; position: relative; touch-action: none; }
 .pad .led { position: absolute; inset: 6px; border-radius: 4px; background: var(--led); opacity: 0; transition: opacity .08s; }
 .pad.down { outline: 2px solid var(--accent); }
+.pad.latched { outline: 2px dashed var(--accent); outline-offset: 2px; }
+.pad.latched::after { content: "⇧"; position: absolute; top: -9px; right: -7px; font-size: 11px; color: var(--accent); background: var(--panel); border-radius: 50%; padding: 0 2px; }
+.pad.latched.hold::after { content: "⌘"; }
+:root:not(.mac) .pad.latched.hold::after { content: "Ctrl"; }
+#help-open { border: 1px solid var(--line); border-radius: 50%; width: 26px; height: 26px; background: var(--panel); color: var(--ink); cursor: pointer; font-weight: 600; }
+dialog#help { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); padding: 16px 20px; max-width: min(560px, calc(100vw - 32px)); }
+dialog#help::backdrop { background: rgb(0 0 0 / .35); }
+#help h2 { font-size: 16px; margin: 0 0 8px; }
+#help h3 { font-size: 13px; margin: 14px 0 4px; color: var(--muted); }
+#help table { border-collapse: collapse; width: 100%; font-size: 13px; }
+#help td { padding: 3px 8px 3px 0; vertical-align: top; }
+#help td:first-child { white-space: nowrap; }
+#help kbd { font: 12px ui-monospace, Menlo, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--bg); }
+#help .close { float: right; border: 0; background: none; color: var(--muted); font-size: 18px; cursor: pointer; }
 .pad .led.blink { animation: blink .5s steps(1) infinite; }
 @keyframes blink { 50% { opacity: .12; } }
 @media (prefers-reduced-motion: reduce) {
@@ -67,7 +81,31 @@ section.log h2 { font-size: 13px; margin: 0; padding: 8px 12px; border-bottom: 1
   <h1 id="script">Test rig panel</h1>
   <span class="meta" id="profile"></span>
   <span id="state">connecting…</span>
+  <button id="help-open" type="button" title="Help (?)" aria-label="Help">?</button>
 </header>
+<dialog id="help" aria-labelledby="help-title">
+  <button class="close" type="button" aria-label="Close">×</button>
+  <h2 id="help-title">Panel help</h2>
+  <h3>Buttons and pads</h3>
+  <table>
+    <tr><td>click</td><td>press and release</td></tr>
+    <tr><td><kbd>Shift</kbd>-click</td><td>hold once: the button stays pressed until the next plain click on another button has been released (hold one, press another: e.g. two track buttons for a loop)</td></tr>
+    <tr><td><kbd><span class="mod">⌘</span></kbd>-click</td><td>hold until let go: stays pressed while you click others; collect several</td></tr>
+    <tr><td>click a held one</td><td>release it (that click doesn't let go of the others)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>release every held button</td></tr>
+  </table>
+  <h3>Faders and knobs</h3>
+  <table>
+    <tr><td>drag</td><td>send the value as it moves</td></tr>
+    <tr><td><kbd>−</kbd> <kbd>+</kbd></td><td>a relative encoder: one step</td></tr>
+    <tr><td><kbd>Shift</kbd>-click <kbd>−</kbd> <kbd>+</kbd></td><td>ten steps</td></tr>
+  </table>
+  <h3>The page</h3>
+  <table>
+    <tr><td>↑ / ↓</td><td>under each control: the last value played into Live / sent by Live</td></tr>
+    <tr><td><kbd>?</kbd></td><td>this help; <kbd>Esc</kbd> closes it</td></tr>
+  </table>
+</dialog>
 <div class="notice" id="notice">Parallel view: the test rig's driver is in charge.</div>
 <div id="error" role="status"></div>
 <main id="rows"></main>
@@ -80,6 +118,42 @@ section.log h2 { font-size: 13px; margin: 0; padding: 8px 12px; border-bottom: 1
 "use strict";
 const cells = new Map();   // element name -> {el, kind, display, setOut, setIn}
 let ws;
+const MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+document.documentElement.classList.toggle("mac", MAC);
+
+// latch:start  Held buttons (plan 0002 Decision 30): Shift-click holds a button once, until the
+// next plain click on another button is released; Cmd-click (Ctrl elsewhere) holds it until it
+// is clicked again. Pure: `send(name, value)` plays, `changed(name, how)` redraws ("once",
+// "hold" or null).
+function makeLatches(send, changed) {
+  const once = new Set(), hold = new Set(), pressed = new Set();
+  const release = (name, set) => { set.delete(name); send(name, 0); changed(name, null); };
+  return {
+    down(name, mod) {  // mod: "once", "hold" or null; true when a plain press is now down
+      if (once.has(name) || hold.has(name)) { release(name, once.has(name) ? once : hold); return false; }
+      send(name, 127);
+      if (mod) { (mod === "once" ? once : hold).add(name); changed(name, mod); return false; }
+      pressed.add(name);
+      return true;
+    },
+    up(name) {  // a plain press let go: then every hold-once button
+      if (!pressed.delete(name)) return;
+      send(name, 0);
+      for (const n of [...once]) release(n, once);
+    },
+    releaseAll() {  // also a plain press whose button was redrawn: it never gets its pointerup
+      for (const n of [...pressed]) { pressed.delete(n); send(n, 0); }
+      for (const n of [...once]) release(n, once);
+      for (const n of [...hold]) release(n, hold);
+    },
+    held: () => [...once, ...hold],
+  };
+}
+// latch:end
+const latches = makeLatches(
+  (name, value) => send(name, value),
+  (name, how) => { const c = cells.get(name); if (c && c.latch) c.latch(how); },
+);
 
 function send(element, value) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ op: "play", element, value }));
@@ -103,8 +177,14 @@ function cell(e, group) {
     control.setAttribute("role", "button");
     const led = Object.assign(document.createElement("div"), { className: "led" });
     control.append(led);
-    const down = ev => { ev.preventDefault(); control.setPointerCapture?.(ev.pointerId); control.classList.add("down"); send(e.name, 127); };
-    const up = () => { if (!control.classList.contains("down")) return; control.classList.remove("down"); send(e.name, 0); };
+    const down = ev => {
+      if (ev.button !== 0) return;  // the main button only
+      ev.preventDefault();
+      const mod = ev.shiftKey ? "once" : (MAC ? ev.metaKey : ev.ctrlKey) ? "hold" : null;
+      if (latches.down(e.name, mod)) { control.setPointerCapture?.(ev.pointerId); control.classList.add("down"); }
+    };
+    const up = () => { if (!control.classList.contains("down")) return; control.classList.remove("down"); latches.up(e.name); };
+    control.addEventListener("contextmenu", ev => ev.preventDefault());
     control.addEventListener("pointerdown", down);
     control.addEventListener("pointerup", up);
     control.addEventListener("pointercancel", up);
@@ -141,6 +221,11 @@ function cell(e, group) {
   const name = Object.assign(document.createElement("div"), { className: "name", textContent: label });
   box.append(control, vals, name);
   cells.set(e.name, {
+    latch: how => {
+      control.classList.toggle("latched", Boolean(how));
+      control.classList.toggle("hold", how === "hold");
+      control.setAttribute("aria-pressed", String(Boolean(how)));
+    },
     setOut: v => { o.textContent = "↑" + shown(e.display, v); },
     setIn: v => { i.textContent = "↓" + shown(e.display, v); onIn(v); box.classList.remove("flash"); void box.offsetWidth; box.classList.add("flash"); },
   });
@@ -152,6 +237,7 @@ function draw(model) {
   document.getElementById("profile").textContent = model.profile ? `device profile: ${model.profile}` : "plain layout (no device.yaml)";
   document.getElementById("notice").textContent = model.notice;
   const rows = document.getElementById("rows");
+  latches.releaseAll();  // a new model (the script reloaded): nothing stays held
   rows.replaceChildren();
   cells.clear();
   for (const row of model.rows) {
@@ -200,6 +286,15 @@ function connect() {
     }
   };
 }
+const help = document.getElementById("help");
+document.querySelectorAll("#help .mod").forEach(m => { m.textContent = MAC ? "⌘" : "Ctrl"; });
+document.getElementById("help-open").addEventListener("click", () => help.showModal());
+help.querySelector(".close").addEventListener("click", () => help.close());
+help.addEventListener("click", ev => { if (ev.target === help) help.close(); });  // the backdrop
+document.addEventListener("keydown", ev => {
+  if (ev.key === "?" && !help.open && !ev.metaKey && !ev.ctrlKey) { ev.preventDefault(); help.showModal(); }
+  else if (ev.key === "Escape" && !help.open) latches.releaseAll();  // an open dialog closes itself
+});
 connect();
 </script>
 </body>

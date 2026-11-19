@@ -30,8 +30,10 @@ class Skin:
         StepOutsideLoop = RED  # an empty step outside the clip's loop
         NoClip = OFF
 
-        class Resolution:
-            Selected = ON
+        class Resolution:  # scene buttons 1-2: off when there is no finer or coarser one
+            Step = ON  # our resolution's names (components.py)
+            StepPressed = ON
+            Selected = YELLOW  # the resolution pads (Decision 30): the active one yellow
             NotSelected = OFF
 
     class LoopSelector:  # the track buttons: one page each
@@ -44,7 +46,9 @@ class Skin:
         Navigation = OFF
         NavigationPressed = ON
 
-    class ViewControl:  # scene buttons 7-8: off when there is no track to move to
+    class ViewControl:  # scene buttons 3-4 and 7-8: off when there is no scene or track to move to
+        Scene = ON
+        ScenePressed = ON
         Track = ON
         TrackPressed = ON
 

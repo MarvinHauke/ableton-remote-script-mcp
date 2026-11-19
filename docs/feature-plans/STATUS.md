@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -302,6 +302,48 @@ _Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 
   `stop_playback`. **First task done.** Next: step 5's main part, the user's pattern on the panel
   (`rig panel`), then on the APC (Decisions 12, 14), in a fresh session. Before a run: delete
   track 9's three clips and track 10 (or restart Live without saving); keep track 9.
+- 0003 step 5, main part on `feat/0003-step-5-hardware` (2026-11-19, solo; from `main` after
+  the merge `948e3f5`). In the panel run the user could move the track but not the clip slot:
+  **0003 Decision 29** (user): scene buttons 1–2 the resolution finer and coarser (lit while they
+  can move, `StepResolutionComponent`), 3–4 previous and next scene (`View_Control`), 5–8 and
+  Shift unchanged. `checks.yaml`'s resolution steps rewritten, `scene-next` and `scene-prev`
+  added; that the steps follow the scene is a check by hand (clip 3 still counts as playing in
+  the run). Validator and `check-names` clean on 12.4.16, 242 tests, reviewed. `rig run`
+  2026-11-19 after `install --replace` and `rig restart-live`: 35 passed, 0 failed, 2 asked
+  (the user: pad heard, track 9 armed, the box on 1-8); `create_midi_track` and `stop_playback`
+  joined `TESTED` (the user saw track 10 and the stopped transport).
+  - **0003 Decision 30** (user, during the panel run): the resolution's own pads, notes 28–31
+    (the right half's top row), v3's `resolution_buttons`, the active one yellow; two
+    `resolution-pad` checks. `rig run` after install and restart: 37 passed, 0 failed, 2 asked.
+  - **The user's panel run** (results page): 9 of 9 points work (the playhead "pretty sure",
+    the delay makes it hard to tell).
+  - **0003 Decision 31** (user, from the panel run): the page follows the playhead while the
+    clip plays, a page pick pauses it until the transport starts or the clip changes
+    (`PageLoopSelectorComponent`); `page-follows` and `page-one-pick` added, `page-two` picks page 2 by hand and it stays. Next:
+    review, install, restart, track 9, `rig run`; the user tries the follow on the panel, then
+    the APC run (Decisions 12, 14), with the results page. `rig run` 2026-11-19: 39 passed,
+    0 failed, 2 asked (the three page checks pass).
+  - The user's panel checks of Decision 31: the steps follow, a picked page holds while the
+    clip plays.
+  - **0002 Decision 30** (user, from the panel run): the panel holds buttons, Shift-click once
+    (until the next plain click is released), Cmd-click until clicked again, Esc releases all;
+    a `?` cheat sheet. The page still sends only 127 and 0, no protocol change; the latch logic
+    is tested in node (`tests/test_rig_panel.py`, skipped without node).
+  - **The APC run, first part** (user, 2026-11-19): with the Yellow Kit most points work; two
+    problems, one cause: a step press on an empty slot while playing wrote into the track's
+    playing clip, and a Drum Rack on a track with a playing clip seemed to take no notes.
+    **0003 Decision 32** (user): the steps always edit the selected slot
+    (`SelectedSlotTargetTrackComponent`); the checks select each clip's scene,
+    `edit-other-slot` added. The local disassembly of 12.4.16's `ableton/v3` and `v2` is in
+    `reference/live-12.4.16-dis/` (made now, it found the cause). Next: review, install,
+    restart, `rig run`, then the rest of the APC run.
+  - After Decision 32: `rig run` 40 passed (Yellow Kit), 40 passed (808 Core Kit on track 9).
+    The user on the APC: working, also with another rack. **Step 5 done** (results page).
+  - **After step 5, before step 6** (user, 2026-11-19): a local disassembly (Python's `dis`) of
+    12.4.16's `ableton/v3`, and the `v2` modules v3 inherits from, into `reference/`
+    (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on
+    three facts this step needed (the loop selector's slot order, `_update_matrix`, the note
+    editor's `set_clip`), and step 6's facts are to be checked against 12.4.16.
 
 ## After grilling
 
@@ -313,6 +355,20 @@ _Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [idea, later] Step locks for the drum sequencer (user, 2026-11-19, after 0003 step 5; out of
+  0003's scope): hold a step, faders 1-8 set macros 1-8 of the track's rack as clip automation
+  for that step's time. A plan of its own (0004?), drafted and grilled after 0003 steps 6-7.
+  Facts so far: `Envelope.insert_step` (documented, Structure Void); Push's and Move's
+  `_insert_step` (12.4.16, observed) as local references. Grill: the faders' jump (0001
+  Decision 29), how a locked step shows, several held steps, clearing a lock, which rack.
+
+- [needs-triage] 0002 panel: the pads (`role=button`) have no `tabindex`, so the keyboard can't
+  reach them (reviewer, 2026-11-19, Decision 30's review; older than it).
+
+- [needs-triage] 0001 (index, MCP): the order of what a method does (which slots `__init__`
+  registers, which method calls which) is not in the index; 0003 step 5 needed it twice and read
+  the `.pyc` bytecode by hand. A statements feature for the MCP? Touches the index schema: grill.
 
 - [needs-triage] Tool findings from 0003 step 1 (results page, findings 3 and 5–10): `element-name`
   gives up on `**dict` in `add_…` calls; `check_names` counts instance attributes of a mixin's

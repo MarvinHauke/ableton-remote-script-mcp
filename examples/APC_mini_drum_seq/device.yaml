@@ -3,11 +3,13 @@
 name: Akai APC mini mk1, drum sequencer
 identity:
   reply: none   # the script doesn't ask; the mk1's identity reply is not used
-# The grid as on the device: the 32 steps on top, the 4x4 pad bank bottom left (its right half
-# is dark and not an element); the scene buttons right of the grid, the track buttons below.
+# The grid as on the device: the 32 steps on top, the 4x4 pad bank bottom left, the resolution
+# pads in its row (on the APC right of its top row; the three rows below are dark, not
+# elements; plan 0003 Decision 30);
+# the scene buttons right of the grid, the track buttons below.
 layout:
   - [steps, scene_buttons]
-  - [pads]
+  - [pads, resolution_pads]
   - [track_buttons, shift_button]
   - [faders, master_fader]
 # Akai's APC mini protocol (documented, confirmed for this unit by the mk1 load test): a grid
@@ -22,6 +24,7 @@ leds:
     5: yellow
     6: yellow blink
   pads: *grid
+  resolution_pads: *grid
   track_buttons:
     0: off
     1: red

@@ -8,6 +8,7 @@ v3's `StepSequenceComponent` depends on a `grid_resolution` and its note editor 
 """
 
 from ableton.v3.base import listens
+from ableton.v3.control_surface.controls import ButtonControl
 from ableton.v3.control_surface.components import (
     DrumGroupComponent,
     GridResolutionComponent,
@@ -17,22 +18,51 @@ from ableton.v3.control_surface.components import (
     SequencerClip,
     SessionRingComponent,
     StepSequenceComponent,
+    TargetTrackComponent,
 )
 from ableton.v3.control_surface.components.grid_resolution import GRID_RESOLUTIONS
 from ableton.v3.control_surface.skin import LiveObjSkinEntry
-from ableton.v3.live import get_bar_length, liveobj_valid
+from ableton.v3.live import get_bar_length, liveobj_changed, liveobj_valid, scene_index
 
 # The clip preset (plan 0003 Decision 16): a clip created on an empty slot
 CLIP_BARS = 2  # 8 beats in 4/4
 CLIP_NAME = "Drum Seq"
 
-# Scene buttons 1-4 choose these (step 4); the steps start at 1/16, so 32 steps are 2 bars in 4/4
+# Scene buttons 1-2 step through these, finer and coarser (Decision 29); the steps start at 1/16,
+# so 32 steps are 2 bars in 4/4
 RESOLUTIONS = tuple(r for r in GRID_RESOLUTIONS if not r.is_triplet)  # 1/32, 1/16, 1/8, 1/4
 DEFAULT_RESOLUTION = 1  # 1/16
 
 
+class StepResolutionComponent(GridResolutionComponent):
+    """v3's grid resolution with a finer and a coarser button beside its one button per
+    resolution (12.4.16 has no such buttons, observed; its `index` setter does the rest). Each is
+    lit while there is a resolution to move to, like the scroll buttons; the pads of v3's own
+    radio group show which one is on (Decision 30)."""
+
+    finer_button = ButtonControl(color="NoteEditor.Resolution.Step",
+                                 pressed_color="NoteEditor.Resolution.StepPressed")
+    coarser_button = ButtonControl(color="NoteEditor.Resolution.Step",
+                                   pressed_color="NoteEditor.Resolution.StepPressed")
+
+    @finer_button.pressed
+    def finer_button(self, _):
+        self.index = max(self.index - 1, 0)
+
+    @coarser_button.pressed
+    def coarser_button(self, _):
+        self.index = min(self.index + 1, len(self._resolutions) - 1)
+
+    def _update_resolution_buttons(self):
+        # the base calls this from its __init__ and whenever the index changes; `_resolutions`
+        # is the base's own list
+        super()._update_resolution_buttons()
+        self.finer_button.enabled = self.index > 0
+        self.coarser_button.enabled = self.index < len(self._resolutions) - 1
+
+
 def create_grid_resolution():
-    return GridResolutionComponent(resolutions=RESOLUTIONS, default_index=DEFAULT_RESOLUTION)
+    return StepResolutionComponent(resolutions=RESOLUTIONS, default_index=DEFAULT_RESOLUTION)
 
 
 def has_drum_rack(track):
@@ -49,6 +79,21 @@ class FaderRingComponent(SessionRingComponent):
     def __init__(self, *a, **k):
         super().__init__(*a, **k)
         self.set_enabled(True)
+
+
+class SelectedSlotTargetTrackComponent(TargetTrackComponent):
+    """The clip the steps edit is the selected track's clip in the selected scene, playing or
+    not (plan 0003 Decision 32). v3 takes the track's playing clip first (12.4.16, observed in
+    the bytecode); Live counts a clip as playing after the transport stops too, so the selected
+    slot was often not the one edited."""
+
+    def _target_clip_from_session(self):
+        track = self._target_track
+        index = scene_index()
+        slot = track.clip_slots[index] if 0 <= index < len(track.clip_slots) else None  # -1: no scene
+        # the base's listener for a clip created in or deleted from the slot
+        self._TargetTrackComponent__on_target_clip_slot_has_clip_changed.subject = slot
+        return slot.clip if slot is not None and slot.has_clip else None
 
 
 class DrumSequencerClip(SequencerClip):
@@ -111,7 +156,7 @@ class DrumNoteEditorComponent(NoteEditorComponent):
     an empty step outside the loop is red here (Decision 10). On a track without a Drum Rack
     directly on it the steps have no clip, so they stay dark and a press does nothing
     (Decision 8). A step's time is page time + index x step length: no triplet resolutions
-    (the scene buttons offer none).
+    (the resolution buttons offer none).
     """
 
     def __init__(self, *a, **k):
@@ -195,11 +240,52 @@ class DrumNoteEditorComponent(NoteEditorComponent):
 class PageLoopSelectorComponent(LoopSelectorComponent):
     """v3's loop selector gives each button one bar. Here each button is one page of 32 steps
     (2 bars at 1/16), so track button N shows page N at every resolution; holding two buttons or
-    double-clicking one sets the clip's loop in pages (plan 0003 Decision 24)."""
+    double-clicking one sets the clip's loop in pages (plan 0003 Decision 24).
+
+    While the clip plays, the steps follow the playhead to its page (Decision 31; v3's loop
+    selector has no follow, 12.4.16, observed). A track button press that changes the page
+    pauses it, so that page can be edited; it follows again when the transport starts or the
+    clip changes."""
+
+    def __init__(self, *a, **k):
+        self._following = True
+        super().__init__(*a, **k)
+        self.register_slot(self.song, self._on_is_playing_changed, "is_playing")
 
     @property
     def bar_length(self):
         return self._paginator.page_length
+
+    def set_clip(self, clip):
+        if liveobj_changed(clip, self._clip):
+            self._following = True
+        super().set_clip(clip)
+
+    def _on_matrix_pressed(self, button):
+        # paused before v3 sets the page: its redraw would otherwise follow back to the playhead
+        page_time = self._paginator.page_time
+        following, self._following = self._following, False
+        super()._on_matrix_pressed(button)
+        if self._paginator.page_time == page_time:
+            self._following = following  # the same page, or a held step: no pause
+
+    def _on_is_playing_changed(self):
+        if self.song.is_playing:
+            self._following = True
+
+    def _update_matrix(self):
+        # v3 redraws the track buttons as the playing position moves: the page follows it here
+        self._follow_playhead()
+        super()._update_matrix()
+
+    def _follow_playhead(self):
+        clip = self._clip
+        if not (self._following and self.song.is_playing and liveobj_valid(clip) and clip.is_playing):
+            return
+        page_length = self._paginator.page_length
+        page_time = (clip.playing_position // page_length) * page_length
+        if page_time != self._paginator.page_time:
+            self._paginator.page_time = page_time  # its slot redraws: the outer draw repeats it
 
 
 class NoPlayheadComponent(PlayheadComponent):
@@ -213,7 +299,7 @@ class NoPlayheadComponent(PlayheadComponent):
 
 class DrumStepSequenceComponent(StepSequenceComponent):
     """v3's step sequencer with the note editor that draws the playhead, pages on the loop
-    buttons, and Live's own playhead off."""
+    buttons, a finer and a coarser resolution button, and Live's own playhead off."""
 
     def __init__(self, *a, **k):
         super().__init__(
@@ -223,3 +309,9 @@ class DrumStepSequenceComponent(StepSequenceComponent):
             playhead_component_type=NoPlayheadComponent,
             **k,
         )
+
+    def set_finer_resolution_button(self, button):
+        self._grid_resolution.finer_button.set_control_element(button)
+
+    def set_coarser_resolution_button(self, button):
+        self._grid_resolution.coarser_button.set_control_element(button)

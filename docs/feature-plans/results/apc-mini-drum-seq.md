@@ -44,7 +44,7 @@ Live 12.4.16. `observed`: in the index. `documented`: read in gluon's decompiled
 | After the transport stops, the sequencer keeps the clip that played last on the track (not the selected scene's) and its page | tested |
 | `ControlSurface.drum_group_changed(drum_group)` is called from `__init__` right after `setup()` and on each instrument change of the target track | observed (statement order) |
 | v3's note editor reads a clip's notes only when its clip changes (`set_clip`) or its notes change; with no Drum Rack the script's `_has_clip` is false, so the script re-sets the clip in `drum_group_changed` (`refresh_clip`) for a rack added later | observed (statements); the re-set not checked on the rig |
-| `ElementsBase.add_submatrix(matrix, name, columns=(start, stop), rows=…)` names a part of a matrix as another element (`resolution_buttons` = scene buttons 1-4); `StepSequenceComponent.set_resolution_buttons` hands it to the `GridResolutionComponent`'s radio buttons (`resolution_buttons`, `checked_index`), whose index picks from the script's four resolutions | observed (signatures, statements), tested |
+| `ElementsBase.add_submatrix(matrix, name, columns=(start, stop), rows=…)` names a part of a matrix as another element (`resolution_buttons` = scene buttons 1-4); `StepSequenceComponent.set_resolution_buttons` hands it to the `GridResolutionComponent`'s radio buttons (`resolution_buttons`, `checked_index`), whose index picks from the script's four resolutions (step 4; replaced in step 5 by two buttons, finer and coarser, plan 0003 Decision 29) | observed (signatures, statements), tested |
 | At 1/8 a step press writes a note one step long (`[40, 0.5, 0.5, 100]` on step 2); the active resolution's button is on (1), the others off | tested |
 | The framework builds the session ring when a component depends on it (`session_ring` among the injected dependencies, `_create_session_ring`), disabled; it is enabled only on an identity reply, so the script's `FaderRingComponent` enables itself and Live draws the box | observed (`_create_session_ring`), documented (the lazy injection, 12.0), tested (the box) |
 | `ControlSurfaceSpecification.link_session_ring_to_track_selection` (and `…_scene_selection`) default to `False`; only with one of them set does registering a `ViewControlComponent` link the ring to the selection (`SessionRingSelectionLinking`) | observed, tested (the faders stay on tracks 1-8) |
@@ -208,8 +208,45 @@ rig selects the slot itself now, plan 0002 Decision 29): 31 passed, 0 failed, 2 
   master. Whether track 9's arm button was lit wasn't answered this time (step 4's run saw it).
 - `create_clip` and `fire_clip` joined `TESTED` (the user saw the clips and heard them);
   `create_midi_track` and `stop_playback` are read back by the rig but not yet confirmed by the
-  user.
+  user. Confirmed later the same day: the user saw track 10 and the stopped transport; both
+  joined `TESTED`.
+
+**Step 5, Decisions 29-30, 2026-11-19, Live 12.4.16** (after `install --replace` and `rig
+restart-live`, track 9 "Yellow Kit" again through AbletonMCP): with the scene buttons and the
+resolution on two buttons, 35 passed, 0 failed, 2 asked; with the resolution pads, 37 passed,
+0 failed, 2 asked. The user: the pad heard and track 9 armed (later track 2, the run's last
+selection, armed instead: auto-arm follows the selection), the box around tracks 1-8, the
+master at +6 dB (fader 9 at 127 is volume 1.0).
 
 ## The user's results
 
-Not yet (panel and hardware after step 7, Decision 14).
+**The panel, 2026-11-19, Live 12.4.16** (`rig panel`, the test Set after the 37-passed run; plan
+0003 Decision 14). The user went through nine points, limited to what was new or checked only
+by the rig:
+1. the resolution pads: the active one yellow, a press sets it: works;
+2. scene buttons 1-2, finer and coarser, off at the ends: work;
+3. a pattern at 1/16 closes up or spreads out at 1/8 and 1/32: works;
+4. scene buttons 3-4 move the selected slot; with nothing playing the grid shows its clip: works;
+5. on an empty slot the first step press creates the 2-bar "Drum Seq" clip: works;
+6. a kick and snare pattern plays as set: works;
+7. the playhead runs with the beat: "pretty sure", the delay makes it hard to tell; pressing
+   feels immediate;
+8. steps set or cleared while it plays are heard on the next pass: works;
+9. pages on a clip longer than 2 bars, the playhead's page blinking: works.
+
+What the user missed: the page doesn't follow the playhead when the clip is longer than the 32
+steps show (as Push's sequencer does): plan 0003 Decision 31. Stopping a clip from the
+controller was left out: the user stops it in Live.
+
+Later on the panel (Decision 31): the steps follow the playhead, a picked page holds while the
+clip plays.
+
+**The APC mini, 2026-11-19, Live 12.4.16** (the slot on APC MINI; plan 0003 Decisions 12, 14).
+First part, with the Yellow Kit: most points worked; two problems with one cause, fixed by
+Decision 32 (the steps edit the selected slot, playing or not): a step press on an empty slot
+while the transport ran wrote into the track's playing clip, and a Drum Rack added to a track
+with a playing clip seemed to take no notes (Live counts a clip as playing after the transport
+stops; tracks 1-8 of the test Set each had one). After the fix (`rig run`: 40 passed with the
+Yellow Kit, 40 passed with the 808 Core Kit on track 9), the user: "its working right now. Also
+switching the rack." No dropped press was reported: the old drops are explained by the plain
+`ControlSurface`'s LED flood, not the unit (Decision 12).

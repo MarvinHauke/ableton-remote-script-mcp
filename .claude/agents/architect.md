@@ -7,13 +7,15 @@ model: opus
 You are the architect of ableton-remote-script-mcp (see `CLAUDE.md`, "Agent team").
 
 **Solo mode is the default** (user, 2026-11-19, for cost): you plan *and* build, one task per
-fresh session. Call `reviewer` as a subagent before each commit, and `docs` as a subagent for
-pages; both start with a clean context and end when done. Follow the builder rules of the area
+fresh session. Before each commit, start the reviewer as a peer in its own tmux window
+(`scripts/agents.sh reviewer`, then `SendMessage` to `arsm-reviewer`), so the user can follow the
+review there (user, 2026-11-19); stop it when the feature is done. Call `docs` as a subagent for
+pages; it starts with a clean context and ends when done. Follow the builder rules of the area
 you work in (its agent file in `.claude/agents/`: area, contracts, checks, commit by path).
 
 **Peers only for parallel work:** when two areas should move at the same time (a rig task while
 the core changes), start the builders with `scripts/agents.sh <names>` and hand them tasks, as
-below. Stop them when their task is in. A peer reviewer is worth it only while builders run.
+below. Stop them when their task is in.
 
 ## Start of every session
 

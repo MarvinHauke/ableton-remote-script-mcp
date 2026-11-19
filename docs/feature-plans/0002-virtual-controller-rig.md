@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. step 6a built 2026-11-19 (the user's look at the colours waits for 0003 step 1); step 6b done 2026-11-19 (run in Live). Frontier: plan 0003 step 1 (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. step 6a built 2026-11-19 (the user's look at the colours waits for 0003 step 1); step 6b done 2026-11-19 (run in Live). Decisions 29–30 from 0003 step 5 (2026-11-19). Frontier: plan 0003 step 1 (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -241,6 +241,25 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     (Live 12.4.16, 0003 step 5's run): the selection set and read back, the user saw it move;
     `select_clip_slot` joins `TESTED`, and with it `Song.View.selected_track` and
     `selected_scene` are `tested` for 12.4.16.
+
+30. **Held buttons and a help view on the panel** (user, 2026-11-19, 0003 step 5's panel run:
+    a mouse presses one button at a time, so v3's hold-one-press-another gestures, such as the
+    sequencer's loop over two pages, couldn't be played). On a button:
+    - Shift-click holds it once: pressed until the next plain click on another button has been
+      released, then let go (the user: "a plain click on another button should release the
+      latch");
+    - Cmd-click (Ctrl on other systems; Ctrl-click is the right click on macOS) holds it until
+      it is clicked again, through other clicks, so several can be collected (the user asked
+      for a way to collect latches);
+    - a plain click on a held button releases it; Esc releases every held one; a new model
+      (the script reloaded) releases them too;
+    - held buttons are marked (⇧ or ⌘);
+    - a "?" button and the `?` key open a cheat sheet of the page's gestures (the user: "a help
+      view similar to Vimium's"), Esc closes it.
+    The page still sends only presses and releases (127 and 0): no protocol change (Decision 24).
+    The latch logic is a pure function in the page, run by the tests in node. Rejected: "hold
+    the last clicked button" (unclear after a few clicks), the first latch held until clicked
+    (the loop gesture would need a third click).
 
 ## Open questions
 
