@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: decided — spec and steps written 2026-11-19 (Decisions 17–20), steps waiting for the user's approval. Frontier: plan 0002 steps 6a and 6b, then step 1._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 1 on `feat/0003-step-1-tracer` (0002 steps 6a and 6b are built)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -224,6 +224,8 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     checks to `checks.yaml` and passes them against Live before it is done; `device.yaml` comes
     in step 1 with the layout and the `leds` map (0002 6a is in by then). A step that needs the
     user in Live says so in its checks, and the user is asked once per step.
+21. **The steps are approved as written** (user, 2026-11-19): order and content as in Steps;
+    step 1 is built on `feat/0003-step-1-tracer`, branched from 0002 step 6b's branch.
 
 ## Open questions
 

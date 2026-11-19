@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 steps approved, Decision 21, step 1 next on `feat/0003-step-1-tracer`; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -235,7 +235,10 @@ _Last updated: 2026-11-19 (0002 step 6b done and run in Live, a clip's notes in 
   how. 229 tests. Run in Live the same day (track 7, scene 8 of the test Set): two notes the
   user drew read back, an add and a clear seen by the user; `get_clip_notes`,
   `get_session_snapshot`, `add_notes_to_clip` and `clear_notes_from_clip` joined `TESTED`.
-  Plan 0002's steps are done except 6a's look at the colours (with 0003 step 1). Next: 0003 step 1, after the user approves 0003's steps.
+  Plan 0002's steps are done except 6a's look at the colours (with 0003 step 1).
+- 0003 steps approved by the user (2026-11-19, Decision 21). Next: 0003 step 1 (the tracer) on
+  `feat/0003-step-1-tracer`, in a fresh architect session. Not yet in `main`: 0003's spec,
+  0002 6a and 6b (merge when the user asks).
 
 ## After grilling
 
