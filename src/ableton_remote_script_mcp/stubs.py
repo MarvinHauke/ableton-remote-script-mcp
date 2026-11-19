@@ -331,3 +331,63 @@ def write_stubs(index: dict, out: Path, documented: dict | None = None, observed
             folder = folder.parent
     return {"status": "ok", "live_build": index["live_build"], "out": str(out), "files": files,
             "documented": not observed_only, "structure_void": documented is not None and not observed_only}
+
+
+PROJECT_CONFIG = {"stubPath": "stubs", "pythonVersion": "3.11", "reportMissingModuleSource": False}
+_IGNORE_LINES = {"stubs", "stubs/", "/stubs", "/stubs/"}
+
+
+def _in_git_repo(folder: Path) -> bool:
+    """The folder or one above it has a `.git` (a folder, or a file in a submodule or worktree)."""
+    return any((p / ".git").exists() for p in (folder, *folder.parents))
+
+
+def _git_ignores_stubs(folder: Path) -> bool:
+    """git's own answer (any `.gitignore` up the repo, any pattern, negations); False when git
+    isn't on the PATH or the folder isn't a work tree, and the line check decides."""
+    import subprocess
+
+    try:
+        return subprocess.run(["git", "-C", str(folder), "check-ignore", "-q", "stubs/"],
+                              capture_output=True, timeout=10, check=False).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def _has_pyright_config(folder: Path) -> bool:
+    if (folder / "pyrightconfig.json").exists():
+        return True
+    pyproject = folder / "pyproject.toml"
+    if not pyproject.is_file():
+        return False
+    import tomllib
+
+    try:
+        tool = tomllib.loads(pyproject.read_text(encoding="utf-8")).get("tool", {})
+    except tomllib.TOMLDecodeError:
+        return False
+    return "pyright" in tool or "basedpyright" in tool  # a pyrightconfig.json would override it
+
+
+def set_up_project(folder: Path) -> dict:
+    """After the stubs are in `<folder>/stubs`: a `pyrightconfig.json` when the folder has no
+    pyright settings yet (existing ones are left alone), and `stubs/` in `<folder>/.gitignore`
+    when the folder is in a git repo and no line ignores it yet (plan 0001 Decision 56, task 2)."""
+    import json
+
+    config = "kept"
+    if not _has_pyright_config(folder):
+        (folder / "pyrightconfig.json").write_text(json.dumps(PROJECT_CONFIG, indent=2) + "\n", encoding="utf-8")
+        config = "created"
+    gitignore = "not_a_repo"
+    if _in_git_repo(folder):
+        path = folder / ".gitignore"
+        text = path.read_text(encoding="utf-8") if path.is_file() else ""
+        if _git_ignores_stubs(folder) or _IGNORE_LINES & {line.strip() for line in text.splitlines()}:
+            gitignore = "present"
+        else:
+            if text and not text.endswith("\n"):
+                text += "\n"
+            path.write_text(text + "stubs/\n", encoding="utf-8")
+            gitignore = "added"
+    return {"folder": str(folder), "config": config, "gitignore": gitignore}

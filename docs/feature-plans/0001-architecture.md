@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand in work (Decision 56, task 1 built 2026-11-20); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand in work (Decision 56, tasks 1–2 built 2026-11-20); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -924,6 +924,26 @@ meant to do, and uses only API names that exist in the Live build they target.
        alone and the settings are printed), and adds `stubs/` to `<folder>/.gitignore` when the
        folder is a git repo and the line is missing. `--out` and `--project` exclude each other.
        It doesn't change the answer core, the MCP tools or the exit codes.
+       - **Built 2026-11-20** (architect, solo). `build_stubs(…, project=)` adds a `project` part
+         to its answer (`config`: `created` or `kept`; `gitignore`: `added`, `present` or
+         `not_a_repo`); `build_stubs` isn't in the API or the MCP tools, so no `answer_version`.
+         A missing folder is `not_found` (exit 2); `--out` with `--project` is argparse's usage
+         error (exit 2). Run on `APC_mini_mk1_Plus` (config and ignore line kept) and on a fresh
+         git folder (both created). Small choices (architect, 2026-11-20):
+         - "a git repo" means the folder or one above it has a `.git` (a folder, or the file of a
+           submodule or worktree), so a script folder inside a bigger repo still gets the line;
+         - the ignore line counts as there when `git check-ignore stubs/` says so (any
+           `.gitignore` up the repo, any pattern), else when `stubs`, `stubs/`, `/stubs` or
+           `/stubs/` is a line of `<folder>/.gitignore` (git not on the PATH, a fake repo);
+         - an existing `pyrightconfig.json` whose `stubPath` is `"stubs"` is reported as ready;
+           otherwise the settings are printed (from the review, 2026-11-20);
+         - a repo in `~` (dotfiles) makes every project under it "in a git repo": harmless, it
+           only adds a line (review, noted, left as it is);
+         - `[tool.pyright]` or `[tool.basedpyright]` in `pyproject.toml` counts as an existing
+           config, since a new `pyrightconfig.json` would override it.
+       - **For task 3:** pyright picks the Python on the PATH for the standard library; with
+         Homebrew's 3.15 it reports 2 errors in 3.15's `string/templatelib.py`. The page says to
+         point it at a 3.11 (`pythonVersion` alone doesn't stop this) or to ignore those.
     3. **A docs page "Editor setup" (docs agent).** For someone who writes a script by hand:
        clone this repo, `build-index`, `build-stubs --project .`; then nvim (lspconfig with
        pyright or basedpyright), VS Code (Pylance) and pylsp. It also covers stubs per project

@@ -475,17 +475,29 @@ def check_names(index_dir: Path, live_build: str | None = None, folder: Path | N
 
 
 def build_stubs(index_dir: Path, live_build: str | None = None, out: Path | None = None,
-                observed_only: bool = False) -> dict:
+                observed_only: bool = False, project: Path | None = None) -> dict:
     """Write type stubs of one build for a language server (`stubs.py`); default folder:
-    `<index dir>/stubs/<build>`."""
-    from .stubs import write_stubs
+    `<index dir>/stubs/<build>`. With `project` (not with `out`): into `<project>/stubs`, and the
+    project gets its pyright config and ignore line (`set_up_project`, Decision 56)."""
+    from .stubs import set_up_project, write_stubs
 
+    if out and project:
+        raise ValueError("out and project exclude each other")
     index, missing = _open(index_dir, live_build, with_statements=True)  # instance attributes come from them
     if missing:
         return missing
     live_build = index["live_build"]
+    if project:
+        project = Path(project).expanduser().resolve()
+        if not project.is_dir():
+            return {"status": "not_found", "live_build": live_build,
+                    "message": f"no folder {project}: --project names your script project's folder"}
+        out = project / "stubs"
     out = Path(out).expanduser() if out else Path(index_dir) / "stubs" / live_build
     try:
-        return write_stubs(index, out, load_document(index_dir, live_major(live_build)), observed_only)
+        answer = write_stubs(index, out, load_document(index_dir, live_major(live_build)), observed_only)
     except FileExistsError as e:
         return {"status": "not_found", "live_build": live_build, "message": str(e)}
+    if project:
+        answer["project"] = set_up_project(project)
+    return answer
