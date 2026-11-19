@@ -116,7 +116,7 @@ If the AbletonMCP Remote Script runs in another slot,
 the rig also reads Live's state through its socket. It's an optional local aid: without it, the
 rig works from MIDI and the log alone. The rig only talks to AbletonMCP 1.7.1, and only sends a
 fixed list of read commands and simple Set changes. It never sends AbletonMCP's rating,
-dataset-consent or browser commands.
+dataset-consent, browser or clip-deleting commands.
 
 ```sh
 uv run ableton-remote-script-mcp rig abletonmcp
@@ -149,12 +149,33 @@ steps:
 ```
 
 - **`requires`:** checked before the first step. The run stops with a list of what the Set lacks.
-  It creates a missing clip on a MIDI track.
-- **`state`:** `song`, `track N` or `track N device M` with the fields to compare. Numbers match
-  within 0.005.
+  It creates a missing clip on a MIDI track. `drum_racks: [1]` asks for a Drum Rack directly on track 1,
+  and `empty_slots: [{track: 1, scene: 2}]` for a slot without a clip. The rig never loads a
+  device or deletes a clip, so it names those for you to fix by hand.
+- **`state`:** `song`, `track N`, `track N device M` or `track N clip M` with the fields to
+  compare. Numbers match within 0.005.
 - **`events`:** a change AbletonMCP's listeners saw during the step.
 - **`do`:** a change made in Live first, for the Live → controller direction: does the script
   show a change made in Live?
+
+A clip is the one in scene M's slot of track N. Its fields are `has_clip`, `name`, `length`,
+`looping`, `loop_start`, `loop_end` and `notes`. A note is `[pitch, start, length, velocity]`,
+with times in beats. Leave out the velocity to match any velocity. The notes match in any order. A
+muted note shows with `muted` after it and matches no note in the check file. An empty slot reads
+as `has_clip: false`.
+
+`add_notes_to_clip` takes the same note lists and keeps the notes already in the clip, so clear
+the clip first when you want only the new ones. A note without a velocity gets velocity 100.
+
+```yaml
+steps:
+  - id: add-a-kick
+    do:
+      - clear_notes_from_clip: {track: 1, clip: 1}
+      - add_notes_to_clip: {track: 1, clip: 1, notes: [[36, 0, 0.25, 100]]}
+    state:
+      track 1 clip 1: {notes: [[36, 0, 0.25, 100]], looping: true}
+```
 
 Without AbletonMCP, `do` steps are skipped, and their state and events are listed as not checked.
 
@@ -184,6 +205,25 @@ file, its messages show up on the page, marked "driver". A `device.yaml` in the 
 sets the rows (`layout`) and how values show (`display`). Without one, the page shows one row
 per matrix, then the single elements. If you restart `rig serve`, the panel connects again by
 itself.
+
+`leds` in `device.yaml` draws a button's LED in the colour your controller shows for each value
+Live sends, so the page can stand in for a grid controller. Name an element or a whole matrix,
+then give each value a colour: `off`, a name (red, green, yellow, amber, orange, blue, cyan,
+purple, pink, white) or `'#rrggbb'` in quotes (a bare `#` starts a YAML comment), with
+` blink` after it for a blinking LED. Case doesn't matter. A YAML anchor
+shares one map between matrices. A value the map leaves out lights the LED as before, brighter
+for a higher value.
+
+```yaml
+leds:
+  steps: &grid
+    0: off
+    1: green
+    2: green blink
+    3: red
+    4: '#ff8800'
+  pads: *grid
+```
 
 Another program can play through the panel too, such as an editor that already draws your
 controller: [the panel's protocol](rig-panel-protocol.md).

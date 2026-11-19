@@ -157,8 +157,28 @@ log state to expect, which steps to ask the user about).
 
 **Device profile**:
 What the test rig knows about one controller beyond its elements: its layout for the panel, its
-identity reply, display hints.
+identity reply, display hints, LED colours (0002 Decision 26).
 
 **Test Set**:
 The Set open in Live that the test rig may change (from the user's `devSetup` template); it is
 never saved by the rig.
+
+### The drum sequencer (plan 0003)
+
+**Step sequencer**:
+A script mode in which each button of a row stands for a step of a clip: a press sets or clears
+the selected pitch's note at that step. In v3, `StepSequenceComponent` with a pitch provider.
+_Avoid_: pattern editor
+
+**Pad bank**:
+The part of the grid that shows a Drum Rack's pads (4×4 on the APC mini mk1); a press selects
+the pad whose steps are shown and plays it. In v3, `DrumGroupComponent`.
+_Avoid_: drum grid, pad matrix
+
+**Clip preset**:
+What a clip the sequencer creates on an empty slot looks like: its length, loop, name, and the
+length and velocity of new notes (0003 Decision 16).
+
+**Results page**:
+A plan's page of what was found while building and testing a script, each fact with its build
+and confidence; under `docs/feature-plans/results/` from plan 0003 on (0003 Decision 18).

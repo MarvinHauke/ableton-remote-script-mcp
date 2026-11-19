@@ -873,6 +873,18 @@ meant to do, and uses only API names that exist in the Live build they target.
         `scripts/agents.sh core rig` (any of the five) starts peers when two areas move at once.
       - To check, run one similar task both ways and compare `/cost`.
 
+55. **Small eval rounds; the sequencer before the MCP round** (user, 2026-11-19, asked what
+    another round would bring). A full 9a round with the MCP tools would most likely repeat 100%
+    graders and 0 unknown names, and 3 runs per arm can't show the tools' saving in cost and
+    tool calls. So work goes first into the tools themselves: plan 0003's APC mini drum
+    sequencer, written with the skill and the MCP server and tested on the rig.
+    - **Short rounds along the way:** at most 2–3 runs each, to check a change works (the MCP
+      setup, a new case). The round with the MCP tools is one, after the sequencer, on a
+      sequencer case, where the `Live` objects' names (the index's thin part) are in play.
+    - **One big round at the end** (user, 2026-11-19), as large as the first ones (every case,
+      several runs, with and without the skill), once the tools are improved: the step 13
+      benchmark.
+
 ## Open questions
 
 None: grilling closed 2026-11-15 (user confirmed).

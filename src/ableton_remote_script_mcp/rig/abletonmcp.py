@@ -1,4 +1,4 @@
-"""The rig's AbletonMCP client (plan 0002 Decisions 2, 6, 21): Live's state, read through the
+"""The rig's AbletonMCP client (plan 0002 Decisions 2, 6, 21, 25): Live's state, read through the
 AbletonMCP Remote Script's socket on localhost:9877, as optional evidence beside the MIDI replies.
 
 Protocol (AbletonMCP 1.7.1, read from its `__init__.py`): the client writes one JSON object
@@ -6,8 +6,8 @@ Protocol (AbletonMCP 1.7.1, read from its `__init__.py`): the client writes one 
 `{"status": "success", "result": ...}` or `{"status": "error", "message": ...}` on the same
 connection. Reads run off Live's main thread; writes are scheduled on it.
 
-Only the commands in `ALLOWED` are ever sent (Decision 6); never its rating, dataset-consent or
-browser commands. A read is repeated until two answers agree, because a first read after the user
+Only the commands in `ALLOWED` are ever sent (Decisions 6, 25, 27); never its rating, dataset-consent,
+browser or clip-deleting commands. A read is repeated until two answers agree, because a first read after the user
 reopened Live failed once (`Boost.Python.ArgumentError … None(Song)`, 2026-11-18). With another
 script version, or no socket, the rig runs without AbletonMCP.
 """
@@ -20,9 +20,11 @@ import socket
 HOST, PORT = "127.0.0.1", 9877
 SCRIPT_VERSION, PROTOCOL_VERSION = "1.7.1", 1
 READS = {"get_script_info", "get_session_info", "get_track_info", "get_device_parameters",
-         "drain_passive_events"}
+         "drain_passive_events", "get_clip_notes",
+         "get_session_snapshot"}  # only for a clip's looping, loop_start, loop_end: Decision 27
 WRITES = {"create_midi_track", "create_audio_track", "create_clip", "set_tempo", "set_device_parameter",
-          "fire_clip", "stop_clip", "start_playback", "stop_playback"}
+          "fire_clip", "stop_clip", "start_playback", "stop_playback",
+          "add_notes_to_clip", "clear_notes_from_clip"}  # the notes three: Decision 25
 ALLOWED = READS | WRITES
 
 # Commands whose answer was checked against a state the user set by hand in Live (Decision 6),
@@ -33,6 +35,13 @@ TESTED = {
     "get_session_info": "2026-11-18, Live 12.4.16: tempo read 123 after the user set 123 BPM by hand",
     "get_device_parameters": "2026-11-18, Live 12.4.16: Macro 2 of track 2's Instrument Rack read 64.0 after the "
                              "user set it to 64 by hand",
+    # plan 0002 step 6b, the user's clip on track 7, scene 8 of the test Set
+    "get_clip_notes": "2026-11-19, Live 12.4.16: read C#3 on 1.2 and C3 on 1.4, the two notes the user drew by hand",
+    "get_session_snapshot": "2026-11-19, Live 12.4.16: read the same clip looping over its whole bar (0-4), "
+                            "as the user's screenshot showed (a new clip's default loop; a loop changed by hand "
+                            "is still to be read, in 0003's checks)",
+    "add_notes_to_clip": "2026-11-19, Live 12.4.16: a D3 on 1.1 read back and seen by the user, the two notes kept",
+    "clear_notes_from_clip": "2026-11-19, Live 12.4.16: the three notes gone, read back and seen by the user",
 }
 
 
@@ -74,14 +83,18 @@ class AbletonMCP:
             raise AbletonMCPError(f"`{command}`: {answer.get('message', answer)}")
         return answer.get("result")
 
-    def read(self, command: str, tries: int = 4, **params):
-        """A read repeated until two answers in a row agree (or an error the last time)."""
+    def read(self, command: str, tries: int = 4, project=None, **params):
+        """A read repeated until two answers in a row agree (or an error the last time). With
+        `project`, only `project(answer)` must agree, and it is what comes back: a snapshot holds
+        the song time, so two whole ones never agree while Live plays."""
         if command not in READS - {"drain_passive_events"}:
             raise Forbidden(f"`{command}` is not a repeatable read")
         last, error = None, None
         for _ in range(tries):
             try:
                 answer = self.call(command, **params)
+                if project is not None:
+                    answer = project(answer)
             except AbletonMCPError as e:
                 error, last = e, None
                 continue

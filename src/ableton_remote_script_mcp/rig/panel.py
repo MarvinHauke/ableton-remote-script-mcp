@@ -9,7 +9,10 @@ page as it happens, and the user's moves on the page go to the same port.
                                                                     encoder, or "press"
                     {"op": "send", "message": [bytes]}              one raw MIDI message (a client that
                                                                     knows the device, not the script)
-    panel -> page   {"type": "model", ...}                          once, on connecting, then the last
+    panel -> page   {"type": "model", ...}                          once, on connecting (an element may
+                                                                    carry "leds": {"value": {"colour":
+                                                                    "#rrggbb" | null, "blink": bool}}),
+                                                                    then the last
                                                                     "midi" event per element and dir
                                                                     with "replay": true
                     {"type": "midi", "dir": "in" | "out", "by": "panel" | "driver" | null,
@@ -67,6 +70,13 @@ def _display(ctl: Controller, profile, name: str, group: str | None) -> str:
     return "relative" if ctl.elements[name].relative else "absolute"
 
 
+def _leds(profile, name: str, group: str | None) -> dict | None:
+    """The element's LED map for the page (Decision 26), its own or its matrix's; None without one."""
+    leds = profile.leds if profile else {}
+    values = leds.get(name) or (leds.get(group) if group else None)
+    return {str(v): led.to_json() for v, led in sorted(values.items())} if values else None
+
+
 def panel_model(ctl: Controller, profile=None) -> dict:
     """Rows of groups of elements, as the page draws them. A profile's `layout` gives the rows
     (each name an element or a whole matrix); without one, a plain layout from `outline`: one
@@ -74,12 +84,16 @@ def panel_model(ctl: Controller, profile=None) -> dict:
     (Decision 10). Elements a layout leaves out are added at the end, so none is hidden."""
     group_of = {item: m for m, items in ctl.matrices.items() for item in items}
 
+    def element(n: str) -> dict:
+        e = {"name": n, "kind": ctl.elements[n].kind, "midi": ctl.elements[n].describe(),
+             "display": _display(ctl, profile, n, group_of.get(n)), "feedback": ctl.elements[n].feedback}
+        leds = _leds(profile, n, group_of.get(n))
+        if leds:  # an optional field: a profile without `leds` gives the model as before
+            e["leds"] = leds
+        return e
+
     def group(name: str) -> dict:
-        names = ctl.matrices.get(name, [name])
-        return {"name": name, "elements": [
-            {"name": n, "kind": ctl.elements[n].kind, "midi": ctl.elements[n].describe(),
-             "display": _display(ctl, profile, n, group_of.get(n)),
-             "feedback": ctl.elements[n].feedback} for n in names]}
+        return {"name": name, "elements": [element(n) for n in ctl.matrices.get(name, [name])]}
 
     rows: list[list[str]] = [list(r) for r in profile.layout] if profile and profile.layout else []
     placed = {n for row in rows for x in row for n in ctl.matrices.get(x, [x])}

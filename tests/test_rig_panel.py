@@ -25,7 +25,7 @@ from ableton_remote_script_mcp.rig.panel import (
     ws_read,
 )
 from ableton_remote_script_mcp.rig.ports import MemoryPort
-from ableton_remote_script_mcp.rig.profile import Profile
+from ableton_remote_script_mcp.rig.profile import Led, Profile, check_profile_names
 from ableton_remote_script_mcp.rig.serve import RigServer, ServedPort
 
 ELEMENTS = '''\
@@ -77,6 +77,24 @@ def test_profile_layout_and_hints_and_nothing_left_out(ctl):
     model = panel_model(ctl, profile)
     assert _rows(model) == [["pads", "play_button"], ["faders"], ["quant_encoder"]]
     assert {e["display"] for e in model["rows"][1][0]["elements"]} == {"bipolar"}
+
+
+def test_led_colours_reach_the_model_and_only_where_the_profile_gives_them(ctl):
+    """Decision 26: an optional `leds` field per element; an element's own map wins over its matrix's."""
+    grid = {0: Led(None), 1: Led("#2fb344", True)}
+    profile = Profile(leds={"pads": grid, "pads[1]": {3: Led("#e5322d")}})
+    pads = {e["name"]: e for e in panel_model(ctl, profile)["rows"][1][0]["elements"]}
+    assert pads["pads[0]"]["leds"] == {"0": {"colour": None, "blink": False}, "1": {"colour": "#2fb344", "blink": True}}
+    assert pads["pads[1]"]["leds"] == {"3": {"colour": "#e5322d", "blink": False}}
+    assert all("leds" not in e for row in panel_model(ctl)["rows"] for g in row for e in g["elements"])
+    assert all("leds" not in e for g in panel_model(ctl, profile)["rows"][0] for e in g["elements"])  # faders
+    json.dumps(panel_model(ctl, profile))  # it goes to the page as JSON
+
+
+def test_led_maps_name_buttons_the_script_has(ctl):
+    profile = Profile(leds={"pads": {1: Led("#2fb344")}, "faders": {1: Led("#2fb344")}, "nope": {1: Led(None)}})
+    problems = check_profile_names(profile, ctl)
+    assert len(problems) == 2 and "`nope`" in problems[0] and "`faders`" in problems[1]
 
 
 def test_midi_event_names_the_element_and_its_value(ctl):

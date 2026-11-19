@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (agent team set up, 0001 Decision 54; `build-stubs` built; distribution stays last)._
+_Last updated: 2026-11-19 (0003 steps approved, Decision 21, step 1 next on `feat/0003-step-1-tracer`; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -162,7 +162,7 @@ _Last updated: 2026-11-19 (agent team set up, 0001 Decision 54; `build-stubs` bu
   check: the user plays the UC4 script from the panel. Played 2026-11-18: the controls reached
   Live. The panel's WebSocket became a contract (Decision 24, `docs/rig-panel-protocol.md`), and
   the UC4 Editor's architect got a brief for its plan 0008 (play through the rig). Step 5 done and merged
-  (2026-11-18). Next for 0002: step 6, once the APC sequencer has its own plan.
+  (2026-11-18). Next for 0002: step 6 (its LED panel first; the checks once 0003's steps are written).
 - The 0001 step 10 eval round ran (user confirmed Decision 46, 2026-11-18). With the skill:
   100% of the graders in all three cases, 0 findings. Without it: no v3 script got the session box
   or the UC4's value feedback. The login expired partway through, so the v3 cases ran a second
@@ -194,6 +194,51 @@ _Last updated: 2026-11-19 (agent team set up, 0001 Decision 54; `build-stubs` bu
 
   219 tests. The user decided (2026-11-19) that distribution (PyPI, the plugin, a release
   workflow) is one of the last steps: improve the tool first. Step 12 waits.
+- Plan 0003 drafted on `docs/plan-0003-drum-sequencer` (2026-11-19): a drum step sequencer for
+  the APC mini mk1, built with the skill and the MCP server and tested on the rig (0001 Decision
+  55: short eval rounds of 2–3 runs along the way, the MCP round after the sequencer, one big
+  round at the end as step 13). Question 7 decided
+  (0003 Decision 2, 0002 Decision 25): `get_clip_notes`, `add_notes_to_clip` and
+  `clear_notes_from_clip` are on the rig's allow-list, not yet tested. The skill has a section
+  "With the MCP server" (each script's tool, `build=` always, absolute folders). 220 tests.
+  Registered for this project (2026-11-19, the user's go, local only): the MCP server
+  `ableton-remote-script` (`claude mcp add --scope local`, connected), the skill as a link
+  `.claude/skills/ableton-remote-scripts`, and `ABLETON_REMOTE_SCRIPT_MCP` in the git-ignored
+  `.claude/settings.local.json` for its scripts (no `uv tool install`: `eval_run.sh` refuses to
+  run beside one). 0003 grilled (2026-11-19, Decisions 3–16): one pad at a time on v3's
+  components, `examples/APC_mini_drum_seq/`, the APC a normal test device again until its hardware check shows otherwise (Decision 12),
+  the panel draws LED colours (0002 Decision 26, an addition to protocol 1, in 0002 step 6), a
+  fixed clip preset. A one-run `uc4-mixer-v3` check after the skill's MCP section: with 9/9,
+  without 7/9 (Decision 7). Next, in a fresh session: 0003's spec and steps.
+- 0003 spec and steps written on `docs/plan-0003-drum-sequencer` (2026-11-19, the architect;
+  steps wait for the user's approval). The API facts were looked up with the MCP server
+  (12.4.16, `observed`): the v3 base `StepSequenceComponent` has no `playhead` property, it
+  builds a `PlayheadComponent` that hands the lighting to Live's own playhead (Decision 17:
+  v3's first, our own if it doesn't reach the mk1). 0002 step 6 split into 6a (panel LED
+  colours) and 6b (a clip's notes in check files); order 0002 6a → 6b → 0003 1–7, the LED
+  colours before the first rig checks as Decision 14 says (Decision 19). Three tool findings for 0003 step 1's list: `get_class("Clip")` cuts
+  `Live.Clip.Clip` behind skin and notification classes named `Clip`; `Launchkey_MK4`'s outline
+  shows no mappings; `lookup class` crashes (`KeyError: 'all_members'`, `cli.py`
+  `_format_class`) on a cut answer, e.g. `Live.Clip.Clip`. The steps still wait for the
+  user's approval.
+- 0002 step 6a built on `feat/0002-step-6a-led-colours` (2026-11-19, solo): `leds` in
+  `device.yaml` (value → colour, ` blink`), the optional `leds` field per element in the panel's
+  `model` message (still protocol 1), the rule that clients ignore unknown fields in
+  `docs/rig-panel-protocol.md`, the page drawing them; `docs/test-rig.md` says how. 223 tests.
+  Open: the user's look at the colours (with the sequencer, 0003 step 1); the one-line note to
+  the UC4 Editor's architect, handed to the user.
+- 0002 step 6b built on `feat/0002-step-6b-clip-notes` (2026-11-19, solo): a `state` target
+  `track N clip M` (`has_clip`, `name`, `length`, `notes`, `looping`, `loop_start`,
+  `loop_end`), `add_notes_to_clip` taking `[pitch, start, length, velocity]` lists, and
+  `requires` `drum_racks` and `empty_slots` (named, never created). 0002 Decision 27 (user):
+  `get_session_snapshot` joins the reads, only for a clip's looping. `docs/test-rig.md` says
+  how. 229 tests. Run in Live the same day (track 7, scene 8 of the test Set): two notes the
+  user drew read back, an add and a clear seen by the user; `get_clip_notes`,
+  `get_session_snapshot`, `add_notes_to_clip` and `clear_notes_from_clip` joined `TESTED`.
+  Plan 0002's steps are done except 6a's look at the colours (with 0003 step 1).
+- 0003 steps approved by the user (2026-11-19, Decision 21). Next: 0003 step 1 (the tracer) on
+  `feat/0003-step-1-tracer`, in a fresh architect session. Not yet in `main`: 0003's spec,
+  0002 6a and 6b (merge when the user asks).
 
 ## After grilling
 

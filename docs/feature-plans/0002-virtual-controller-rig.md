@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6 (needs the APC sequencer's own plan)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. step 6a built 2026-11-19 (the user's look at the colours waits for 0003 step 1); step 6b done 2026-11-19 (run in Live). Frontier: plan 0003 step 1 (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -9,8 +9,9 @@ _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 Every behaviour check of a Remote Script needs the user, the hardware and a round of "press
 this, what lights up?". The UC4 load test took two sessions, and three of its four bugs showed
 only as wrong values or a traceback, which a machine can see. Some hardware can't be trusted for
-the test at all: the APC mini mk1 loses presses under LED load, so a step sequencer can't be
-load-tested on it reliably. The user wants a virtual controller that sends the script's MIDI
+the test at all: the APC mini mk1 lost presses under LED load, so a step sequencer couldn't be
+load-tested on it reliably (since `OptimizedControlSurface` none seen, not yet confirmed: 0003
+Decision 12). The user wants a virtual controller that sends the script's MIDI
 and shows what Live sends back, which the user can play with and Claude can drive itself.
 
 ## Solution
@@ -60,11 +61,11 @@ behaviour) stays the user's load test. Decisions 1–24 below.
 - **Timing:** after each send the driver waits for replies until a quiet period (default
   150 ms, configurable per step), then reads the log and drains AbletonMCP's events.
 - **Device profile (`device.yaml`):** beside the check file; identity reply bytes, panel layout,
-  display hints (absolute, relative, bipolar).
+  display hints (absolute, relative, bipolar), LED colours (Decision 26).
 - **Report:** printed summary plus `checks.result.json` beside the check file (git-ignored).
 - **Panel:** a static page and a WebSocket served on localhost by `rig panel`; the page shows
   "parallel view: the driver is in charge". It renders the controller model and the last value
-  sent and received per element.
+  sent and received per element, in the profile's LED colours where it gives them (Decision 26).
 
 ## Testing Decisions
 
@@ -187,6 +188,24 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     LEDs in it) belongs to that project: the agent sends its architect a brief for its plan 0008
     (live view) to grill, and builds nothing in that repo. The panel's own page stays, for
     scripts whose device has no editor.
+25. **AbletonMCP's note commands join the allow-list** (user, 2026-11-19, "allow the note
+    check", for plan 0003's drum sequencer; adds to Decision 6). The read `get_clip_notes` and
+    the test-Set changes `add_notes_to_clip` and `clear_notes_from_clip`. Like every command,
+    each joins the "tested" list only after it read back, or set, a state the user made or
+    checked by hand in Live. Still never sent: deleting clips, the browser, rating and
+    dataset consent. How check files state a clip's notes is part of step 6.
+26. **The panel draws LED colours from the device profile** (user, 2026-11-19, plan 0003
+    Decision 14, "yes to a-d"). `device.yaml` may give a `leds` map, value → colour and
+    blinking, per element or matrix; the panel draws them, so it can stand in for a grid
+    controller. The colours reach the page as a new optional field per element in the `model`
+    message: an addition, still protocol 1, and `docs/rig-panel-protocol.md` gains the rule that
+    clients ignore fields they don't know. The UC4 Editor's architect gets a one-line note.
+    Changes Decision 24's contract by that field and the rule on unknown fields only.
+27. **The rig may read AbletonMCP's `get_session_snapshot`** (user, 2026-11-19, step 6b, asked by
+    the architect; adds to Decisions 6 and 25). Only for a clip's `looping`, `loop_start` and
+    `loop_end`, which no other allowed command reports, and only with `include_notes` and
+    `include_params` off. A read, so it joins `READS`; like every command it is labelled
+    untested until it read back a state the user set by hand.
 
 ## Open questions
 
@@ -377,9 +396,51 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
        answers a press with a quick 0/127 pair and then the settled value about 40 ms later.
        The user then saw it working after the servers were restarted.
    - **Done** (2026-11-18, the user).
-6. **The APC mini drum sequencer's checks** — blocked by: 3, and the sequencer's own plan.
-   - **Delivers:** its check file and device profile; the skill mentions the rig (Decision 20)
-     once the sequencer's checks pass.
+6. **The APC mini drum sequencer's checks** — split in two around plan 0003's steps (0003
+   Decision 19, architect, 2026-11-19). The sequencer's check file and device profile grow in
+   0003's steps 1–5 (0003 Decision 20), no longer here.
+   - **6a. LED colours in the panel** — blocked by: 5. Before 0003 step 1 (0003 Decision 14).
+     - **Delivers:** Decision 26: `leds` in `device.yaml` (value → colour and blinking, per
+       element or matrix), the new optional field per element in the `model` message, the rule
+       in `docs/rig-panel-protocol.md` that clients ignore unknown fields, the page drawing them;
+       the one-line note to the UC4 Editor's architect.
+     - **Checks:** seam C (a profile's `leds` reaches the `model` message; a profile without
+       them gives the message as before); the protocol page's check; the user sees a profile's
+       colours on the page with `Rig_Identity` or the sequencer.
+     - **Built** (2026-11-19, the architect in solo mode, branch `feat/0002-step-6a-led-colours`):
+       `leds` names an element or a matrix, each value a colour (`off`, a name from
+       `rig/profile.py` `COLOURS`, or a quoted `'#rrggbb'`) with ` blink` after it; an element's
+       own map wins over its matrix's; a value the map leaves out lights the LED by the value as
+       before. YAML 1.1 reads a bare `off` (and `no`, `false`) as false, taken as off; `on` is
+       refused. A map on a control that isn't a button is refused like an unknown name (exit 4).
+       The model's field: `"leds": {"<value>": {"colour": "#rrggbb" | null, "blink": bool}}`,
+       absent without a map. 223 tests. Open: the user's look at the colours, with the
+       sequencer's `device.yaml` in 0003 step 1 (`Rig_Identity`'s values from Live's default skin
+       aren't known, so no map is guessed for it); the UC4 Editor note, handed to the user.
+   - **6b. A clip's notes in check files** — blocked by: 3. Before 0003 step 1.
+     - **Delivers:** Decision 25: a `state` target `track N clip M` (`notes` as pitch, start,
+       length, velocity; `length`, `looping`, `name`) read with `get_clip_notes` and the clip
+       info; `do` with `add_notes_to_clip` and `clear_notes_from_clip`; `requires` names a Drum
+       Rack track and an empty slot when they are missing (never creates the Drum Rack).
+     - **Checks:** seam C over the fake socket; the user sets two notes by hand in a test-Set
+       clip, the rig reads them back, and `get_clip_notes` joins `TESTED`; an add and a clear
+       read back and checked by the user join it too.
+     - **Built** (2026-11-19, the architect in solo mode, branch `feat/0002-step-6b-clip-notes`):
+       `track N clip M` takes `has_clip`, `name` and `length` (read with `get_track_info`, which is
+       tested), `notes` (`get_clip_notes`) and `looping`, `loop_start` and `loop_end`
+       (`get_session_snapshot`, Decision 27, repeated until the three loop fields agree, since a
+       whole snapshot holds the song time). Each read is made only when a field needs it. An
+       empty slot reads as `has_clip: false`, and its other fields as "(no clip)". A note is
+       `[pitch, start, length]` or `[pitch, start, length, velocity]`. Notes match in any order,
+       and a muted note matches none. `add_notes_to_clip` takes the same lists, with velocity
+       100 when it is left out. `requires` takes `drum_racks` (AbletonMCP's device type
+       `drum_machine`) and `empty_slots`, both only named when missing. 229 tests.
+     - **Run in Live** (2026-11-19, Live 12.4.16, the user's clip on track 7, scene 8): the rig
+       read the two notes the user drew (C#3 on 1.2, C3 on 1.4) and the clip looping over its
+       bar, which the user confirmed with a screenshot; an added D3 on 1.1 and then a clear were
+       read back and seen by the user. `get_clip_notes`, `get_session_snapshot`,
+       `add_notes_to_clip` and `clear_notes_from_clip` joined `TESTED`. Step 6b is done.
+   - The skill mentions the rig (Decision 20) in 0003 step 6.
 
 ## Out of scope
 
