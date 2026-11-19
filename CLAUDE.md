@@ -64,6 +64,26 @@ plan and STATUS on the same branch → the user gets what to try by hand.
   rig) starts peers in the tmux window `arsm-agents`; `--resume <agent>` continues a recorded
   session; `status` and `stop` as in the script's header.
 
+## Working in the script's submodule
+
+`examples/APC_mini_mk1_Plus` is its own git repo (plan 0003 Decision 36). The repo rules above
+hold in it too, with these additions (architect, 2026-11-19):
+
+- **Branch:** for a task that touches the script, the architect creates a branch of the same name
+  in both repos (`git -C examples/APC_mini_mk1_Plus switch -c <branch>`). Builders don't switch
+  branches in either repo.
+- **Commit there first, by path, relative to the submodule:**
+  `git -C examples/APC_mini_mk1_Plus commit -- APC_mini_mk1_Plus/<file>`. A `git commit` here
+  can't take paths inside the submodule. The pointer `examples/APC_mini_mk1_Plus` is committed
+  here, together with the plan and STATUS, once the script's commit is in.
+- **Review:** `git -C examples/APC_mini_mk1_Plus status --short` and `git -C
+  examples/APC_mini_mk1_Plus diff` (or `git diff --submodule=diff` here) show the script's change.
+  The pointer here must match the script's commit.
+- **Merge and push** (architect, only when the user asks): first merge the script repo's branch
+  into its `main` and push it, then commit the pointer here, merge and push `main`. The guard
+  `push.recurseSubmodules = check` refuses the wrong order.
+- **Not in its commits:** `stubs/` (from Ableton's code, git-ignored).
+
 ## Rules that hold everywhere
 
 - **Every API fact carries its Live build and a confidence:**
