@@ -7,7 +7,8 @@
 #   .claude/agent-sessions/<agent> (git-ignored); --resume continues that session instead. Use it
 #   only for unfinished work: a long session reloads its whole history.
 # - by default only the architect starts (solo mode, 0001 Decision 54): it plans and builds one task
-#   per fresh session and calls the reviewer and docs as subagents. Peers are for parallel work.
+#   per fresh session, starts the reviewer as a peer before each commit (in its own window, so the
+#   user can follow it) and calls docs as a subagent. Builder peers are for parallel work.
 # - core, reviewer, docs, skill and rig start only when you name them, as splits in one tmux window
 #   "arsm-agents" (tiled)
 # - the architect replaces this script in the current pane (your main window); outside tmux the

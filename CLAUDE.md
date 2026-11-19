@@ -20,15 +20,16 @@ It controls nothing at runtime; that is AbletonMCP's job. The architecture is pl
 ## Agent team
 
 **Solo mode is the default** (user, 2026-11-19, for cost): `scripts/agents.sh` starts only the
-architect, which plans and builds one task per fresh session and calls `reviewer` and `docs` as
-subagents. Peer sessions are for parallel work; they message each other (`SendMessage`), run in
+architect, which plans and builds one task per fresh session, starts the reviewer as a peer in
+its own window before each commit (user, 2026-11-19: the user follows the review there) and calls
+`docs` as a subagent. Peer sessions are for parallel work; they message each other (`SendMessage`), run in
 tmux, and start only when named (plan 0001 Decision 54):
 
 | Name | Agent file | Model | Job |
 |---|---|---|---|
 | `arsm-architect` | `.claude/agents/architect.md` | opus | lead: plans, STATUS, tasks and briefs, decisions, merges |
 | `arsm-core` | `.claude/agents/core.md` | sonnet | index, query and answer core, API, MCP server, validator, stubs — **on demand** |
-| `arsm-reviewer` | `.claude/agents/reviewer.md` | opus | read-only review against the plans and the Ableton-material rules — **on demand** (a subagent in solo mode) |
+| `arsm-reviewer` | `.claude/agents/reviewer.md` | opus | read-only review against the plans and the Ableton-material rules — **on demand** (a peer in its own window, also in solo mode) |
 | `arsm-docs` | `.claude/agents/docs.md` | sonnet | docs site and README — **on demand** |
 | `arsm-skill` | `.claude/agents/skill.md` | sonnet | the skill and its evals — **on demand** |
 | `arsm-rig` | `.claude/agents/rig.md` | sonnet | the test rig, plan 0002 — **on demand** |
