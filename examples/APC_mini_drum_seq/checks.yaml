@@ -126,11 +126,41 @@ steps:
     wait: 3.0
     timeout: 4.0
     log: clean
+  # Step 5 (Decision 31): the page follows the playhead while the clip plays. Clip 3 starts at
+  # s, the next bar after four-bar-clip's fire (0 < s <= 2 s at 120 BPM); its page 2 (beats
+  # 8-16) plays from s+4 to s+8 s. With the playhead running a step lasts its whole timeout:
+  # four-bar-clip ends about 4 s after the fire, page-follows about 7 s, always on page 2 (a
+  # fire within about 50 ms of a bar line could switch already in four-bar-clip's window).
+  - id: page-follows
+    description: the steps follow the playhead to page 2 (the note on step 33 shows), track button 2 lights
+    depends_on: [four-bar-clip]
+    wait: 2.5
+    timeout: 3.0
+    expect:
+      steps[0]: [1, 5]       # the note, or the playhead passing it
+      track_buttons[1]: [1, 2]
+    log: clean
+  # A pick that changes the page pauses following: track button 1 shows page 1 while page 2
+  # plays, then track button 2 page 2, which stays while the playhead plays page 1 again (page-two
+  # ends 10.6-11.1 s after the fire; scroll-pitch writes on page 2 after the stop).
+  - id: page-one-pick
+    description: track button 1 shows page 1 while page 2 plays (page 1 of clip 3 is empty) and is on
+    depends_on: [four-bar-clip]
+    send:
+      - track_buttons[0]: press
+    wait: 0.5
+    timeout: 0.6
+    expect:
+      steps[0]: [0, 5]
+      track_buttons[0]: 1
+    log: clean
   - id: page-two
-    description: track button 2 shows steps 33-64 and is on; the clip keeps its loop
+    description: track button 2 picks page 2 (steps 33-64), which stays while page 1 plays; the clip keeps its loop
     depends_on: [four-bar-clip]
     send:
       - track_buttons[1]: press
+    wait: 3.0
+    timeout: 3.5
     expect:
       steps[0]: [1, 5]       # the note, or the playhead passing it
       track_buttons[1]: [1, 2]

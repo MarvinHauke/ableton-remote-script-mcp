@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -314,8 +314,14 @@ _Last updated: 2026-11-19 (0003 Decision 30 built, the resolution pads; 0003 Dec
   joined `TESTED` (the user saw track 10 and the stopped transport).
   - **0003 Decision 30** (user, during the panel run): the resolution's own pads, notes 28–31
     (the right half's top row), v3's `resolution_buttons`, the active one yellow; two
-    `resolution-pad` checks. Next: install, restart, track 9, `rig run`; then the user's panel
-    run and the APC run (Decisions 12, 14), with the results page.
+    `resolution-pad` checks. `rig run` after install and restart: 37 passed, 0 failed, 2 asked.
+  - **The user's panel run** (results page): 9 of 9 points work (the playhead "pretty sure",
+    the delay makes it hard to tell).
+  - **0003 Decision 31** (user, from the panel run): the page follows the playhead while the
+    clip plays, a page pick pauses it until the transport starts or the clip changes
+    (`PageLoopSelectorComponent`); `page-follows` and `page-one-pick` added, `page-two` picks page 2 by hand and it stays. Next:
+    review, install, restart, track 9, `rig run`; the user tries the follow on the panel, then
+    the APC run (Decisions 12, 14), with the results page.
 
 ## After grilling
 

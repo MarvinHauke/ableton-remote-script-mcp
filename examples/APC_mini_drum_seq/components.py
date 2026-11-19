@@ -21,7 +21,7 @@ from ableton.v3.control_surface.components import (
 )
 from ableton.v3.control_surface.components.grid_resolution import GRID_RESOLUTIONS
 from ableton.v3.control_surface.skin import LiveObjSkinEntry
-from ableton.v3.live import get_bar_length, liveobj_valid
+from ableton.v3.live import get_bar_length, liveobj_changed, liveobj_valid
 
 # The clip preset (plan 0003 Decision 16): a clip created on an empty slot
 CLIP_BARS = 2  # 8 beats in 4/4
@@ -224,11 +224,52 @@ class DrumNoteEditorComponent(NoteEditorComponent):
 class PageLoopSelectorComponent(LoopSelectorComponent):
     """v3's loop selector gives each button one bar. Here each button is one page of 32 steps
     (2 bars at 1/16), so track button N shows page N at every resolution; holding two buttons or
-    double-clicking one sets the clip's loop in pages (plan 0003 Decision 24)."""
+    double-clicking one sets the clip's loop in pages (plan 0003 Decision 24).
+
+    While the clip plays, the steps follow the playhead to its page (Decision 31; v3's loop
+    selector has no follow, 12.4.16, observed). A track button press that changes the page
+    pauses it, so that page can be edited; it follows again when the transport starts or the
+    clip changes."""
+
+    def __init__(self, *a, **k):
+        self._following = True
+        super().__init__(*a, **k)
+        self.register_slot(self.song, self._on_is_playing_changed, "is_playing")
 
     @property
     def bar_length(self):
         return self._paginator.page_length
+
+    def set_clip(self, clip):
+        if liveobj_changed(clip, self._clip):
+            self._following = True
+        super().set_clip(clip)
+
+    def _on_matrix_pressed(self, button):
+        # paused before v3 sets the page: its redraw would otherwise follow back to the playhead
+        page_time = self._paginator.page_time
+        following, self._following = self._following, False
+        super()._on_matrix_pressed(button)
+        if self._paginator.page_time == page_time:
+            self._following = following  # the same page, or a held step: no pause
+
+    def _on_is_playing_changed(self):
+        if self.song.is_playing:
+            self._following = True
+
+    def _update_matrix(self):
+        # v3 redraws the track buttons as the playing position moves: the page follows it here
+        self._follow_playhead()
+        super()._update_matrix()
+
+    def _follow_playhead(self):
+        clip = self._clip
+        if not (self._following and self.song.is_playing and liveobj_valid(clip) and clip.is_playing):
+            return
+        page_length = self._paginator.page_length
+        page_time = (clip.playing_position // page_length) * page_length
+        if page_time != self._paginator.page_time:
+            self._paginator.page_time = page_time  # its slot redraws: the outer draw repeats it
 
 
 class NoPlayheadComponent(PlayheadComponent):

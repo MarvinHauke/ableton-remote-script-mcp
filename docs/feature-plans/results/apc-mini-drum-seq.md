@@ -208,8 +208,34 @@ rig selects the slot itself now, plan 0002 Decision 29): 31 passed, 0 failed, 2 
   master. Whether track 9's arm button was lit wasn't answered this time (step 4's run saw it).
 - `create_clip` and `fire_clip` joined `TESTED` (the user saw the clips and heard them);
   `create_midi_track` and `stop_playback` are read back by the rig but not yet confirmed by the
-  user.
+  user. Confirmed later the same day: the user saw track 10 and the stopped transport; both
+  joined `TESTED`.
+
+**Step 5, Decisions 29-30, 2026-11-19, Live 12.4.16** (after `install --replace` and `rig
+restart-live`, track 9 "Yellow Kit" again through AbletonMCP): with the scene buttons and the
+resolution on two buttons, 35 passed, 0 failed, 2 asked; with the resolution pads, 37 passed,
+0 failed, 2 asked. The user: the pad heard and track 9 armed (later track 2, the run's last
+selection, armed instead: auto-arm follows the selection), the box around tracks 1-8, the
+master at +6 dB (fader 9 at 127 is volume 1.0).
 
 ## The user's results
 
-Not yet (panel and hardware after step 7, Decision 14).
+**The panel, 2026-11-19, Live 12.4.16** (`rig panel`, the test Set after the 37-passed run; plan
+0003 Decision 14). The user went through nine points, limited to what was new or checked only
+by the rig:
+1. the resolution pads: the active one yellow, a press sets it: works;
+2. scene buttons 1-2, finer and coarser, off at the ends: work;
+3. a pattern at 1/16 closes up or spreads out at 1/8 and 1/32: works;
+4. scene buttons 3-4 move the selected slot; with nothing playing the grid shows its clip: works;
+5. on an empty slot the first step press creates the 2-bar "Drum Seq" clip: works;
+6. a kick and snare pattern plays as set: works;
+7. the playhead runs with the beat: "pretty sure", the delay makes it hard to tell; pressing
+   feels immediate;
+8. steps set or cleared while it plays are heard on the next pass: works;
+9. pages on a clip longer than 2 bars, the playhead's page blinking: works.
+
+What the user missed: the page doesn't follow the playhead when the clip is longer than the 32
+steps show (as Push's sequencer does): plan 0003 Decision 31. Stopping a clip from the
+controller was left out: the user stops it in Live.
+
+The APC mini: not yet.

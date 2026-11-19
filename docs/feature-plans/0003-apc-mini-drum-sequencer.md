@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons) and 30 (resolution pads)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons) 30 (resolution pads) and 31 (the page follows the playhead)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -153,7 +153,8 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
    the first step press creates a 2-bar clip (`SequencerClip.create_clip(length)`, `observed`).
    A track without a Drum Rack leaves the pad bank dark and the steps inert.
 9. **The other controls** (user, 2026-11-19, Q4):
-   - track buttons 1–8: v3's loop buttons, one page of 32 steps each (replaces previous/next page);
+   - track buttons 1–8: v3's loop buttons, one page of 32 steps each (replaces previous/next page;
+     amended by Decision 31: the page also follows the playhead, a pick pauses it);
    - scene buttons 1–4: resolution 1/32, 1/16, 1/8, 1/4; 5–6: scroll the pad bank up and down by
      a row (`DrumGroupScrollComponent`) (1–4 amended by Decision 29: 1–2 finer and coarser,
      3–4 previous and next scene);
@@ -334,6 +335,22 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     profile puts the pads in the pad bank's row (the panel draws each group as one line of
     cells, no matrix shape); no rig or protocol change.
 
+31. **The page follows the playhead** (user, 2026-11-19, step 5's panel run, "follow; a pick
+    pauses it"; amends Decision 9, where pages change only by hand). On a clip longer than one
+    page the user missed Push's follow. v3's `LoopSelectorComponent` has none (12.4.16,
+    `observed`: no `is_following` or follow button), so `PageLoopSelectorComponent` does it:
+    - while the transport and the clip play, the page shown is the playhead's page;
+    - a track button press that changes the page pauses following, so that page can be edited
+      while the clip plays (pressing the page already shown changes nothing, and following
+      goes on);
+    - following starts again when the transport starts or the sequencer's clip changes;
+    - the pause is set in `_on_matrix_pressed` (12.4.16, `observed`) before v3 sets the page:
+      v3's own redraw on the page change runs before any slot of ours, and would follow back;
+    - the checks: `page-follows` (page 2 shows on its own while it plays), `page-one-pick`
+      (page 1 shown while page 2 plays), `page-two` (page 2 picked, it stays while page 1
+      plays; `scroll-pitch` writes on it after the stop). Rejected: always follow (no editing of another page while it plays), Shift to
+      toggle (Shift stays for the session mode).
+
 ## Open questions
 
 None: questions 1–12 are Decisions 2–13 (each names its question), the panel question from
@@ -408,8 +425,8 @@ back, and the step's overview says which became a fix and which a STATUS item.
      the same on the APC; the results page gets both, and whether a press dropped.
    - **Checks:** `rig run` all passed; the panel shows the grid in the APC's colours; the user's
      list (playhead, pads, pages, track and scene choice, no dropped presses while the playhead
-     runs). Decisions 29 (the scene buttons, the resolution on two) and 30 (the resolution pads)
-     came out of the panel run.
+     runs). Decisions 29 (the scene buttons, the resolution on two), 30 (the resolution pads)
+     and 31 (the page follows the playhead) came out of the panel run.
      ReceiveMIDI only if a press seems missing. Unit-only findings stay on the results page.
 6. **Into the skill** — blocked by: 5.
    - **Delivers:** a `tested` section "A step sequencer" in the v3 reference (the components,

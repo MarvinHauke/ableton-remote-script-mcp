@@ -11,6 +11,8 @@ when none plays, its clip in the selected scene (v3's target track, plan 0003 De
 - A track without a Drum Rack directly on it: pads and steps dark, a step press does nothing.
 - The selected MIDI track is armed for the pads (Live's auto-arm).
 - Track buttons 1-8: pages of 32 steps. The page shown is on, the playhead's page blinks.
+  While the clip plays the steps follow the playhead's page; a press on another page stays
+  there until the transport starts again or the clip changes.
 - Scene buttons 1-2: the steps' resolution one step finer or coarser (1/32, 1/16 at the start,
   1/8, 1/4), lit when there is one. Bottom four rows, right half, top row: one pad per
   resolution, the active one yellow; a press sets it. The three rows below stay dark.
