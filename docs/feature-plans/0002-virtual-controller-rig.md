@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6 (needs the APC sequencer's own plan)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6 (needs plan 0003, the APC sequencer's plan: a draft since 2026-11-19, blocked until its steps are written)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -187,6 +187,12 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     LEDs in it) belongs to that project: the agent sends its architect a brief for its plan 0008
     (live view) to grill, and builds nothing in that repo. The panel's own page stays, for
     scripts whose device has no editor.
+25. **AbletonMCP's note commands join the allow-list** (user, 2026-11-19, "allow the note
+    check", for plan 0003's drum sequencer; adds to Decision 6). The read `get_clip_notes` and
+    the test-Set changes `add_notes_to_clip` and `clear_notes_from_clip`. Like every command,
+    each joins the "tested" list only after it read back, or set, a state the user made or
+    checked by hand in Live. Still never sent: deleting clips, the browser, rating and
+    dataset consent. How check files state a clip's notes is part of step 6.
 
 ## Open questions
 
@@ -377,7 +383,7 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
        answers a press with a quick 0/127 pair and then the settled value about 40 ms later.
        The user then saw it working after the servers were restarted.
    - **Done** (2026-11-18, the user).
-6. **The APC mini drum sequencer's checks** — blocked by: 3, and the sequencer's own plan.
+6. **The APC mini drum sequencer's checks** — blocked by: 3, and plan 0003's steps (0003 is a draft since 2026-11-19).
    - **Delivers:** its check file and device profile; the skill mentions the rig (Decision 20)
      once the sequencer's checks pass.
 

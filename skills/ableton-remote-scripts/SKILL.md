@@ -54,6 +54,29 @@ to ask (default: the newest indexed build); `log.sh --build` picks which Live bu
 Each script's header lists its options and exit codes. Answers are capped at about 4,000 tokens;
 a line at the end says what was cut and how to get it (`--section`, `--offset`, `--full`).
 
+### With the MCP server
+
+If the `ableton-remote-script-mcp` MCP server is connected (its tools are named `search_api`,
+`get_class`, …), use its tools instead of the scripts below for the same questions. The answers are
+the same, as structured data, and the index stays loaded between calls. Wherever this skill names a
+script, call the tool in its place:
+
+| Script | Tool |
+|---|---|
+| `lookup.sh builds` | `list_builds()` |
+| `lookup.sh class <Name>` | `get_class(name=…, members=[…])`; `members` asks only for the ones you need |
+| `lookup.sh search <words>` | `search_api(query=…, kind=…)` |
+| `lookup.sh outline <Script>` | `outline_reference_script(script=…, section=…)` |
+| `lookup.sh names <folder>` | `check_names(folder=…)` or `check_names(names=[…])`: a whole draft in one call |
+| `validate.sh <folder>` | `validate_script(folder=…)` |
+
+- Always pass `build=` the user's Live build; without it the tools use the newest indexed build,
+  which may be a beta.
+- Give a script folder as an absolute path: the server's working folder may not be yours.
+- A cut answer says so; ask again with `offset`, `section` or `full=True`.
+- `install.sh` and `log.sh` have no tool: run the scripts for those.
+- Without the server, everything works through the scripts.
+
 ## Workflow
 
 1. **Find the build.** Run `scripts/lookup.sh builds` and ask which Live build the user runs if

@@ -1,4 +1,4 @@
-"""The rig's AbletonMCP client (plan 0002 Decisions 2, 6, 21): Live's state, read through the
+"""The rig's AbletonMCP client (plan 0002 Decisions 2, 6, 21, 25): Live's state, read through the
 AbletonMCP Remote Script's socket on localhost:9877, as optional evidence beside the MIDI replies.
 
 Protocol (AbletonMCP 1.7.1, read from its `__init__.py`): the client writes one JSON object
@@ -6,8 +6,8 @@ Protocol (AbletonMCP 1.7.1, read from its `__init__.py`): the client writes one 
 `{"status": "success", "result": ...}` or `{"status": "error", "message": ...}` on the same
 connection. Reads run off Live's main thread; writes are scheduled on it.
 
-Only the commands in `ALLOWED` are ever sent (Decision 6); never its rating, dataset-consent or
-browser commands. A read is repeated until two answers agree, because a first read after the user
+Only the commands in `ALLOWED` are ever sent (Decisions 6, 25); never its rating, dataset-consent,
+browser or clip-deleting commands. A read is repeated until two answers agree, because a first read after the user
 reopened Live failed once (`Boost.Python.ArgumentError … None(Song)`, 2026-11-18). With another
 script version, or no socket, the rig runs without AbletonMCP.
 """
@@ -20,9 +20,10 @@ import socket
 HOST, PORT = "127.0.0.1", 9877
 SCRIPT_VERSION, PROTOCOL_VERSION = "1.7.1", 1
 READS = {"get_script_info", "get_session_info", "get_track_info", "get_device_parameters",
-         "drain_passive_events"}
+         "drain_passive_events", "get_clip_notes"}
 WRITES = {"create_midi_track", "create_audio_track", "create_clip", "set_tempo", "set_device_parameter",
-          "fire_clip", "stop_clip", "start_playback", "stop_playback"}
+          "fire_clip", "stop_clip", "start_playback", "stop_playback",
+          "add_notes_to_clip", "clear_notes_from_clip"}  # the notes three: Decision 25
 ALLOWED = READS | WRITES
 
 # Commands whose answer was checked against a state the user set by hand in Live (Decision 6),

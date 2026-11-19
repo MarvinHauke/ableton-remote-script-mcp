@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (agent team set up, 0001 Decision 54; `build-stubs` built; distribution stays last)._
+_Last updated: 2026-11-19 (plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -194,6 +194,15 @@ _Last updated: 2026-11-19 (agent team set up, 0001 Decision 54; `build-stubs` bu
 
   219 tests. The user decided (2026-11-19) that distribution (PyPI, the plugin, a release
   workflow) is one of the last steps: improve the tool first. Step 12 waits.
+- Plan 0003 drafted on `docs/plan-0003-drum-sequencer` (2026-11-19): a drum step sequencer for
+  the APC mini mk1, built with the skill and the MCP server and tested on the rig (0001 Decision
+  55: short eval rounds of 2–3 runs along the way, the MCP round after the sequencer, one big
+  round at the end as step 13). Question 7 decided
+  (0003 Decision 2, 0002 Decision 25): `get_clip_notes`, `add_notes_to_clip` and
+  `clear_notes_from_clip` are on the rig's allow-list, not yet tested. The skill has a section
+  "With the MCP server" (each script's tool, `build=` always, absolute folders). 220 tests.
+  Next: register the skill and the MCP server in Claude Code, a fresh session, then grill
+  0003's other 11 questions.
 
 ## After grilling
 

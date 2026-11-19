@@ -13,6 +13,7 @@ Stages: **draft** → **grilled** → **decided** (spec + steps) → **in work**
 |---|---|---|
 | [0001](0001-architecture.md) | Architecture: API index, skill, MCP server, phases | in work |
 | [0002](0002-virtual-controller-rig.md) | Virtual controller test rig | in work |
+| [0003](0003-apc-mini-drum-sequencer.md) | APC mini mk1 drum step sequencer | draft |
 
 ## Next, in dependency order
 

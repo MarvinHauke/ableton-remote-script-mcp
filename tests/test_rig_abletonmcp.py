@@ -87,6 +87,21 @@ def test_client_refuses_commands_outside_the_allow_list():
     assert {r["type"] for r in live.sent} == {"get_script_info"}  # nothing forbidden reached the socket
 
 
+def test_the_note_commands_are_allowed_and_not_yet_tested():
+    # plan 0002 Decision 25: reading and setting a clip's notes, for the drum sequencer's checks
+    from ableton_remote_script_mcp.rig.abletonmcp import ALLOWED, READS, TESTED, WRITES
+
+    assert "get_clip_notes" in READS
+    assert {"add_notes_to_clip", "clear_notes_from_clip"} <= WRITES
+    assert parse_do([{"clear_notes_from_clip": {"track": 1, "clip": 1}}], "t") == [
+        ("clear_notes_from_clip", {"track_index": 0, "clip_index": 0})]
+    notes = [{"pitch": 36, "start_time": 0.0, "duration": 0.25, "velocity": 100}]
+    assert parse_do({"add_notes_to_clip": {"track": 2, "clip": 1, "notes": notes}}, "t") == [
+        ("add_notes_to_clip", {"track_index": 1, "clip_index": 0, "notes": notes})]
+    assert not {"get_clip_notes", "add_notes_to_clip", "clear_notes_from_clip"} & set(TESTED)
+    assert "delete_clip" not in ALLOWED
+
+
 def test_reads_repeat_until_two_agree_and_survive_a_first_error():
     live = FakeLive(fail_first=1)
     mcp = AbletonMCP(sock=live)
