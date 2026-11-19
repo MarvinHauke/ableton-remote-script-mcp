@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -329,6 +329,14 @@ _Last updated: 2026-11-19 (0002 Decision 30 built, held buttons and help on the 
     (until the next plain click is released), Cmd-click until clicked again, Esc releases all;
     a `?` cheat sheet. The page still sends only 127 and 0, no protocol change; the latch logic
     is tested in node (`tests/test_rig_panel.py`, skipped without node).
+  - **The APC run, first part** (user, 2026-11-19): with the Yellow Kit most points work; two
+    problems, one cause: a step press on an empty slot while playing wrote into the track's
+    playing clip, and a Drum Rack on a track with a playing clip seemed to take no notes.
+    **0003 Decision 32** (user): the steps always edit the selected slot
+    (`SelectedSlotTargetTrackComponent`); the checks select each clip's scene,
+    `edit-other-slot` added. The local disassembly of 12.4.16's `ableton/v3` and `v2` is in
+    `reference/live-12.4.16-dis/` (made now, it found the cause). Next: review, install,
+    restart, `rig run`, then the rest of the APC run.
   - **After step 5, before step 6** (user, 2026-11-19): a local disassembly (Python's `dis`) of
     12.4.16's `ableton/v3`, and the `v2` modules v3 inherits from, into `reference/`
     (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on

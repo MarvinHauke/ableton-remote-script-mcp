@@ -1,6 +1,7 @@
 """A drum step sequencer for the Akai APC mini mk1 on `ableton.v3`, for Live 12.4 or later
-(plan 0003). Select a track with a Drum Rack: the sequencer edits the clip that plays on it, or,
-when none plays, its clip in the selected scene (v3's target track, plan 0003 Decision 22).
+(plan 0003). Select a track with a Drum Rack: the sequencer edits its clip in the selected scene,
+playing or not (in Session view; in Arrangement v3's detail clip; plan 0003 Decision 32, v3
+would take a playing clip first).
 
 - Top four rows: 32 steps of the selected drum pad, step 1 top left. A press sets or clears a
   note (one step long, velocity 100); on an empty slot the first press creates a 2-bar clip
@@ -37,6 +38,7 @@ from .components import (
     DrumSequencerClip,
     FaderRingComponent,
     DrumStepSequenceComponent,
+    SelectedSlotTargetTrackComponent,
     PadBankComponent,
     create_grid_resolution,
 )
@@ -51,6 +53,7 @@ class Specification(ControlSurfaceSpecification):
     elements_type = Elements
     control_surface_skin = create_skin(skin=Skin)
     create_mappings_function = create_mappings
+    target_track_component_type = SelectedSlotTargetTrackComponent  # the selected slot (Decision 32)
     session_ring_component_type = FaderRingComponent  # on without an identity reply: a box on tracks 1-8
     link_session_ring_to_track_selection = False  # the default (observed 12.4.16): the faders stay on 1-8
     component_map = {"Step_Sequence": DrumStepSequenceComponent, "Drum_Group": PadBankComponent}

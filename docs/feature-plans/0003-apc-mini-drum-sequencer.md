@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons) 30 (resolution pads) and 31 (the page follows the playhead)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons), 30 (resolution pads) and 31 (the page follows the playhead); the APC run gave 32 (always the selected slot)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -235,7 +235,7 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     user in Live says so in its checks, and the user is asked once per step.
 21. **The steps are approved as written** (user, 2026-11-19): order and content as in Steps;
     step 1 is built on `feat/0003-step-1-tracer`, branched from 0002 step 6b's branch.
-22. **The clip: the track's playing clip first, as v3 does** (user, 2026-11-19, step 1 review;
+22. **The clip: the track's playing clip first, as v3 does** (replaced by Decision 32) (user, 2026-11-19, step 1 review;
     amends Decision 8). v3's target track takes the clip that plays on the selected track and
     the selected scene's slot only when none plays (`documented`, 12.0 decompile; checked on the
     rig). The script keeps v3's behaviour, which Ableton's own sequencers have. Rejected: a target
@@ -324,7 +324,7 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
       `song: {selected_scene: N}` (0002 Decision 29). That the steps then edit the new scene's
       slot is a check by hand in the panel run: in the run clip 3 still counts as the track's
       playing clip after the stop (resolution-note writes to it), and the playing clip comes
-      first (Decision 22).
+      first (Decision 22). (Amended by Decision 32: scene-next and scene-prev check the steps.)
 
 30. **The resolution on its own pads** (user, 2026-11-19, step 5's panel run, "bottom-right pad
     row"; amends Decision 29's "no button shows which resolution is on"). The user couldn't tell
@@ -348,8 +348,24 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
       v3's own redraw on the page change runs before any slot of ours, and would follow back;
     - the checks: `page-follows` (page 2 shows on its own while it plays), `page-one-pick`
       (page 1 shown while page 2 plays), `page-two` (page 2 picked, it stays while page 1
-      plays; `scroll-pitch` writes on it after the stop). Rejected: always follow (no editing of another page while it plays), Shift to
+      plays; after the stop `scroll-pitch` picks page 2 with track button 2). Rejected: always follow (no editing of another page while it plays), Shift to
       toggle (Shift stays for the session mode).
+
+32. **The clip: always the selected slot** (user, 2026-11-19, the APC run; replaces Decision 22,
+    back to Decision 8's wording). On the hardware a step press on an empty slot while the
+    transport ran wrote into the track's playing clip, and a Drum Rack added to a track with a
+    playing clip seemed not to take notes: they went into that clip. Live counts a clip as
+    playing after the transport stops too (tracks 1–8 of the test Set all had one), so the
+    selected slot was often not the one edited. `SelectedSlotTargetTrackComponent` overrides
+    `TargetTrackComponent._target_clip_from_session` (12.4.16, `observed`; its playing-slot
+    rule read in the 12.4.16 bytecode, local disassembly) to take the selected scene's slot,
+    playing or not, keeping the base's listener on the slot (in Session view; in Arrangement
+    v3's detail clip, unchanged). A press on an empty slot creates
+    the clip there: v3's `create_sequencer_clip` uses the selected slot when it is empty and
+    starts it at once, legato, in place of the track's playing clip (12.4.16 bytecode). The
+    checks select each clip's scene (`select_clip_slot`) and `edit-other-slot` shows clip 2
+    while clip 3 plays. Rejected (user): a created clip that doesn't start; the playing clip
+    first.
 
 ## Open questions
 

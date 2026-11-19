@@ -1,11 +1,12 @@
 # The drum sequencer's checks for `ableton-remote-script-mcp rig run` (plan 0003 steps 1-5; each
 # step of the plan adds its own, Decision 20). Run it in the test Set with a MIDI track 9 that
-# has a Drum Rack with a kit, its slots in scenes 1-3 empty and no clip playing on it (the
-# sequencer edits a playing clip first, plan 0003 Decision 22). The rig selects track 9 and its
+# has a Drum Rack with a kit and its slots in scenes 1-3 empty (the sequencer edits the selected
+# slot, playing or not, plan 0003 Decision 32). The rig selects track 9 and its
 # scene 1 slot itself, with an AbletonMCP that has `select_clip_slot` (plan 0002 Decision 29);
 # with upstream 1.7.1 the steps that set or read the selection fail. It changes the Set (three
 # clips are created and played, the transport is stopped, a MIDI track 10 is added at the end,
-# the selected track moves, faders set the volumes of tracks 1 and 8 and the master) and never saves;
+# the selected track and scene move, faders set the volumes of tracks 1 and 8 and the master) and
+# never saves;
 # delete the three clips and track 10 by hand before the next run, or restart Live.
 #
 # Live sends an LED value only when it changes, so the pad steps first select another pad.
@@ -108,6 +109,7 @@ steps:
   - id: loop-end-red
     description: on a 1-bar clip the steps beyond its loop end (17-32 at 1/16) are red
     do:
+      - select_clip_slot: {track: 9, scene: 2}
       - create_clip: {track: 9, clip: 2, length: 4}
       - fire_clip: {track: 9, clip: 2}
     wait: 3.0
@@ -120,6 +122,7 @@ steps:
   - id: four-bar-clip
     description: a 4-bar clip with a note on step 33 plays (its launch waits for the next bar)
     do:
+      - select_clip_slot: {track: 9, scene: 3}
       - create_clip: {track: 9, clip: 3, length: 16}
       - add_notes_to_clip: {track: 9, clip: 3, notes: [[37, 8.0, 0.25, 100]]}
       - fire_clip: {track: 9, clip: 3}
@@ -142,7 +145,7 @@ steps:
     log: clean
   # A pick that changes the page pauses following: track button 1 shows page 1 while page 2
   # plays, then track button 2 page 2, which stays while the playhead plays page 1 again (page-two
-  # ends 10.6-11.1 s after the fire; scroll-pitch writes on page 2 after the stop).
+  # ends 10.6-11.1 s after the fire; after the stop scroll-pitch picks page 2 with track button 2).
   - id: page-one-pick
     description: track button 1 shows page 1 while page 2 plays (page 1 of clip 3 is empty) and is on
     depends_on: [four-bar-clip]
@@ -168,12 +171,23 @@ steps:
       track 9 clip 3: {length: 16, looping: true, loop_start: 0, loop_end: 16}
     log: clean
 
+  # Decision 32: the steps edit the selected slot even while another clip plays on the track
+  - id: edit-other-slot
+    description: with clip 3 playing, selecting scene 2 shows clip 2 (1 bar, steps 17-32 red)
+    depends_on: [four-bar-clip]
+    do:
+      - select_clip_slot: {track: 9, scene: 2}
+    expect:
+      steps[16]: 3
+      steps[31]: 3
+    log: clean
   - id: stop
-    description: the transport stops at the end
+    description: the transport stops at the end; scene 3 (clip 3) is selected again
     do:
       - stop_playback: {}
+      - select_clip_slot: {track: 9, scene: 3}
     state:
-      song: {is_playing: false}
+      song: {is_playing: false, selected_scene: 3}
     log: clean
 
   # Step 3: the pad bank. The bank starts at Live's default position (C1 bottom left, row 9 of
@@ -203,11 +217,12 @@ steps:
     expect:
       pads[12]: 5
     log: clean
-  # After the stop the sequencer keeps the clip that played last (clip 3, page 2: steps[0] is
-  # beat 8), seen in step 3's first run; v3's target clip (Decision 22), checked here.
+  # The sequencer edits the selected slot, clip 3 since `stop` (Decision 32); track button 2
+  # shows its page 2, where steps[0] is beat 8.
   - id: scroll-pitch
-    description: a pad of the scrolled bank sets the pitch the steps write (40), in the clip that played last
+    description: a pad of the scrolled bank sets the pitch the steps write (40), in the selected clip
     send:
+      - track_buttons[1]: press
       - pads[12]: press
       - steps[0]: press
     expect:
@@ -306,7 +321,7 @@ steps:
   # coarser (1/32, 1/16, 1/8, 1/4; 1/16 at the start), each lit while it can move; the four
   # resolution pads show the active one in yellow (5), and a press sets it. Live sends an LED
   # value only when it changes, so 1/8 shows in the pads and the note it writes. The clip is
-  # still clip 3 (4 bars), on page 2 since page-two: track button 1 goes back to page 1.
+  # still clip 3 (4 bars), on page 2 since scroll-pitch: track button 1 goes back to page 1.
   - id: resolution-eighth
     description: scene button 2 sets 1/8; its pad is yellow, 1/16's goes off
     send:
@@ -379,25 +394,27 @@ steps:
       scene_buttons[1]: 1
     log: clean
 
-  # Step 5 (Decision 29): scene buttons 3-4 select the previous and next scene, the slot the
-  # steps edit when no clip plays on the track. Scene 1 is selected since select-track. Clip 3
-  # still counts as playing after the stop (resolution-note writes to it), so that the steps
-  # follow the scene is checked by hand, in the panel run.
+  # Step 5 (Decisions 29, 32): scene buttons 3-4 select the previous and next scene, the slot
+  # the steps edit. The rig starts from scene 1 (clip 1, 2 bars, empty since step-clears-again).
   - id: scene-next
-    description: scene button 4 selects scene 2; scene button 3 lights, there is a scene above
+    description: scene button 4 selects scene 2 and the steps show clip 2 (1 bar, 17-32 red); scene button 3 lights
+    do:
+      - select_clip_slot: {track: 9, scene: 1}
     send:
       - scene_buttons[3]: press
     expect:
       scene_buttons[2]: 1
+      steps[16]: 3
     state:
       song: {selected_track: 9, selected_scene: 2}
     log: clean
   - id: scene-prev
-    description: scene button 3 selects scene 1 again and goes off
+    description: scene button 3 selects scene 1 again (clip 1, 2 bars, step 17 empty) and goes off
     send:
       - scene_buttons[2]: press
     expect:
       scene_buttons[2]: 0
+      steps[16]: 0
     state:
       song: {selected_track: 9, selected_scene: 1}
     log: clean

@@ -18,10 +18,11 @@ from ableton.v3.control_surface.components import (
     SequencerClip,
     SessionRingComponent,
     StepSequenceComponent,
+    TargetTrackComponent,
 )
 from ableton.v3.control_surface.components.grid_resolution import GRID_RESOLUTIONS
 from ableton.v3.control_surface.skin import LiveObjSkinEntry
-from ableton.v3.live import get_bar_length, liveobj_changed, liveobj_valid
+from ableton.v3.live import get_bar_length, liveobj_changed, liveobj_valid, scene_index
 
 # The clip preset (plan 0003 Decision 16): a clip created on an empty slot
 CLIP_BARS = 2  # 8 beats in 4/4
@@ -78,6 +79,21 @@ class FaderRingComponent(SessionRingComponent):
     def __init__(self, *a, **k):
         super().__init__(*a, **k)
         self.set_enabled(True)
+
+
+class SelectedSlotTargetTrackComponent(TargetTrackComponent):
+    """The clip the steps edit is the selected track's clip in the selected scene, playing or
+    not (plan 0003 Decision 32). v3 takes the track's playing clip first (12.4.16, observed in
+    the bytecode); Live counts a clip as playing after the transport stops too, so the selected
+    slot was often not the one edited."""
+
+    def _target_clip_from_session(self):
+        track = self._target_track
+        index = scene_index()
+        slot = track.clip_slots[index] if 0 <= index < len(track.clip_slots) else None  # -1: no scene
+        # the base's listener for a clip created in or deleted from the slot
+        self._TargetTrackComponent__on_target_clip_slot_has_clip_changed.subject = slot
+        return slot.clip if slot is not None and slot.has_clip else None
 
 
 class DrumSequencerClip(SequencerClip):
