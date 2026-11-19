@@ -296,8 +296,7 @@ _Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 
   {selected_track, selected_scene}`), `checks.yaml`'s `select-track` is a `do` with its state
   read back, and the track-choice steps read the selected track. The fork's half is committed on
   its own branch `feat/select-clip-slot` (from `cmdabl-testing`; the user merges and pushes).
-  242 tests here, 59 in the fork. The fork's script is installed in the User Library (the old
-  one kept as `__init__.py.bak` there). `rig run` 2026-11-19: 31 passed, 0 failed, 2 asked
+  242 tests here, 59 in the fork. The fork's script is installed in the User Library. `rig run` 2026-11-19: 31 passed, 0 failed, 2 asked
   (answered yes); the user saw the selection move, so `select_clip_slot`, `create_clip` and
   `fire_clip` joined `TESTED` (results page). Open: the user's glance for `create_midi_track` and
   `stop_playback`. **First task done.** Next: step 5's main part, the user's pattern on the panel
