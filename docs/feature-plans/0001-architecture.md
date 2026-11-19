@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand in work (Decision 56, tasks 1–2 built 2026-11-20); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -918,6 +918,11 @@ meant to do, and uses only API names that exist in the Live build they target.
          avoids it with `b: Any = ButtonControl(…)`, no change at runtime.
        - **Accepted** (user, 2026-11-20, "yes like suggested"): the examples stay as they are;
          the "Editor setup" page (task 3) explains the error and the `b: Any = …` workaround.
+       - **Workaround corrected** (architect, 2026-11-20, from the review of task 3, tested with
+         pyright 1.1.404 and basedpyright 1.31 in standard mode): `b: Any = …` clears the error in
+         pyright and Pylance, but basedpyright then reports `reportRedeclaration`. The page leads
+         with `# pyright: ignore[reportGeneralTypeIssues]` on the `@b.pressed` line, which clears
+         it in both, and mentions `b: Any` as the pyright-only form.
     2. **`build-stubs --project <folder>` (core).** It writes the stubs to `<folder>/stubs`,
        creates a `pyrightconfig.json` there when there is none (`stubPath: "stubs"`,
        `pythonVersion: "3.11"`, `reportMissingModuleSource: false`; an existing one is left
@@ -951,6 +956,14 @@ meant to do, and uses only API names that exist in the Live build they target.
        errors mean. Getting started and the README link to it, and so does `APC_mini_mk1_Plus`'s
        README, whose stubs line also needs `build-index`. pylsp stays documented, not tested
        (Decision 53).
+       - **Built 2026-11-20** (architect, solo; docs subagent): `docs/editor-setup.md`, in the
+         nav after Getting started; Getting started's section shortened to the `--project` form
+         and a link; the README's item 4 and `APC_mini_mk1_Plus`'s README use it. Every command
+         runs in the clone with `--project path/to/My_Project` (from the review: a bare `uv run`
+         in a script project doesn't find the tool, and `--project .` in the clone would write
+         the stubs into the tool's repo). Checked: nvim-lspconfig's `basedpyright` config has
+         `pyrightconfig.json` among its root markers. Not checked here: Pylance's
+         `python.analysis.stubPath`, the pre-0.11 `lspconfig` form.
 
 ## Open questions
 
