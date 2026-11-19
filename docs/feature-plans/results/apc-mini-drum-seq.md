@@ -238,4 +238,15 @@ What the user missed: the page doesn't follow the playhead when the clip is long
 steps show (as Push's sequencer does): plan 0003 Decision 31. Stopping a clip from the
 controller was left out: the user stops it in Live.
 
-The APC mini: not yet.
+Later on the panel (Decision 31): the steps follow the playhead, a picked page holds while the
+clip plays.
+
+**The APC mini, 2026-11-19, Live 12.4.16** (the slot on APC MINI; plan 0003 Decisions 12, 14).
+First part, with the Yellow Kit: most points worked; two problems with one cause, fixed by
+Decision 32 (the steps edit the selected slot, playing or not): a step press on an empty slot
+while the transport ran wrote into the track's playing clip, and a Drum Rack added to a track
+with a playing clip seemed to take no notes (Live counts a clip as playing after the transport
+stops; tracks 1-8 of the test Set each had one). After the fix (`rig run`: 40 passed with the
+Yellow Kit, 40 passed with the 808 Core Kit on track 9), the user: "its working right now. Also
+switching the rack." No dropped press was reported: the old drops are explained by the plain
+`ControlSurface`'s LED flood, not the unit (Decision 12).

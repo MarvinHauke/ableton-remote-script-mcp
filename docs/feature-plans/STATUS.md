@@ -337,6 +337,8 @@ _Last updated: 2026-11-19 (0003 Decision 32 built, the steps edit the selected s
     `edit-other-slot` added. The local disassembly of 12.4.16's `ableton/v3` and `v2` is in
     `reference/live-12.4.16-dis/` (made now, it found the cause). Next: review, install,
     restart, `rig run`, then the rest of the APC run.
+  - After Decision 32: `rig run` 40 passed (Yellow Kit), 40 passed (808 Core Kit on track 9).
+    The user on the APC: working, also with another rack. **Step 5 done** (results page).
   - **After step 5, before step 6** (user, 2026-11-19): a local disassembly (Python's `dis`) of
     12.4.16's `ableton/v3`, and the `v2` modules v3 inherits from, into `reference/`
     (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on
