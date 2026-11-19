@@ -111,7 +111,7 @@ def test_client_refuses_commands_outside_the_allow_list():
     assert {r["type"] for r in live.sent} == {"get_script_info"}  # nothing forbidden reached the socket
 
 
-def test_the_note_commands_are_allowed_and_not_yet_tested():
+def test_the_note_commands_are_allowed_and_tested():
     # plan 0002 Decision 25: reading and setting a clip's notes, for the drum sequencer's checks
     from ableton_remote_script_mcp.rig.abletonmcp import ALLOWED, READS, TESTED, WRITES
 
@@ -122,7 +122,7 @@ def test_the_note_commands_are_allowed_and_not_yet_tested():
     notes = [{"pitch": 36, "start_time": 0.0, "duration": 0.25, "velocity": 100}]
     assert parse_do({"add_notes_to_clip": {"track": 2, "clip": 1, "notes": [[36, 0.0, 0.25, 100]]}}, "t") == [
         ("add_notes_to_clip", {"track_index": 1, "clip_index": 0, "notes": notes})]
-    assert not {"get_clip_notes", "add_notes_to_clip", "clear_notes_from_clip", "get_session_snapshot"} & set(TESTED)
+    assert {"get_clip_notes", "add_notes_to_clip", "clear_notes_from_clip", "get_session_snapshot"} <= set(TESTED)
     assert "delete_clip" not in ALLOWED
 
 
@@ -258,7 +258,7 @@ def test_clip_state_reads_notes_in_any_order_and_velocity_is_optional():
         ("track 1 clip 1 notes", True, "get_clip_notes"), ("track 1 clip 1 name", True, "get_track_info"),
         ("track 1 clip 1 length", True, "get_track_info"), ("track 1 clip 1 looping", True, "get_session_snapshot")]
     assert results[0]["got"] == [[36, 0.0, 0.25, 100.0], [38, 1.0, 0.25, 90.0]]
-    assert not results[0]["tested"] and results[1]["tested"]
+    assert results[0]["tested"] and results[1]["tested"]
     assert sum(r["type"] == "get_session_snapshot" for r in live.sent) == 2  # the song time moved; the loop didn't
     live.looping = False
     bad = check_state(mcp, {"track 1 clip 1": {"notes": [[36, 0, 0.25, 100]], "looping": True}})
@@ -315,5 +315,5 @@ steps:
                         quiet_wait=lambda p, q, t, **k: wait_quiet(p, 0.01, 0.1), sleep=lambda _: None,
                         say=lambda *_: None, mcp=AbletonMCP(sock=live))
     assert {s["id"]: s["verdict"] for s in result["steps"]} == {"add": "passed", "clear": "passed"}
-    assert result["steps"][0]["untested_commands"] == ["get_clip_notes", "get_session_snapshot"]
+    assert "untested_commands" not in result["steps"][0]
     assert live.notes[(0, 0)] == []

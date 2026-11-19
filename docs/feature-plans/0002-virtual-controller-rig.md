@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. step 6a built 2026-11-19 (the user's look at the colours waits for 0003 step 1); step 6b built 2026-11-19 (its Live check waits for the user). Frontier: step 6b's Live check (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. step 6a built 2026-11-19 (the user's look at the colours waits for 0003 step 1); step 6b done 2026-11-19 (run in Live). Frontier: plan 0003 step 1 (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -434,9 +434,12 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
        `[pitch, start, length]` or `[pitch, start, length, velocity]`. Notes match in any order,
        and a muted note matches none. `add_notes_to_clip` takes the same lists, with velocity
        100 when it is left out. `requires` takes `drum_racks` (AbletonMCP's device type
-       `drum_machine`) and `empty_slots`, both only named when missing. 229 tests. Open: the
-       Live check below, which needs AbletonMCP and the user. Until then `get_clip_notes`,
-       `get_session_snapshot`, `add_notes_to_clip` and `clear_notes_from_clip` stay off `TESTED`.
+       `drum_machine`) and `empty_slots`, both only named when missing. 229 tests.
+     - **Run in Live** (2026-11-19, Live 12.4.16, the user's clip on track 7, scene 8): the rig
+       read the two notes the user drew (C#3 on 1.2, C3 on 1.4) and the clip looping over its
+       bar, which the user confirmed with a screenshot; an added D3 on 1.1 and then a clear were
+       read back and seen by the user. `get_clip_notes`, `get_session_snapshot`,
+       `add_notes_to_clip` and `clear_notes_from_clip` joined `TESTED`. Step 6b is done.
    - The skill mentions the rig (Decision 20) in 0003 step 6.
 
 ## Out of scope

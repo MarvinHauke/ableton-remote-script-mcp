@@ -35,6 +35,13 @@ TESTED = {
     "get_session_info": "2026-11-18, Live 12.4.16: tempo read 123 after the user set 123 BPM by hand",
     "get_device_parameters": "2026-11-18, Live 12.4.16: Macro 2 of track 2's Instrument Rack read 64.0 after the "
                              "user set it to 64 by hand",
+    # plan 0002 step 6b, the user's clip on track 7, scene 8 of the test Set
+    "get_clip_notes": "2026-11-19, Live 12.4.16: read C#3 on 1.2 and C3 on 1.4, the two notes the user drew by hand",
+    "get_session_snapshot": "2026-11-19, Live 12.4.16: read the same clip looping over its whole bar (0-4), "
+                            "as the user's screenshot showed (a new clip's default loop; a loop changed by hand "
+                            "is still to be read, in 0003's checks)",
+    "add_notes_to_clip": "2026-11-19, Live 12.4.16: a D3 on 1.1 read back and seen by the user, the two notes kept",
+    "clear_notes_from_clip": "2026-11-19, Live 12.4.16: the three notes gone, read back and seen by the user",
 }
 
 

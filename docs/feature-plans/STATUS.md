@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0002 step 6b built, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -232,9 +232,10 @@ _Last updated: 2026-11-19 (0002 step 6b built, a clip's notes in check files, De
   `loop_end`), `add_notes_to_clip` taking `[pitch, start, length, velocity]` lists, and
   `requires` `drum_racks` and `empty_slots` (named, never created). 0002 Decision 27 (user):
   `get_session_snapshot` joins the reads, only for a clip's looping. `docs/test-rig.md` says
-  how. 229 tests. Open: the Live check (two notes set by hand read back; an add and a clear),
-  which needs the user, AbletonMCP and the rig's port. Then `get_clip_notes` and the others
-  join `TESTED`. Next: that check, then 0003 step 1.
+  how. 229 tests. Run in Live the same day (track 7, scene 8 of the test Set): two notes the
+  user drew read back, an add and a clear seen by the user; `get_clip_notes`,
+  `get_session_snapshot`, `add_notes_to_clip` and `clear_notes_from_clip` joined `TESTED`.
+  Plan 0002's steps are done except 6a's look at the colours (with 0003 step 1). Next: 0003 step 1, after the user approves 0003's steps.
 
 ## After grilling
 
