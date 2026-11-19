@@ -356,6 +356,13 @@ _Last updated: 2026-11-19 (0003 Decision 32 built, the steps edit the selected s
 
 ## Small items
 
+- [idea, later] Step locks for the drum sequencer (user, 2026-11-19, after 0003 step 5; out of
+  0003's scope): hold a step, faders 1-8 set macros 1-8 of the track's rack as clip automation
+  for that step's time. A plan of its own (0004?), drafted and grilled after 0003 steps 6-7.
+  Facts so far: `Envelope.insert_step` (documented, Structure Void); Push's and Move's
+  `_insert_step` (12.4.16, observed) as local references. Grill: the faders' jump (0001
+  Decision 29), how a locked step shows, several held steps, clearing a lock, which rack.
+
 - [needs-triage] 0002 panel: the pads (`role=button`) have no `tabindex`, so the keyboard can't
   reach them (reviewer, 2026-11-19, Decision 30's review; older than it).
 
