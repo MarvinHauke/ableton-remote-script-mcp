@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0002 Decision 29, the rig selects the slot; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -281,10 +281,13 @@ _Last updated: 2026-11-19 (0003 step 4 done, 0003 Decision 28, 0002 Decision 28;
   stale installed copy, finding 19); the user saw the box and, by hand, the auto-arm give way to
   a track armed by hand. **Step 4 done.** Next: 0003 step 5 (the full check file, then the
   user's pattern on the panel and on the APC), in a fresh session. Before a rig run: `install
-  examples/APC_mini_drum_seq --replace`, then `rig restart-live`. To try in step 5 (the user,
-  2026-11-19): spare the user the scene 1 click. Live selects a track AbletonMCP creates, and a
-  fresh Set may already have scene 1 selected; if not, a clip created and deleted in that slot
-  may move the selection there (untested).
+  examples/APC_mini_drum_seq --replace`, then `rig restart-live`. First task of step 5 (user,
+  2026-11-19, 0002 Decision 29): the rig selects track and slot itself. In the user's AbletonMCP
+  fork (`~/Development/python/ableton-mcp`, the user's repo: commit there only as the user says)
+  a write command that sets the selected track and scene, and `get_session_info` reporting both;
+  in the rig, the command on the allow-list (`do: {select_clip_slot: {track: 9, scene: 1}}` or
+  similar), `song: {selected_track: …, selected_scene: …}` in `state`, and `checks.yaml` without
+  the `select-track` question (the track-choice checks can then read the selection too).
 
 ## After grilling
 

@@ -212,6 +212,17 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     `get_session_info`). The controller model reads `add_submatrix` as another name for a part of
     a matrix built before it (`Controller.submatrices`; no new elements, so the panel and the
     check names are unchanged).
+29. **The rig selects the track and clip slot itself** (user, 2026-11-19, after 0003 step 4:
+    "the chosen selected clip slot is essential for automated testing"; adds to Decisions 6 and
+    25). The user's AbletonMCP fork (`MarvinHauke/ableton-mcp`, MIT) gets a write command that
+    sets Live's selected track and scene (`Song.View.selected_track`, `selected_scene`), and its
+    session info reports both, so a check can set the selection in `do` and read it back in
+    `state`. The command joins the allow-list, labelled untested until it read back a selection
+    the user saw in Live (Decision 25). It lives in the test tool, never in a script the skill
+    writes. Replaces the `ask_user` selection steps (0003's `select-track`). Rejected: creating
+    and deleting a clip in the slot to move the selection (not known to move it, and it changes
+    the Set for nothing). AbletonMCP's code is MIT: it may also serve as a cited, `documented`
+    source of `Live` API usage and as a reference script for `outline_reference_script`.
 
 ## Open questions
 
