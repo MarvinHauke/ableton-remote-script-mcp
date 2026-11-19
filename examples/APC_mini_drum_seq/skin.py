@@ -26,11 +26,23 @@ class Skin:
         StepEmpty = OFF
         StepMuted = OFF
         StepDisabled = OFF
+        Playhead = YELLOW  # our note editor's names (components.py)
+        StepOutsideLoop = RED  # an empty step outside the clip's loop
         NoClip = OFF
 
         class Resolution:
             Selected = ON
             NotSelected = OFF
+
+    class LoopSelector:  # the track buttons: one page each
+        InsideLoopSelected = ON  # the page the steps show
+        OutsideLoopSelected = ON
+        InsideLoop = OFF
+        OutsideLoop = OFF
+        Playhead = BLINK  # the page the playhead is on
+        PlayheadRecord = BLINK
+        Navigation = OFF
+        NavigationPressed = ON
 
     class DrumGroup:  # the 4x4 pad bank
         PadSelected = GREEN

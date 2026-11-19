@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 2; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed)._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 3; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -237,6 +237,28 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
     depends on the session ring (`@depends(session_ring=…)` along its MRO) or the mappings can't
     be read. Neither changes a contract: the answer core, the MCP tools and the exit codes are
     as before. Narrows plan 0001 step 10's rule (0001 Decision 48).
+24. **Track buttons: one page each** (user, 2026-11-19, step 2; amends Decision 9's "v3's loop
+    buttons"). In 12.4.16 v3's `LoopSelectorComponent` gives each button one bar (`observed`:
+    `_on_matrix_pressed`, `_update_matrix` divide by `bar_length`), so at 1/16 button 2 would show
+    steps 17–48. The script's `PageLoopSelectorComponent` returns the paginator's `page_length` as
+    its `bar_length`: button N shows page N at every resolution, and holding two buttons or
+    double-clicking one sets the loop in pages. Rejected: v3 as is (overlapping pages); pages
+    without the loop setting. Side effects (reviewer, 12.4.16): every caller of `bar_length`
+    sees pages, so a loop that starts mid-page rounds the page time to a page, and delete and
+    copy on a loop button (not mapped in v1) act on a whole page.
+25. **The script draws the playhead and the loop end in its note editor** (architect,
+    2026-11-19, step 2; carries out Decision 17's fallback). Live's own playhead sent nothing to
+    the port in two runs, with v3's default notes and with the 32 step notes on the translation
+    channel at velocity 5 (`tested`, 12.4.16). So `DrumNoteEditorComponent` lights the playing
+    step from `Clip.playing_position` through v3's `_get_alternate_color_for_step` hook and
+    updates only the two steps that change (two LED messages a step, about 16 a second at
+    120 BPM, Decision 12). The same hook paints an empty step outside the clip's loop red: v3
+    shows the whole page past the loop end, and a press there extends the loop
+    (`extend_loop_for_region`, `observed`). Done in the note editor instead of a
+    `playhead_component_type`, because the note editor owns the step colours (amends Decision 17's
+    "through a `playhead_component_type`"); no contract changes. v3's `PlayheadComponent` is
+    still built; step 3 replaces it with one that does nothing, so a later build where it works
+    can't draw a second playhead.
 
 ## Open questions
 
@@ -283,7 +305,8 @@ back, and the step's overview says which became a fix and which a STATUS item.
      otherwise), steps beyond the loop end red, track buttons 1–8 as loop buttons (a page of
      32 steps each; current page on, the playhead's page blinking) (Decisions 9, 10).
    - **Checks:** `rig run` with transport playing: the playhead's LEDs move along the steps
-     (Live's replies, Decision 2); a clip shortened by `do` shows red beyond its end; track
+     (Live's replies, Decision 2); a clip shortened by `do` shows red beyond its end (AbletonMCP
+     can't shorten a clip: a 1-bar clip created by `do` instead); track
      button 2 on a 4-bar clip shows steps 33–64, and a loop button press leaves the clip's
      `length` and `looping` as they were (v3's loop selector may set the loop). The results page records which playhead
      worked, as a `tested` fact.

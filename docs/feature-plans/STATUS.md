@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -249,6 +249,14 @@ _Last updated: 2026-11-19 (0003 step 1 built and loaded in Live, Decisions 22–
   the selection. **Step 1 done.** Open: whether a pad press still sounds (heard, not told apart
   from the clip's note: a held pad on the panel or the hardware). Next: 0003 step 2 (playhead,
   loop end, pages), in a fresh session; Live's own playhead sent nothing to the port in step 1.
+- 0003 step 2 built on `feat/0003-step-2-playhead` (2026-11-19, solo, branched from step 1's
+  branch): the playhead and the loop end drawn by the script's own note editor (Decision 25: Live's
+  playhead sent nothing, tested), track buttons as one page each (Decision 24, user), the skin's
+  `LoopSelector` names, `checks.yaml` with four more steps. `rig run` 11 passed, 0 failed, after
+  `rig restart-live` and track 9 rebuilt through AbletonMCP (the test Set is unsaved, so a restart
+  loses it). **Step 2 done.** Next: 0003 step 3 (the pad bank); it also takes the reviewer's
+  code points: the playhead redrawn with the page, a no-op `PlayheadComponent`, `step_count`,
+  a note on triplets.
 
 ## After grilling
 
@@ -267,6 +275,13 @@ _Last updated: 2026-11-19 (0003 step 1 built and loaded in Live, Decisions 22–
   injects and that `_get_additional_dependencies()` takes functions (a validator rule?);
   `lookup class <short name>` with many matches prints nothing but the cut note; `outline` of
   `Launchkey_MK4` shows no Specification or mappings; `get_class("Clip")` buries `Live.Clip.Clip`.
+- [needs-triage] Tool findings from 0003 step 2 (results page, 11, 13, 14): `get_class` and
+  `outline` default to the newest index, the Live 13 beta (the newest release instead?);
+  `check_names` resolves bare `NoteEditorComponent` to `bar_based_sequence` first; a one-`return`
+  method has no statements.
+- The rig can't select a track or slot (AbletonMCP 1.7.1 has no command for it), so `ask_user`
+  stays for the selection. A track created through AbletonMCP is selected by Live (the user,
+  2026-11-19): a check can reach a new track that way.
 
 - [grilled] **MCP server design ideas for step 11, from the user's sources (2026-11-17):**
   Zhang, Kraska, Khattab, *Recursive Language Models* (arxiv.org/abs/2512.24601), Zhang's blog

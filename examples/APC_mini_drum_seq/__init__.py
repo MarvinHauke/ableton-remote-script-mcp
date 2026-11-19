@@ -4,9 +4,10 @@ when none plays, its clip in the selected scene (v3's target track, plan 0003 De
 
 - Top four rows: 32 steps of the selected drum pad, step 1 top left. A press sets or clears a
   note (one step long, velocity 100); on an empty slot the first press creates a 2-bar clip
-  named "Drum Seq". Green: a note.
+  named "Drum Seq". Green: a note; yellow: the playhead; red: beyond the clip's loop end.
 - Bottom four rows, left half: a 4x4 bank of the Drum Rack's pads. A press plays the pad and
   selects it for the steps. Green: selected; yellow: a pad with a sound.
+- Track buttons 1-8: pages of 32 steps. The page shown is on, the playhead's page blinks.
 
 Device facts are in `elements.py`, LED values in `skin.py`.
 """
@@ -19,9 +20,12 @@ from ableton.v3.control_surface import (
     ControlSurfaceSpecification,
     create_skin,
 )
-from ableton.v3.control_surface.components import StepSequenceComponent
-
-from .components import DrumSequencerClip, PadBankComponent, create_grid_resolution
+from .components import (
+    DrumSequencerClip,
+    DrumStepSequenceComponent,
+    PadBankComponent,
+    create_grid_resolution,
+)
 from .elements import Elements
 from .mappings import create_mappings
 from .skin import Skin
@@ -33,7 +37,7 @@ class Specification(ControlSurfaceSpecification):
     elements_type = Elements
     control_surface_skin = create_skin(skin=Skin)
     create_mappings_function = create_mappings
-    component_map = {"Step_Sequence": StepSequenceComponent, "Drum_Group": PadBankComponent}
+    component_map = {"Step_Sequence": DrumStepSequenceComponent, "Drum_Group": PadBankComponent}
 
 
 def create_instance(c_instance):
