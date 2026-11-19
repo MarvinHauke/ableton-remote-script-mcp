@@ -25,7 +25,9 @@ Rules, with their severity:
 - `session-ring` (warning): a v3 Specification with neither `identity_response_id_bytes` nor
   `custom_identity_response` and the framework's own session ring: the framework enables the
   ring only when the controller answers the identity request, so Live draws no session box
-  (observed in 12.4.16's `ControlSurface`, tested on the Faderfox UC4; plan 0001 step 10).
+  (observed in 12.4.16's `ControlSurface`, tested on the Faderfox UC4; plan 0001 step 10). Only
+  when a component the mappings name depends on the ring (`@depends(session_ring=…)` on an
+  `__init__` along its MRO), or the mappings can't be read (plan 0003 step 1).
 
 What a rule cannot decide is listed in `not_checked` with the reason.
 """
@@ -284,6 +286,8 @@ class _Checker:
             return  # identified (the framework enables the ring), or a ring class of the script's own
         if str(own.get("num_tracks", {}).get("value")) == "0" or str(own.get("num_scenes", {}).get("value")) == "0":
             return  # no ring to draw
+        if self._mappings_use_session_ring(spec) is False:
+            return  # no mapped component asks for the ring, so the framework never builds it
         fact = self.overlay["classes"][spec]
         self.findings.append(_finding(
             "session-ring", self.file_of(fact["module"]), fact.get("line"),
@@ -293,6 +297,30 @@ class _Checker:
             "set identity_response_id_bytes when the controller answers the identity request; otherwise set "
             "session_ring_component_type to a SessionRingComponent subclass that calls self.set_enabled(True) "
             "in __init__", severity="warning"))
+
+    def _mappings_use_session_ring(self, spec: str) -> bool | None:
+        """Whether a component the mappings name depends on the session ring (`@depends(session_ring=…)`
+        on an `__init__` along its MRO); None when the mappings or the component map can't be read."""
+        found = self.o.mapping_sections(spec)
+        if not found or found["module"] is None or not found["complete"]:
+            return None
+        cmap = {e["name"]: e for e in self.o.component_map(spec)}
+        used: set[str] = set()
+        for name, kwargs, _ in found["sections"]:
+            if name in cmap:
+                used.add(name)
+            for value in kwargs.values():
+                text = str(value)  # a mode as dict(component='X', ...) or {'component': 'X', ...}
+                used.update(n for n in re.findall(r"component['\"]?\s*[=:]\s*['\"](\w+)['\"]", text) if n in cmap)
+        for name in used:
+            cls = cmap[name].get("defined_in")
+            if not cls:
+                return None  # a component map entry the validator can't follow
+            for key in self.o.resolver.mro(cls) or []:
+                init = self.overlay["classes"].get(key, {}).get("members", {}).get("__init__", {})
+                if any(re.match(r"depends\(.*\bsession_ring\s*=", d) for d in init.get("decorators", [])):
+                    return True
+        return False
 
     def _component_map_complete(self, spec: str) -> bool:
         field = self.o.lineage(spec).members.get("component_map")

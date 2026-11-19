@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0003 steps approved, Decision 21, step 1 next on `feat/0003-step-1-tracer`; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -236,9 +236,72 @@ _Last updated: 2026-11-19 (0003 steps approved, Decision 21, step 1 next on `fea
   user drew read back, an add and a clear seen by the user; `get_clip_notes`,
   `get_session_snapshot`, `add_notes_to_clip` and `clear_notes_from_clip` joined `TESTED`.
   Plan 0002's steps are done except 6a's look at the colours (with 0003 step 1).
-- 0003 steps approved by the user (2026-11-19, Decision 21). Next: 0003 step 1 (the tracer) on
-  `feat/0003-step-1-tracer`, in a fresh architect session. Not yet in `main`: 0003's spec,
-  0002 6a and 6b (merge when the user asks).
+- 0003 steps approved by the user (2026-11-19, Decision 21); 0003's spec and 0002 6a and 6b
+  merged into main.
+- 0003 step 1 built on `feat/0003-step-1-tracer` (2026-11-19, solo): `examples/APC_mini_drum_seq/`
+  (v3 `StepSequenceComponent` on the top four rows, a pad bank of our own that selects the pad it
+  plays, the clip preset, `grid_resolution` and `sequencer_clip` injected as `const`),
+  `device.yaml` with the LED colours, a first `checks.yaml`, the results page
+  [results/apc-mini-drum-seq.md](results/apc-mini-drum-seq.md) with 10 tool findings. Two package
+  fixes (Decision 23): `lookup class` on a cut answer, `session-ring` only for components that use
+  the ring. The clip is v3's: the playing one first (Decision 22, user). 235 tests. Loaded in Live
+  12.4.16 on `ARS Test Rig`, no traceback; `rig run` 6 passed, 0 failed, twice; the user confirmed
+  the selection. **Step 1 done.** Open: whether a pad press still sounds (heard, not told apart
+  from the clip's note: a held pad on the panel or the hardware). Next: 0003 step 2 (playhead,
+  loop end, pages), in a fresh session; Live's own playhead sent nothing to the port in step 1.
+- 0003 step 2 built on `feat/0003-step-2-playhead` (2026-11-19, solo, branched from step 1's
+  branch): the playhead and the loop end drawn by the script's own note editor (Decision 25: Live's
+  playhead sent nothing, tested), track buttons as one page each (Decision 24, user), the skin's
+  `LoopSelector` names, `checks.yaml` with four more steps. `rig run` 11 passed, 0 failed, after
+  `rig restart-live` and track 9 rebuilt through AbletonMCP (the test Set is unsaved, so a restart
+  loses it). **Step 2 done.** Next: 0003 step 3 (the pad bank); it also takes the reviewer's
+  code points: the playhead redrawn with the page, a no-op `PlayheadComponent`, `step_count`,
+  a note on triplets.
+- 0003 step 3 built on `feat/0003-step-3-pad-bank` (2026-11-19, solo, branched from step 2's):
+  pad colours (selected green blinking, a sound yellow, held red from the script's skin,
+  Decision 27), scene 5–6 scroll the bank, the script's own auto-arm (Decision 26, user: pads
+  sound only on an armed track), steps dark and inert on a track without a Drum Rack, Live's
+  playhead off, and the reviewer's step-2 code points. `rig run` 19 passed, 0 failed; the user
+  heard the held pad and saw the auto-arm. Step 1's open point is answered: a pad press plays
+  its sound (on an armed track). **Step 3 done.** Next: 0003 step 4 (resolution, track choice,
+  faders), in a fresh session. Step 4 also takes the reviewer's step-3 code points:
+  - a Drum Rack added to the selected track leaves the steps empty, and a step press on a
+    track without one drops the editor's clip (`_has_clip` side effects in
+    `__on_clip_notes_changed` and `_on_pad_pressed`): re-set the clip on `drum_group_changed`;
+  - the held-pad set: clear it in `set_matrix`, no red on a track without a Drum Rack, try
+    `pressed_color`;
+  - `super().update()` in `NoPlayheadComponent`;
+  - a check that the auto-arm steps back while another track is armed by hand.
+- 0003 step 4 built on `feat/0003-step-4-resolution-tracks-faders` (2026-11-19, solo, branched
+  from step 3's): scene 1–4 the resolution (a submatrix of the scene buttons), scene 7–8 the
+  previous and next track (`View_Control`), faders 1–8 tracks 1–8 and fader 9 the master
+  (`Mixer`), the session ring enabled for the faders' box (0003 Decision 28), and the reviewer's
+  step-3 code points. Two rig additions: a nested `state` field, `add_submatrix` in the
+  controller model (0002 Decision 28). `rig run` 30 passed, 0 failed (after a first run on the
+  stale installed copy, finding 19); the user saw the box and, by hand, the auto-arm give way to
+  a track armed by hand. **Step 4 done.** Next: 0003 step 5 (the full check file, then the
+  user's pattern on the panel and on the APC), in a fresh session. Before a rig run: `install
+  examples/APC_mini_drum_seq --replace`, then `rig restart-live`. First task of step 5 (user,
+  2026-11-19, 0002 Decision 29): the rig selects track and slot itself. In the user's AbletonMCP
+  fork (`~/Development/python/ableton-mcp`, the user's repo: commit there only as the user says)
+  a write command that sets the selected track and scene, and `get_session_info` reporting both;
+  in the rig, the command on the allow-list (`do: {select_clip_slot: {track: 9, scene: 1}}` or
+  similar), `song: {selected_track: …, selected_scene: …}` in `state`, and `checks.yaml` without
+  the `select-track` question (the track-choice checks can then read the selection too).
+  Also (user, 2026-11-19): AbletonMCP as a reference (a local clone under `reference/` or its
+  path for `outline_reference_script`); its facts `documented`, double-checked before the skill
+  uses them.
+- 0003 step 5, first task built on `feat/0003-step-5-rig-selection` (2026-11-19, solo; 0002
+  Decision 29): the rig sets and reads Live's selection (`select_clip_slot`, `song:
+  {selected_track, selected_scene}`), `checks.yaml`'s `select-track` is a `do` with its state
+  read back, and the track-choice steps read the selected track. The fork's half is committed on
+  its own branch `feat/select-clip-slot` (from `cmdabl-testing`; the user merges and pushes).
+  242 tests here, 59 in the fork. The fork's script is installed in the User Library. `rig run` 2026-11-19: 31 passed, 0 failed, 2 asked
+  (answered yes); the user saw the selection move, so `select_clip_slot`, `create_clip` and
+  `fire_clip` joined `TESTED` (results page). Open: the user's glance for `create_midi_track` and
+  `stop_playback`. **First task done.** Next: step 5's main part, the user's pattern on the panel
+  (`rig panel`), then on the APC (Decisions 12, 14), in a fresh session. Before a run: delete
+  track 9's three clips and track 10 (or restart Live without saving); keep track 9.
 
 ## After grilling
 
@@ -250,6 +313,23 @@ _Last updated: 2026-11-19 (0003 steps approved, Decision 21, step 1 next on `fea
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [needs-triage] Tool findings from 0003 step 1 (results page, findings 3 and 5–10): `element-name`
+  gives up on `**dict` in `add_…` calls; `check_names` counts instance attributes of a mixin's
+  `__init__` (`component_map`) as not members; no tool says which dependencies the framework
+  injects and that `_get_additional_dependencies()` takes functions (a validator rule?);
+  `lookup class <short name>` with many matches prints nothing but the cut note; `outline` of
+  `Launchkey_MK4` shows no Specification or mappings; `get_class("Clip")` buries `Live.Clip.Clip`.
+- [needs-triage] Tool findings from 0003 steps 2–3 (results page, 11, 13–15): `get_class` and
+  `outline` default to the newest index, the Live 13 beta (the newest release instead?);
+  `check_names` resolves bare `NoteEditorComponent` to `bar_based_sequence` first; a one-`return`
+  method has no statements; nothing says where a `__getattr__` forwards control names to.
+- [needs-triage] Tool findings from 0003 step 4 (results page, 16 and 19): `check_names` calls an
+  attribute `add_button_matrix` creates (`self.scene_buttons`) unknown; `rig run` doesn't notice
+  that the installed copy in the User Library is older than the check file's `script:` folder.
+- The rig can't select a track or slot (AbletonMCP 1.7.1 has no command for it), so `ask_user`
+  stays for the selection. A track created through AbletonMCP is selected by Live (the user,
+  2026-11-19): a check can reach a new track that way.
 
 - [grilled] **MCP server design ideas for step 11, from the user's sources (2026-11-17):**
   Zhang, Kraska, Khattab, *Recursive Language Models* (arxiv.org/abs/2512.24601), Zhang's blog

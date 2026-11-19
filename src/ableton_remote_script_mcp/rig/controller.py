@@ -13,6 +13,9 @@ and `EncoderElement` default to `msg_type=MIDI_CC_TYPE`. A matrix takes `channel
 or one per element (rows like `identifiers`), else the global channel (`add_matrix`; its body as
 documented in the decompiled 11/12.0 framework, `is_iterable(channels)` observed in 12.4.16). A
 matrix's elements are named `<matrix>[i]`, counted row by row from 0, like `<matrix>_raw[i]`.
+`add_submatrix(matrix, name, columns=(start, stop), rows=(start, stop))` builds no elements: it
+names a part of a matrix built before it (`submatrices`; the slices as `ElementsBase.add_submatrix`
+takes them, observed 12.4.16; their meaning documented in the decompiled 12.0 framework).
 
 Only v3 Elements classes are read; an element whose numbers can't be worked out is listed in
 `unresolved` with the reason, never guessed.
@@ -73,6 +76,8 @@ class Controller:
     elements: dict[str, Element] = field(default_factory=dict)
     matrices: dict[str, list[str]] = field(default_factory=dict)
     unresolved: list[dict] = field(default_factory=list)
+    submatrices: dict[str, list[str]] = field(default_factory=dict)  # parts of a matrix, other names
+    widths: dict[str, int] = field(default_factory=dict)  # a matrix's columns
 
     def element(self, name: str) -> Element:
         if name in self.elements:
@@ -258,7 +263,7 @@ def build_controller(outline: dict, folder: Path) -> Controller:
         defined_by = entry.get("defined_by") or ""
         method = defined_by.rsplit(".", 1)[-1]
         where = entry.get("in", "")
-        if method not in ADDERS:
+        if method not in ADDERS and method != "add_submatrix":
             if defined_by or entry.get("class"):
                 ctl.unresolved.append({"line": entry.get("line"), "in": where,
                                        "reason": f"built by {method or entry.get('class')}, which the rig doesn't read"})
@@ -277,7 +282,27 @@ def build_controller(outline: dict, folder: Path) -> Controller:
     return ctl
 
 
+def _add_submatrix(ctl: Controller, call: ast.Call, consts: _Constants) -> None:
+    args = _bind(call, ["matrix", "name", "columns", "rows"], consts)
+    source = args.get("matrix")
+    if not (isinstance(source, ast.Attribute) and isinstance(source.value, ast.Name) and source.value.id == "self"):
+        raise Unresolved("the submatrix's matrix is not an attribute of the Elements")
+    if source.attr not in ctl.matrices:
+        raise Unresolved(f"no matrix `{source.attr}` built before it")
+    items, width = ctl.matrices[source.attr], ctl.widths[source.attr]
+    height = len(items) // width if width else 0
+    columns = consts.eval(args["columns"]) if "columns" in args else None
+    rows = consts.eval(args["rows"]) if "rows" in args else None
+    # as Python slices: a range past the matrix stops at its edge
+    columns = range(*slice(*(columns or (0, width))).indices(width))
+    rows = range(*slice(*(rows or (0, height))).indices(height))
+    name = consts.eval(args["name"])
+    ctl.submatrices[_attribute_name(name)] = [items[r * width + c] for r in rows for c in columns]
+
+
 def _add(ctl: Controller, method: str, call: ast.Call, consts: _Constants, global_channel: int, line: int) -> None:
+    if method == "add_submatrix":
+        return _add_submatrix(ctl, call, consts)
     kind = ADDERS[method]
     matrix = method.endswith("_matrix")
     params = ["identifiers", "base_name", "channels"] if matrix else ["identifier", "name"]
@@ -298,6 +323,8 @@ def _add(ctl: Controller, method: str, call: ast.Call, consts: _Constants, globa
                                      **common)
         return
     rows = [list(r) for r in consts.eval(args["identifiers"])]
+    if len({len(r) for r in rows}) > 1:
+        raise Unresolved("the matrix's rows have different lengths")
     channels = consts.eval(args["channels"]) if "channels" in args else None
     if channels is None:
         channels = global_channel
@@ -310,6 +337,7 @@ def _add(ctl: Controller, method: str, call: ast.Call, consts: _Constants, globa
             ctl.elements[item] = Element(item, channel=int(channel), identifier=int(identifier), **common)
             names.append(item)
     ctl.matrices[attr] = names
+    ctl.widths[attr] = len(rows[0]) if rows else 0
 
 
 def controller_for_folder(folder: Path, index_dir: Path, live_build: str | None = None) -> tuple[Controller | None, str]:

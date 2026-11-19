@@ -177,6 +177,24 @@ steps:
       track 1 clip 1: {notes: [[36, 0, 0.25, 100]], looping: true}
 ```
 
+A check can also set and read Live's selected track and scene (the highlighted clip slot). Both
+count from 1, like everything else:
+
+```yaml
+steps:
+  - id: select-a-slot
+    do:
+      - select_clip_slot: {track: 9, scene: 1}
+    state:
+      song: {selected_track: 9, selected_scene: 1}
+```
+
+Leave out `track` or `scene` to keep that part of the selection. A selected return track or the
+master reads as its name (for example `Main`) instead of a number. This needs an AbletonMCP whose
+`capabilities` list `select_clip_slot`, such as the MarvinHauke/ableton-mcp fork from 2026-11-19
+(still version 1.7.1). With upstream AbletonMCP 1.7.1 the `do` step fails with a message saying
+so, and a selection field reads as missing.
+
 Without AbletonMCP, `do` steps are skipped, and their state and events are listed as not checked.
 
 ## Play it from a web page
@@ -230,6 +248,7 @@ controller: [the panel's protocol](rig-panel-protocol.md).
 
 ## What the rig can't see
 
-The rig sees MIDI, the log and, with AbletonMCP, Live's state. It can't see Live's screen (the
-session box, the selection) or the hardware's own behaviour (its display, LEDs it keeps per
-group, pickup). Those stay `ask_user` steps, or a load test on the hardware.
+The rig sees MIDI, the log and, with AbletonMCP, Live's state. With the fork it also reads and
+sets the selected track and scene. It can't see Live's screen (the session box) or the hardware's
+own behaviour (its display, LEDs it keeps per group, pickup). Those stay `ask_user` steps, or a
+load test on the hardware.

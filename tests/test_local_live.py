@@ -191,7 +191,7 @@ def test_skill_template_is_clean_in_12_4_16(index_dir, tmp_path, name):
 
 
 @pytest.mark.local_live
-@pytest.mark.parametrize("name", ["APC_mini_mk1", "Faderfox_UC4", "Rig_Identity"])
+@pytest.mark.parametrize("name", ["APC_mini_mk1", "Faderfox_UC4", "Rig_Identity", "APC_mini_drum_seq"])
 def test_example_is_clean_in_12_4_16(index_dir, name):
     folder = Path(__file__).parent.parent / "examples" / name
     answer = validate_script(folder, index_dir, "12.4.16")
@@ -206,6 +206,32 @@ def test_session_ring_warning_without_identity_in_12_4_16(index_dir, tmp_path):
     init = folder / "__init__.py"
     init.write_text(init.read_text().replace(
         "    session_ring_component_type = SessionRingComponent", "    pass"))
+    findings = validate_script(folder, index_dir, "12.4.16")["findings"]
+    assert [(f["rule"], f["severity"]) for f in findings] == [("session-ring", "warning")]
+
+
+@pytest.mark.local_live
+def test_session_ring_warning_only_with_a_component_that_needs_the_ring_in_12_4_16(index_dir, tmp_path):
+    """plan 0003 step 1: the drum sequencer without its mixer, track choice and own ring maps no
+    component that depends on the session ring, so the missing identity reply draws no warning;
+    a mixer section brings it back."""
+    folder = tmp_path / "APC_mini_drum_seq"
+    shutil.copytree(Path(__file__).parent.parent / "examples/APC_mini_drum_seq", folder)
+    init = folder / "__init__.py"
+    init.write_text("\n".join(line for line in init.read_text().splitlines()
+                              if not line.lstrip().startswith("session_ring_component_type")))
+    mappings = folder / "mappings.py"
+    text = mappings.read_text()
+    mappings.write_text(text[:text.index('    mappings["View_Control"]')] + "    return mappings\n")
+    assert validate_script(folder, index_dir, "12.4.16")["findings"] == []
+    mappings.write_text(mappings.read_text().replace(
+        "    return mappings", '    mappings["Mixer"] = {"volume_controls": "faders"}\n    return mappings'))
+    findings = validate_script(folder, index_dir, "12.4.16")["findings"]
+    assert [(f["rule"], f["severity"]) for f in findings] == [("session-ring", "warning")]
+    # a mode written as a dict literal counts too
+    mappings.write_text(mappings.read_text().replace(
+        'mappings["Mixer"] = {"volume_controls": "faders"}',
+        'mappings["Fader_Modes"] = {"volume": {"component": "Mixer", "volume_controls": "faders"}}'))
     findings = validate_script(folder, index_dir, "12.4.16")["findings"]
     assert [(f["rule"], f["severity"]) for f in findings] == [("session-ring", "warning")]
 
@@ -236,7 +262,23 @@ def test_uc4_controller_model(index_dir):
 
 
 @pytest.mark.local_live
-def test_uc4_check_file_names_its_elements(index_dir):
+def test_drum_seq_controller_model(index_dir):
+    """plan 0003 step 1: the rig reads the sequencer's grid rows, top row first."""
+    from ableton_remote_script_mcp.rig.controller import controller_for_folder
+
+    ctl, why = controller_for_folder(Path(__file__).parent.parent / "examples/APC_mini_drum_seq", index_dir, "12.4.16")
+    assert ctl is not None, why
+    assert len(ctl.elements) == 74 and not ctl.unresolved
+    assert ctl.element("steps[0]").key == (0x90, 56) and ctl.element("steps[31]").key == (0x90, 39)
+    assert ctl.element("pads[0]").key == (0x90, 24) and ctl.element("pads[15]").key == (0x90, 3)
+    assert ctl.element("master_fader").key == (0xB0, 56)
+    # step 4: scene buttons 1-4 are also the resolution buttons, a submatrix (no new elements)
+    assert ctl.submatrices == {"resolution_buttons": [f"scene_buttons[{i}]" for i in range(4)]}
+
+
+@pytest.mark.local_live
+@pytest.mark.parametrize("name", ["Faderfox_UC4", "APC_mini_drum_seq"])
+def test_example_check_file_names_its_elements(index_dir, name):
     from ableton_remote_script_mcp.rig.checks import (
         check_names,
         encode,
@@ -244,7 +286,7 @@ def test_uc4_check_file_names_its_elements(index_dir):
     )
     from ableton_remote_script_mcp.rig.controller import controller_for_folder
 
-    checks = load_check_file(Path(__file__).parent.parent / "examples/Faderfox_UC4/checks.yaml")
+    checks = load_check_file(Path(__file__).parent.parent / "examples" / name / "checks.yaml")
     ctl, why = controller_for_folder(checks.script_folder, index_dir, checks.build)
     assert ctl is not None, why
     assert check_names(checks, ctl) == []
@@ -255,7 +297,7 @@ def test_uc4_check_file_names_its_elements(index_dir):
 
 
 @pytest.mark.local_live
-@pytest.mark.parametrize("name", ["Faderfox_UC4", "Rig_Identity"])
+@pytest.mark.parametrize("name", ["Faderfox_UC4", "Rig_Identity", "APC_mini_drum_seq"])
 def test_example_device_profiles_name_their_elements(index_dir, name):
     from ableton_remote_script_mcp.rig.controller import controller_for_folder
     from ableton_remote_script_mcp.rig.profile import check_profile_names, load_profile

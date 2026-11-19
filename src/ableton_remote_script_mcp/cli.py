@@ -156,32 +156,43 @@ def _format_documented(d: dict, title: str) -> list[str]:
 
 
 def _format_class(c: dict, own_only: bool) -> str:
-    bases = ", ".join(
-        b["expr"] if b["defined_in"] == b["expr"] and b["status"] != "unresolved"
-        else f"{b['expr']} (unresolved)" if b["status"] == "unresolved"
-        else f"{b['expr']} = {b['defined_in']}"
-        for b in c["bases"]
-    ) or "-"
-    if not c["bases_parsed"]:
-        bases = "(not read: a base expression the extractor does not model)"
-    lines = [f"{c['qualified_name']}  [Live {c['live_build']}, {c['confidence']}]"]
+    """A class as text. A capped answer may lack any key after the first ones (`cut`), so every
+    part is printed only when it is there."""
+    lines = [f"{c['qualified_name']}  [Live {c.get('live_build', '?')}, {c.get('confidence', '?')}]"]
     if c.get("proxy_model"):
         lines.append(f"  proxy model of {c.get('proxy_of', 'the Live module')} (Push 3 helper's live_model, not Live itself)")
-    lines.append(f"  bases:  {bases}")
-    if c["keywords"]:
+    if "bases" in c:
+        bases = ", ".join(
+            b["expr"] if b["defined_in"] == b["expr"] and b["status"] != "unresolved"
+            else f"{b['expr']} (unresolved)" if b["status"] == "unresolved"
+            else f"{b['expr']} = {b['defined_in']}"
+            for b in c["bases"]
+        ) or "-"
+        if not c.get("bases_parsed", True):
+            bases = "(not read: a base expression the extractor does not model)"
+        lines.append(f"  bases:  {bases}")
+    if c.get("keywords"):
         lines.append("  keywords: " + ", ".join(f"{k}={v}" for k, v in c["keywords"].items()))
-    if c["decorators"]:
+    if c.get("decorators"):
         lines.append("  decorators: " + ", ".join(f"@{d}" for d in c["decorators"]))
-    lines.append(f"  source: {c['source']}:{c['line']}")
+    if "source" in c:
+        lines.append(f"  source: {c['source']}:{c.get('line', '?')}")
     if c.get("docstring"):
         lines.append("  doc:    " + c["docstring"].splitlines()[0])
-    lines.append("  mro:    " + " -> ".join(_mro_entry(e) for e in c["mro"])
-                 + ("" if c["mro_method"] == "c3" else "  (depth-first: the bases admit no C3 order)"))
-    if not c["complete"]:
+    if "mro" in c:
+        lines.append("  mro:    " + " -> ".join(_mro_entry(e) for e in c["mro"])
+                     + ("" if c.get("mro_method", "c3") == "c3" else "  (depth-first: the bases admit no C3 order)"))
+    if not c.get("complete", True):
         lines.append("  incomplete: a base along the MRO is not resolved or not read; inherited members may be missing")
+    members = c.get("all_members")
+    if members is None:  # cut: the class's own members, if they are left
+        members = {n: {**m, "origin": c["qualified_name"]} for n, m in c.get("members", {}).items()}
+        lines.append("  members: cut from this answer" if not members
+                     else "  inherited members: cut from this answer")
     by_origin: dict[str, list[str]] = {}
-    for n, m in c["all_members"].items():
-        text = _format_member(n, m) + (f"  (overrides {', '.join(m['overrides'])})" if m["overrides"] else "")
+    for n, m in members.items():
+        overrides = m.get("overrides") or []
+        text = _format_member(n, m) + (f"  (overrides {', '.join(overrides)})" if overrides else "")
         by_origin.setdefault(m["origin"], []).append(text)
     own = by_origin.pop(c["qualified_name"], [])
     lines += _format_documented(c["documented"], "  also on Structure Void's page") if c.get("documented") else []

@@ -73,6 +73,35 @@ def test_controller_model_reads_the_elements_calls(controller):
         c.element("faders[9]")
 
 
+SUBMATRICES = """\
+        self.add_submatrix(self.pads, "Top_Pads", rows=(0, 1))
+        self.add_submatrix(self.pads, "Right_Pads", columns=(1, 2))
+        self.add_submatrix(self.faders, "Wide", columns=(2, 9))
+        self.add_submatrix(self.nothing, "Lost")
+        self.add_button_matrix([[1, 2], [3]], "Ragged", msg_type=MIDI_NOTE_TYPE)
+"""
+
+
+def test_controller_model_reads_submatrices_as_names_for_part_of_a_matrix(tmp_path):
+    """plan 0002 Decision 28: no new elements; a slice past the matrix stops at its edge, as
+    Python's slices do; a matrix not built before it and ragged rows are unresolved."""
+    folder = tmp_path / "Box"
+    folder.mkdir()
+    (folder / "__init__.py").write_text("")
+    (folder / "constants.py").write_text("CH2 = 13\n")
+    (folder / "elements.py").write_text(ELEMENTS + SUBMATRICES)
+    first = LINES["computed"] + 1
+    outline = {"script": "Box", "elements": [
+        _entry("add_encoder_matrix", LINES["faders"]), _entry("add_button_matrix", LINES["pads"]),
+        *(_entry("add_submatrix", first + i) for i in range(4)), _entry("add_button_matrix", first + 4)]}
+    c = build_controller(outline, folder)
+    assert c.submatrices == {"top_pads": ["pads[0]", "pads[1]"], "right_pads": ["pads[1]", "pads[3]"],
+                             "wide": ["faders[2]", "faders[3]"]}
+    assert len(c.elements) == 8 and "top_pads" not in c.matrices
+    reasons = [u["reason"] for u in c.unresolved]
+    assert len(reasons) == 2 and "nothing" in reasons[0] and "rows" in reasons[1]
+
+
 def test_encode_press_relative_and_range(controller):
     assert encode(controller.element("play_button"), "press") == [[0x9C, 122, 127], [0x9C, 122, 0]]
     assert encode(controller.element("quant_encoder"), 1) == [[0xBC, 60, 1]]
