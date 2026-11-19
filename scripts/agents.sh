@@ -6,17 +6,19 @@
 #   docs/feature-plans/STATUS.md are the hand-over. Each fresh start records its session id in
 #   .claude/agent-sessions/<agent> (git-ignored); --resume continues that session instead. Use it
 #   only for unfinished work: a long session reloads its whole history.
-# - core and reviewer open as splits in one tmux window "arsm-agents" (tiled)
-# - docs, skill and rig are on demand: they only start when you name them
+# - by default only the architect starts (solo mode, 0001 Decision 54): it plans and builds one task
+#   per fresh session and calls the reviewer and docs as subagents. Peers are for parallel work.
+# - core, reviewer, docs, skill and rig start only when you name them, as splits in one tmux window
+#   "arsm-agents" (tiled)
 # - the architect replaces this script in the current pane (your main window); outside tmux the
 #   script opens (or attaches to) the tmux session "arsm" and runs there
 # - every pane it starts is marked with the tmux pane option @arsm_agent=<name>; an agent counts as
 #   running while its marked pane runs something other than a shell (Claude Code renames pane
 #   titles after the conversation topic, so the title doesn't identify it)
-# Usage: scripts/agents.sh                    start the default team, fresh (architect in this pane)
+# Usage: scripts/agents.sh                    start the architect, fresh, in this pane (solo mode)
 #        scripts/agents.sh status             list the agents and where they run
-#        scripts/agents.sh docs               add the on-demand docs agent (also: skill, rig)
-#        scripts/agents.sh core reviewer      start only these (also: docs, skill, rig, architect)
+#        scripts/agents.sh core rig           start these peers for parallel work (also: reviewer,
+#                                             docs, skill; add `architect` to start it too)
 #        scripts/agents.sh --resume core      resume core's recorded session instead of a fresh one
 #        scripts/agents.sh stop docs          end these agents (/exit, then close the pane)
 #        scripts/agents.sh stop               end every running peer (never the pane you run this in)
@@ -29,13 +31,12 @@ SESSION=arsm
 SESSIONS_DIR=.claude/agent-sessions
 SHELLS=" zsh -zsh bash -bash sh fish "
 
-# name  agent-file
-PEERS=(
-    "arsm-core core"
-    "arsm-reviewer reviewer"
-)
+# name  agent-file. The default team is empty: peers start only when named.
+PEERS=()
 # Started only when named on the command line.
 ON_DEMAND=(
+    "arsm-core core"
+    "arsm-reviewer reviewer"
     "arsm-docs docs"
     "arsm-skill skill"
     "arsm-rig rig"
@@ -55,7 +56,8 @@ session_id() { cat "$SESSIONS_DIR/$1" 2>/dev/null || true; }
 model_of() { sed -n '/^---$/,/^---$/s/^model:[[:space:]]*//p' ".claude/agents/$1.md" | head -1; }
 session_exists() { [ -n "$1" ] && ls ~/.claude/projects/*/"$1".jsonl >/dev/null 2>&1; }
 named() { [[ " ${ARGS[*]:-} " == *" ${1#arsm-} "* ]]; }
-# Default-team members run when no names are given; on-demand agents only when named.
+# The architect (and default-team members, none now) run when no names are given, or when named;
+# naming only peers starts just those.
 selected() { [ ${#ARGS[@]} -eq 0 ] || named "$1"; }
 # pane_of <name>: the pane marked with @arsm_agent=<name> that still runs something (not a shell).
 pane_of() {
@@ -163,7 +165,7 @@ for a in "$@"; do
 done
 
 if [ "$STATUS" = 1 ]; then
-    for entry in "$ARCHITECT" "${PEERS[@]}" "${ON_DEMAND[@]}"; do
+    for entry in "$ARCHITECT" "${PEERS[@]+"${PEERS[@]}"}" "${ON_DEMAND[@]}"; do
         read -r name agent <<<"$entry"
         if running "$name" "$(session_id "$agent")"; then
             printf '%-16s running  %s\n' "$name" "$(where "$name")"
@@ -175,7 +177,7 @@ if [ "$STATUS" = 1 ]; then
 fi
 
 if [ "$STOP" = 1 ]; then
-    for entry in "${PEERS[@]}" "${ON_DEMAND[@]}" "$ARCHITECT"; do
+    for entry in "${PEERS[@]+"${PEERS[@]}"}" "${ON_DEMAND[@]}" "$ARCHITECT"; do
         read -r name agent <<<"$entry"
         if [ ${#ARGS[@]} -eq 0 ]; then
             [ "$entry" = "$ARCHITECT" ] && continue   # `stop` alone never stops the architect
@@ -187,7 +189,7 @@ if [ "$STOP" = 1 ]; then
     exit 0
 fi
 
-for entry in "${PEERS[@]}"; do
+for entry in "${PEERS[@]+"${PEERS[@]}"}"; do
     read -r name agent <<<"$entry"
     selected "$name" && start_peer "$name" "$agent"
 done

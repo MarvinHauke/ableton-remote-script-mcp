@@ -197,9 +197,9 @@ _Last updated: 2026-11-19 (agent team set up, 0001 Decision 54; `build-stubs` bu
 
 ## After grilling
 
-- Since 2026-11-19 an agent team builds (0001 Decision 54, `CLAUDE.md` "Agent team",
-  `scripts/agents.sh`): the architect plans and hands out tasks, `arsm-core` builds, the reviewer
-  reviews; docs, skill and rig agents on demand. Before that: one session with a `/compact`
+- Since 2026-11-19 (0001 Decision 54, `CLAUDE.md` "Agent team", `scripts/agents.sh`): solo mode
+  by default, one task per fresh architect session that plans and builds, with the reviewer and
+  docs as subagents; peer builders (core, skill, rig, docs, reviewer) only for parallel work. Before that: one session with a `/compact`
   between steps (Decision 31).
 - Order: 1 → 2 → 3 → 5 → 5a → 7 → 9 → 9a → 8 → 10 → 4 → 6 → 11 → 12 → 13 (13, the
   with/without benchmark for the README, was added last by the user, 0001 decision 39).

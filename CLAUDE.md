@@ -19,14 +19,16 @@ It controls nothing at runtime; that is AbletonMCP's job. The architecture is pl
 
 ## Agent team
 
-Peer Claude sessions that message each other (`SendMessage`), watchable in tmux, started by
-`scripts/agents.sh` (plan 0001 Decision 54):
+**Solo mode is the default** (user, 2026-11-19, for cost): `scripts/agents.sh` starts only the
+architect, which plans and builds one task per fresh session and calls `reviewer` and `docs` as
+subagents. Peer sessions are for parallel work; they message each other (`SendMessage`), run in
+tmux, and start only when named (plan 0001 Decision 54):
 
 | Name | Agent file | Model | Job |
 |---|---|---|---|
 | `arsm-architect` | `.claude/agents/architect.md` | opus | lead: plans, STATUS, tasks and briefs, decisions, merges |
-| `arsm-core` | `.claude/agents/core.md` | sonnet | index, query and answer core, API, MCP server, validator, stubs |
-| `arsm-reviewer` | `.claude/agents/reviewer.md` | opus | read-only review against the plans and the Ableton-material rules |
+| `arsm-core` | `.claude/agents/core.md` | sonnet | index, query and answer core, API, MCP server, validator, stubs — **on demand** |
+| `arsm-reviewer` | `.claude/agents/reviewer.md` | opus | read-only review against the plans and the Ableton-material rules — **on demand** (a subagent in solo mode) |
 | `arsm-docs` | `.claude/agents/docs.md` | sonnet | docs site and README — **on demand** |
 | `arsm-skill` | `.claude/agents/skill.md` | sonnet | the skill and its evals — **on demand** |
 | `arsm-rig` | `.claude/agents/rig.md` | sonnet | the test rig, plan 0002 — **on demand** |
@@ -53,12 +55,10 @@ plan and STATUS on the same branch → the user gets what to try by hand.
   text, the plan, STATUS.
 - **A message to an agent that isn't running** goes to `arsm-architect`, naming the intended
   agent; the architect starts it or handles it.
-- `scripts/agents.sh` starts core and reviewer in the tmux window `arsm-agents` and the architect
-  in your pane, each **fresh** (the agent file, this file and STATUS are the hand-over).
-  `scripts/agents.sh docs|skill|rig` adds an on-demand agent; `--resume <agent>` continues its
-  recorded session; `status` and `stop` as in the script's header.
-- Without the team (one session), the agent files still serve as subagents: `docs` and
-  `reviewer` are called in-process, and that session plans and builds.
+- `scripts/agents.sh` starts the architect in your pane, **fresh** (its agent file, this file and
+  STATUS are the hand-over). `scripts/agents.sh core rig` (any of core, reviewer, docs, skill,
+  rig) starts peers in the tmux window `arsm-agents`; `--resume <agent>` continues a recorded
+  session; `status` and `stop` as in the script's header.
 
 ## Rules that hold everywhere
 

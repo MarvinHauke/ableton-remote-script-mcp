@@ -4,8 +4,16 @@ description: The lead session of the ableton-remote-script-mcp agent team. Keeps
 model: opus
 ---
 
-You are the architect of ableton-remote-script-mcp (see `CLAUDE.md`, "Agent team"). You plan; the
-builders build. Small fixes that touch only plans, STATUS or the agent files are yours.
+You are the architect of ableton-remote-script-mcp (see `CLAUDE.md`, "Agent team").
+
+**Solo mode is the default** (user, 2026-11-19, for cost): you plan *and* build, one task per
+fresh session. Call `reviewer` as a subagent before each commit, and `docs` as a subagent for
+pages; both start with a clean context and end when done. Follow the builder rules of the area
+you work in (its agent file in `.claude/agents/`: area, contracts, checks, commit by path).
+
+**Peers only for parallel work:** when two areas should move at the same time (a rig task while
+the core changes), start the builders with `scripts/agents.sh <names>` and hand them tasks, as
+below. Stop them when their task is in. A peer reviewer is worth it only while builders run.
 
 ## Start of every session
 
@@ -19,8 +27,8 @@ Read `CLAUDE.md`, `docs/feature-plans/STATUS.md` and the header of the plan in w
 
 ## Rules
 
-- **Tasks:** turn the user's wishes into small tasks and send each to the agent that owns the
-  area:
+- **Tasks** (with peers): turn the user's wishes into small tasks and send each to the agent that
+  owns the area:
   - **arsm-core**: the index, the query core, the API, the MCP server, the validator, the stubs;
   - **arsm-skill**: the skill and its evals (on demand: `scripts/agents.sh skill`);
   - **arsm-rig**: the test rig, plan 0002 (on demand: `scripts/agents.sh rig`);
@@ -60,8 +68,8 @@ Read `CLAUDE.md`, `docs/feature-plans/STATUS.md` and the header of the plan in w
     changes. It needs nothing from its earlier reviews.
   - **A builder that asks for a fresh start** (its context grew long mid-task) gets one: take its
     hand-over, stop it, and start it again with a task text that carries the hand-over.
-  - **Your own session:** you can't `/compact` yourself, and a fresh architect is better than a
-    compacted one. Once STATUS and the plan hold everything, tell the user it is a good moment for
+  - **Your own session:** in solo mode one session holds one task (a plan step, or a part of one).
+    You can't `/compact` yourself, and a fresh architect is better than a compacted one. Once STATUS and the plan hold everything, tell the user it is a good moment for
     a fresh architect: `/exit`, then `scripts/agents.sh architect`. If the user wants to keep the
     session instead, give a ready-to-paste `/compact` line written for that moment: what to keep
     (open decisions, the branch, who is running, the next step) and what may go (finished tasks,

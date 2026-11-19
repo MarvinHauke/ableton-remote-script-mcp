@@ -862,6 +862,16 @@ meant to do, and uses only API names that exist in the Live build they target.
       - The reviewer starts fresh per feature.
       - After every finished task the architect suggests a fresh architect, or else a
         ready-to-paste `/compact` line.
+    - **Solo mode by default, peers for parallel work** (user, 2026-11-19, asking for the most
+      cost-effective setup; the agent's analysis):
+      - Every call re-sends the session's context. Cached reads are cheaper but not free, so a
+        call's cost grows with the context: short, fresh sessions are cheaper and work better.
+      - An idle session costs nothing until it is woken, but each peer adds its own base context
+        and the messages between sessions. For one task at a time that is more than one session.
+      - So `scripts/agents.sh` starts only the architect. It plans and builds one task per fresh
+        session, with `reviewer` and `docs` as subagents, which start clean and end when done.
+        `scripts/agents.sh core rig` (any of the five) starts peers when two areas move at once.
+      - To check, run one similar task both ways and compare `/cost`.
 
 ## Open questions
 
