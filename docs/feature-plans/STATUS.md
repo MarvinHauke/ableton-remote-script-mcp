@@ -245,8 +245,10 @@ _Last updated: 2026-11-19 (0003 step 1 built and loaded in Live, Decisions 22–
   [results/apc-mini-drum-seq.md](results/apc-mini-drum-seq.md) with 10 tool findings. Two package
   fixes (Decision 23): `lookup class` on a cut answer, `session-ring` only for components that use
   the ring. The clip is v3's: the playing one first (Decision 22, user). 235 tests. Loaded in Live
-  12.4.16 on `ARS Test Rig`, no traceback. Next: the rig run (waits for the user's go), then the
-  results into the page.
+  12.4.16 on `ARS Test Rig`, no traceback; `rig run` 6 passed, 0 failed, twice; the user confirmed
+  the selection. **Step 1 done.** Open: whether a pad press still sounds (heard, not told apart
+  from the clip's note: a held pad on the panel or the hardware). Next: 0003 step 2 (playhead,
+  loop end, pages), in a fresh session; Live's own playhead sent nothing to the port in step 1.
 
 ## After grilling
 

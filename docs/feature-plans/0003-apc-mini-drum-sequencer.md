@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 1 on `feat/0003-step-1-tracer`: built, loaded in Live, rig run next._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 2; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed)._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem

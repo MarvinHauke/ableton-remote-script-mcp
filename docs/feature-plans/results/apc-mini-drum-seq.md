@@ -72,7 +72,26 @@ back. Fixed in step 1 unless a STATUS item is named.
 
 ## Rig runs
 
-Step 1: not run yet.
+**Step 1, 2026-11-19, Live 12.4.16** (the test Set with track 9 "Yellow Kit", a Drum Rack; the
+script on `ARS Test Rig`, AbletonMCP 1.7.1): 6 passed, 0 failed, 1 asked, twice (the second run
+after the user deleted the clip; the result file stays local). The user confirmed the selection (track 9,
+scene 1) and saw the note set.
+- A pad press selects that pad: its LED turns green (1), the one selected before turns yellow
+  (5), the pad with a sound. While held, the pressed pad first shows yellow, then green.
+- On the empty slot, the first step press created "Drum Seq": 8 beats, looping, one note
+  `[36, 0, 0.25, 100]` (C1, one 1/16 step, velocity 100); step 1's LED turned green. A second
+  press cleared the note and the LED.
+- After a press on the pad for 37, step 5 wrote `[37, 1.0, 0.25, 100]`.
+- `log: clean` in every step.
+- So these are now `tested` in 12.4.16: the `const` dependencies, the pad bank that selects,
+  the clip preset, velocity 100, the step skin values, the lowest pad bottom left
+  (`pads[12]` = 36).
+- The user heard the kit during the second run. The rig's pad presses are 20 ms taps and the new
+  clip plays its note too, so whether a pad press itself still sounds while the pad bank listens
+  (`matrix_always_listenable=True`) is not told apart: the panel (a held pad) or the hardware
+  decides it, at the latest in step 7.
+- Live's own playhead sent nothing to the port, although the new clip played (the default
+  playhead notes 0–7 on channel 2). Step 2's question (Decision 17).
 
 ## The user's results
 
