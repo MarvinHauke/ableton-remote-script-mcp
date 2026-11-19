@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -219,8 +219,14 @@ _Last updated: 2026-11-19 (plan 0003 spec and steps, Decisions 17–20, 0002 ste
   colours before the first rig checks as Decision 14 says (Decision 19). Three tool findings for 0003 step 1's list: `get_class("Clip")` cuts
   `Live.Clip.Clip` behind skin and notification classes named `Clip`; `Launchkey_MK4`'s outline
   shows no mappings; `lookup class` crashes (`KeyError: 'all_members'`, `cli.py`
-  `_format_class`) on a cut answer, e.g. `Live.Clip.Clip`. Next: the user approves the steps,
-  then 0002 step 6a in a fresh session.
+  `_format_class`) on a cut answer, e.g. `Live.Clip.Clip`. The steps still wait for the
+  user's approval.
+- 0002 step 6a built on `feat/0002-step-6a-led-colours` (2026-11-19, solo): `leds` in
+  `device.yaml` (value → colour, ` blink`), the optional `leds` field per element in the panel's
+  `model` message (still protocol 1), the rule that clients ignore unknown fields in
+  `docs/rig-panel-protocol.md`, the page drawing them; `docs/test-rig.md` says how. 223 tests.
+  Open: the user's look at the colours (with the sequencer, 0003 step 1); the one-line note to
+  the UC4 Editor's architect, handed to the user. Next: 0002 step 6b in a fresh session.
 
 ## After grilling
 

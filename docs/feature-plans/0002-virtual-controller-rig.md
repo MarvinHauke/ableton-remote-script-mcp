@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. Frontier: step 6a, then 6b (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. step 6a built 2026-11-19 (the user's look at the colours waits for 0003 step 1). Frontier: step 6b (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -402,6 +402,16 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      - **Checks:** seam C (a profile's `leds` reaches the `model` message; a profile without
        them gives the message as before); the protocol page's check; the user sees a profile's
        colours on the page with `Rig_Identity` or the sequencer.
+     - **Built** (2026-11-19, the architect in solo mode, branch `feat/0002-step-6a-led-colours`):
+       `leds` names an element or a matrix, each value a colour (`off`, a name from
+       `rig/profile.py` `COLOURS`, or a quoted `'#rrggbb'`) with ` blink` after it; an element's
+       own map wins over its matrix's; a value the map leaves out lights the LED by the value as
+       before. YAML 1.1 reads a bare `off` (and `no`, `false`) as false, taken as off; `on` is
+       refused. A map on a control that isn't a button is refused like an unknown name (exit 4).
+       The model's field: `"leds": {"<value>": {"colour": "#rrggbb" | null, "blink": bool}}`,
+       absent without a map. 223 tests. Open: the user's look at the colours, with the
+       sequencer's `device.yaml` in 0003 step 1 (`Rig_Identity`'s values from Live's default skin
+       aren't known, so no map is guessed for it); the UC4 Editor note, handed to the user.
    - **6b. A clip's notes in check files** — blocked by: 3. Before 0003 step 1.
      - **Delivers:** Decision 25: a `state` target `track N clip M` (`notes` as pitch, start,
        length, velocity; `length`, `looping`, `name`) read with `get_clip_notes` and the clip

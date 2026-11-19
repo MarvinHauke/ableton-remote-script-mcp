@@ -14,6 +14,15 @@ shows its value.
     display:                          # how a control shows its value: absolute (default),
       pan_encoders: bipolar           # bipolar or relative
       track_select_encoder: relative
+    leds:                             # what a button's LED shows for a value Live sends (Decision 26):
+      steps: &grid                    # an element or matrix name -> value -> colour, `off`, and
+        0: off                        # ` blink` after the colour; a YAML anchor shares a map
+        1: green
+        2: green blink
+      pads: *grid
+
+A colour is a name from `COLOURS` or a quoted `'#rrggbb'` (a bare `#` starts a YAML comment). A value the map doesn't name shows as before (the
+LED lit by the value). An element's own map wins over its matrix's.
 
 How v3 checks an identity reply (12.4.16 index, `ableton.v3.control_surface.identification`,
 observed): the script sends `identity_request` (default `F0 7E 7F 06 01 F7`) and, with
@@ -36,7 +45,11 @@ IDENTITY_REQUEST = [0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7]  # midi.SYSEX_IDENTITY_R
 RIG_IDENTITY_BYTES = (0x7D, 0x00, 0x01, 0x00, 0x01)
 RIG_IDENTITY_REPLY = [0xF0, 0x7E, 0x7F, 0x06, 0x02, *RIG_IDENTITY_BYTES, 0x00, 0x01, 0x00, 0x00, 0xF7]
 DISPLAYS = {"absolute", "bipolar", "relative"}
-PROFILE_KEYS = {"name", "identity", "layout", "display"}
+# LED colours a profile may name; what the page draws for each (the panel sends the hex).
+COLOURS = {"red": "#e5322d", "green": "#2fb344", "yellow": "#f2c12e", "amber": "#f59a1b",
+           "orange": "#f0701f", "blue": "#3a7bd5", "cyan": "#2bb7c9", "purple": "#9b5bd6",
+           "pink": "#ec5fa4", "white": "#f4f4f0"}
+PROFILE_KEYS = {"name", "identity", "layout", "display", "leds"}
 PROFILE_NAME = "device.yaml"
 
 
@@ -51,6 +64,16 @@ class Profile:
     reply: list[int] | None = None
     layout: list[list[str]] = field(default_factory=list)
     display: dict[str, str] = field(default_factory=dict)
+    leds: dict[str, dict[int, Led]] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class Led:
+    colour: str | None  # "#rrggbb", or None for off
+    blink: bool = False
+
+    def to_json(self) -> dict:
+        return {"colour": self.colour, "blink": self.blink}
 
 
 def load_profile(path: Path) -> Profile:
@@ -84,7 +107,53 @@ def load_profile(path: Path) -> Profile:
     if bad:
         raise ProfileError(f"{path}: `display` takes {', '.join(sorted(DISPLAYS))}; not {bad}")
     profile.display = {str(k): str(v) for k, v in display.items()}
+    try:
+        profile.leds = _leds(data.get("leds") or {})
+    except ValueError as e:
+        raise ProfileError(f"{path}: leds: {e}") from e
     return profile
+
+
+def _leds(data) -> dict[str, dict[int, Led]]:
+    if not isinstance(data, dict):
+        raise ValueError("a map of element or matrix names, each a map of value -> colour")  # noqa: TRY004
+    leds = {}
+    for name, values in data.items():
+        if not isinstance(values, dict) or not values:
+            raise ValueError(f"`{name}` takes a map of value -> colour, such as `1: green`")
+        leds[str(name)] = {_value(name, v): _led(name, v, text) for v, text in values.items()}
+    return leds
+
+
+def _value(name, value) -> int:
+    if isinstance(value, str) and value.isdigit():
+        raise ValueError(f"`{name}`: `'{value}'` is text; write the value without quotes")
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 127:
+        raise ValueError(f"`{name}`: `{value}` is not a value 0-127")
+    return value
+
+
+def _led(name, value, text) -> Led:
+    if text is False:  # YAML 1.1 reads a bare `off` (and `no`, `false`) as false: all mean off
+        return Led(None)
+    if text is None:  # nothing after the colon, or an unquoted `#rrggbb`, which YAML reads as a comment
+        raise ValueError(f"`{name}` {value}: no colour; quote a hex colour, such as '#ff0000'")
+    if text is True:  # `on`, `yes`, `true`
+        raise ValueError(f"`{name}` {value}: YAML reads this as true; name the colour, such as `red`")
+    words = str(text).lower().split()
+    blink = words[1:] == ["blink"]
+    if not words or len(words) > 2 or (len(words) == 2 and not blink):
+        raise ValueError(f"`{name}` {value}: `{text}` is not `<colour>` or `<colour> blink`")
+    colour = words[0]
+    if colour == "off":
+        if blink:
+            raise ValueError(f"`{name}` {value}: `off` doesn't blink")
+        return Led(None)
+    if colour in COLOURS:
+        return Led(COLOURS[colour], blink)
+    if len(colour) == 7 and colour[0] == "#" and all(c in "0123456789abcdef" for c in colour[1:]):
+        return Led(colour, blink)
+    raise ValueError(f"`{name}` {value}: `{colour}` is not off, #rrggbb or one of {', '.join(sorted(COLOURS))}")
 
 
 def _sysex(text) -> list[int]:
@@ -103,10 +172,16 @@ def profile_beside(path: Path) -> Profile | None:
 
 
 def check_profile_names(profile: Profile, ctl) -> list[str]:
-    """Names in the profile's layout and display hints that the controller doesn't have."""
+    """Names in the profile's layout, display hints and LED maps that the controller doesn't have,
+    and LED maps on controls that aren't buttons (only a button's LED is drawn)."""
     known = set(ctl.elements) | set(ctl.matrices)
-    names = [n for row in profile.layout for n in row] + list(profile.display)
-    return [f"device.yaml names `{n}`, which {ctl.script} has no element or matrix of" for n in names if n not in known]
+    names = [n for row in profile.layout for n in row] + list(profile.display) + list(profile.leds)
+    problems = [f"device.yaml names `{n}`, which {ctl.script} has no element or matrix of"
+                for n in names if n not in known]
+    for n in profile.leds:
+        if n in known and any(ctl.elements[e].kind != "button" for e in ctl.matrices.get(n, [n])):
+            problems.append(f"device.yaml gives `{n}` LED colours, and only buttons have LEDs on the panel")
+    return problems
 
 
 class IdentityResponder:

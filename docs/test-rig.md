@@ -185,6 +185,25 @@ sets the rows (`layout`) and how values show (`display`). Without one, the page 
 per matrix, then the single elements. If you restart `rig serve`, the panel connects again by
 itself.
 
+`leds` in `device.yaml` draws a button's LED in the colour your controller shows for each value
+Live sends, so the page can stand in for a grid controller. Name an element or a whole matrix,
+then give each value a colour: `off`, a name (red, green, yellow, amber, orange, blue, cyan,
+purple, pink, white) or `'#rrggbb'` in quotes (a bare `#` starts a YAML comment), with
+` blink` after it for a blinking LED. Case doesn't matter. A YAML anchor
+shares one map between matrices. A value the map leaves out lights the LED as before, brighter
+for a higher value.
+
+```yaml
+leds:
+  steps: &grid
+    0: off
+    1: green
+    2: green blink
+    3: red
+    4: '#ff8800'
+  pads: *grid
+```
+
 Another program can play through the panel too, such as an editor that already draws your
 controller: [the panel's protocol](rig-panel-protocol.md).
 

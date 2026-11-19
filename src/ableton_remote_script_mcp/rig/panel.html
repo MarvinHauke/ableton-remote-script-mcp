@@ -43,6 +43,11 @@ main { padding: 12px 16px 24px; display: grid; gap: 12px; }
 .pad { width: 52px; height: 40px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); cursor: pointer; position: relative; touch-action: none; }
 .pad .led { position: absolute; inset: 6px; border-radius: 4px; background: var(--led); opacity: 0; transition: opacity .08s; }
 .pad.down { outline: 2px solid var(--accent); }
+.pad .led.blink { animation: blink .5s steps(1) infinite; }
+@keyframes blink { 50% { opacity: .12; } }
+@media (prefers-reduced-motion: reduce) {
+  .pad .led.blink { animation: none; opacity: .5 !important; outline: 2px dashed var(--ink); outline-offset: 2px; }
+}
 input[type=range] { width: 72px; accent-color: var(--accent); }
 .bipolar input[type=range] { background: linear-gradient(90deg, transparent 49%, var(--muted) 49%, var(--muted) 51%, transparent 51%); }
 .steps { display: flex; gap: 4px; }
@@ -103,7 +108,19 @@ function cell(e, group) {
     control.addEventListener("pointerdown", down);
     control.addEventListener("pointerup", up);
     control.addEventListener("pointercancel", up);
-    onIn = v => { led.style.opacity = v > 0 ? String(0.35 + 0.65 * v / 127) : "0"; };
+    onIn = v => {  // the profile's colour for this value (protocol: an element's optional "leds"), else lit by the value
+      const look = e.leds && e.leds[String(v)];
+      led.classList.toggle("blink", Boolean(look && look.colour && look.blink));
+      if (look) {
+        led.style.background = look.colour || "";
+        led.style.opacity = look.colour ? "1" : "0";
+        control.title = `${box.title}\nLED ${v}: ${look.colour ? (look.blink ? "blinking " : "") + look.colour : "off"}`;
+      } else {
+        led.style.background = "";
+        control.title = "";
+        led.style.opacity = v > 0 ? String(0.35 + 0.65 * v / 127) : "0";
+      }
+    };
   } else if (e.display === "relative") {
     control = document.createElement("div");
     control.className = "steps";

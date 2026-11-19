@@ -31,6 +31,22 @@ element and direction, marked `"replay": true`, and after that every message as 
 Check `protocol` first. A client built for version 1 should stop with a message if the number
 is different.
 
+An element may also carry `leds`, when the script's `device.yaml` gives LED colours for it or
+its matrix. It maps a value Live sends to what the LED shows: `colour` is `#rrggbb`, or `null`
+for off, and `blink` says whether it blinks. A value the map leaves out has no colour from the
+profile; the panel's own page lights the LED by the value then.
+
+```json
+{"name": "steps[0]", "kind": "button", "midi": "note 32, channel 1", "display": "absolute",
+ "feedback": true,
+ "leds": {"0": {"colour": null, "blink": false}, "1": {"colour": "#2fb344", "blink": false},
+          "2": {"colour": "#2fb344", "blink": true}}}
+```
+
+**Ignore fields you don't know.** Version 1 may gain optional fields, in any message, as `leds`
+came in. A client built for version 1 reads the fields it knows and skips the rest. A change
+that a version-1 client can't skip raises the version.
+
 **MIDI**, in either direction:
 
 ```json

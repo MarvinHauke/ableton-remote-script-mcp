@@ -7,10 +7,12 @@ import pytest
 
 from ableton_remote_script_mcp.rig.ports import MemoryPort, wait_quiet
 from ableton_remote_script_mcp.rig.profile import (
+    COLOURS,
     IDENTITY_REQUEST,
     RIG_IDENTITY_BYTES,
     RIG_IDENTITY_REPLY,
     IdentityResponder,
+    Led,
     ProfileError,
     RespondingPort,
     load_profile,
@@ -108,3 +110,22 @@ def test_rig_serve_answers_identity_without_a_client(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_led_colours(tmp_path):
+    """Decision 26: value -> colour and blinking, per element or matrix; a YAML anchor shares a map."""
+    p = _profile(tmp_path, """\
+leds:
+  steps: &grid {0: off, 1: green, 2: green blink, 5: '#FFAA00'}
+  pads: *grid
+""")
+    assert p.leds["steps"] == {0: Led(None), 1: Led(COLOURS["green"]), 2: Led(COLOURS["green"], True),
+                               5: Led("#ffaa00")}
+    assert p.leds["pads"] == p.leds["steps"]
+    assert _profile(tmp_path, "name: Box\n").leds == {}
+    for bad, why in [("{steps: {1: mauve}}", "mauve"), ("{steps: {128: red}}", "0-127"),
+                     ("{steps: {1: red fast}}", "blink"), ("{steps: {0: off blink}}", "doesn't blink"),
+                     ("{steps: {1: on}}", "name the colour"), ("{steps: {1: }}", "quote"),
+                     ("{steps: {'1': red}}", "without quotes"), ("{steps: red}", "value -> colour"), ("[steps]", "names")]:
+        with pytest.raises(ProfileError, match=why):
+            _profile(tmp_path, f"leds: {bad}\n")
