@@ -358,7 +358,9 @@ _Last updated: 2026-11-19 (0003 Decision 36 built: the sequencer in its own repo
   `APC_mini_mk1_Plus/`; here the submodule `examples/APC_mini_mk1_Plus`. Validates with 0
   findings against 12.4.16; `uv run pytest` 246 passed (5 skip without the submodule). The user
   pushed it to GitHub (2026-11-19, `98161a8`, the submodule's pointer), so `main` can be pushed
-  after the merge (Decision 36's hold is lifted). **For the user in Live:** `install`
+  after the merge (Decision 36's hold is lifted). Merged into `main` 2026-11-19 (`7c2d80d`). Then (user):
+  the submodule is the only working copy, with GitHub as its `origin` and on `main`. The clone
+  beside this repo is deleted, and the stubs are in `examples/APC_mini_mk1_Plus/stubs`. **For the user in Live:** `install`
   of `examples/APC_mini_mk1_Plus/APC_mini_mk1_Plus`, restart, choose `APC_mini_mk1_Plus` as
   the Control Surface, delete the old `APC_mini_drum_seq` from the User Library's Remote Scripts.
   Next: 0003 step 6.
@@ -379,6 +381,16 @@ _Last updated: 2026-11-19 (0003 Decision 36 built: the sequencer in its own repo
 
 ## Small items
 
+- [finding, build-stubs] (architect, 2026-11-19, on `APC_mini_mk1_Plus` with the 12.4.16
+  stubs): the imports resolve, but pyright and basedpyright report 13 false errors.
+  - A property with a setter (`listenable_property`, e.g. `StepResolutionComponent.index`) comes
+    out as a plain method `def index(self, index)`.
+  - A control's decorator (`@finer_button.pressed` over `def finer_button`) reads as a
+    self-reference, and `MethodType` attribute writes fail (`subject`, `name`, `looping`).
+  - Fix in the stubs (emit a property, give controls a `pressed` decorator type) before the user
+    relies on them.
+- [todo, APC_mini_mk1_Plus] (user, 2026-11-19): the LICENSE holder becomes `MarvinHauke` with that
+  repo's next commit.
 - [idea, later] From the user's test list (0003 results page): pad preview as an option; the
   first loop extension duplicates the content (Elektron); playhead and following in Arrangement
   View; a new clip's launch quantization (v3 starts it at once, legato).

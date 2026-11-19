@@ -412,6 +412,11 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
       submodule nobody can fetch. CI is not affected either way: the tests skip and `docs.yml`
       doesn't check out submodules.
       The user pushed the repo themselves (2026-11-19, `98161a8`), so the hold is lifted.
+    - One working copy (user, 2026-11-19, the architect's suggestion): the submodule
+      `examples/APC_mini_mk1_Plus`. Its `origin` is GitHub, and it is on `main`; the clone at
+      `../APC_mini_mk1_Plus` is deleted. Edit, test, commit and push there, then commit the new
+      pointer here. Its `stubs/` is built inside it (`build-stubs --out
+      examples/APC_mini_mk1_Plus/stubs`, git-ignored there).
 
 ## Open questions
 
