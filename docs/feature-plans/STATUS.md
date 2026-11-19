@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-19 (0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-19 (0002 step 6b built, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -226,7 +226,15 @@ _Last updated: 2026-11-19 (0002 step 6a built, the panel's LED colours; plan 000
   `model` message (still protocol 1), the rule that clients ignore unknown fields in
   `docs/rig-panel-protocol.md`, the page drawing them; `docs/test-rig.md` says how. 223 tests.
   Open: the user's look at the colours (with the sequencer, 0003 step 1); the one-line note to
-  the UC4 Editor's architect, handed to the user. Next: 0002 step 6b in a fresh session.
+  the UC4 Editor's architect, handed to the user.
+- 0002 step 6b built on `feat/0002-step-6b-clip-notes` (2026-11-19, solo): a `state` target
+  `track N clip M` (`has_clip`, `name`, `length`, `notes`, `looping`, `loop_start`,
+  `loop_end`), `add_notes_to_clip` taking `[pitch, start, length, velocity]` lists, and
+  `requires` `drum_racks` and `empty_slots` (named, never created). 0002 Decision 27 (user):
+  `get_session_snapshot` joins the reads, only for a clip's looping. `docs/test-rig.md` says
+  how. 229 tests. Open: the Live check (two notes set by hand read back; an add and a clear),
+  which needs the user, AbletonMCP and the rig's port. Then `get_clip_notes` and the others
+  join `TESTED`. Next: that check, then 0003 step 1.
 
 ## After grilling
 

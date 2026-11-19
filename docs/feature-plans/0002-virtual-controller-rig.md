@@ -1,6 +1,6 @@
 # 0002 — Virtual controller test rig
 
-_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. step 6a built 2026-11-19 (the user's look at the colours waits for 0003 step 1). Frontier: step 6b (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
+_Stage: in work — steps approved by the user 2026-11-18; step 1 built 2026-11-18; steps 2-4 built and run in Live 2026-11-18; step 5 done 2026-11-18. step 6a built 2026-11-19 (the user's look at the colours waits for 0003 step 1); step 6b built 2026-11-19 (its Live check waits for the user). Frontier: step 6b's Live check (0003's steps written 2026-11-19; step 6 split into 6a and 6b, 0003 Decision 19)._
 _Depends on: 0001 (outline, validator, `log`); input: the UC4 load test
 ([milestone-1/faderfox-uc4.md](milestone-1/faderfox-uc4.md))._
 
@@ -201,6 +201,11 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     message: an addition, still protocol 1, and `docs/rig-panel-protocol.md` gains the rule that
     clients ignore fields they don't know. The UC4 Editor's architect gets a one-line note.
     Changes Decision 24's contract by that field and the rule on unknown fields only.
+27. **The rig may read AbletonMCP's `get_session_snapshot`** (user, 2026-11-19, step 6b, asked by
+    the architect; adds to Decisions 6 and 25). Only for a clip's `looping`, `loop_start` and
+    `loop_end`, which no other allowed command reports, and only with `include_notes` and
+    `include_params` off. A read, so it joins `READS`; like every command it is labelled
+    untested until it read back a state the user set by hand.
 
 ## Open questions
 
@@ -420,6 +425,18 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
      - **Checks:** seam C over the fake socket; the user sets two notes by hand in a test-Set
        clip, the rig reads them back, and `get_clip_notes` joins `TESTED`; an add and a clear
        read back and checked by the user join it too.
+     - **Built** (2026-11-19, the architect in solo mode, branch `feat/0002-step-6b-clip-notes`):
+       `track N clip M` takes `has_clip`, `name` and `length` (read with `get_track_info`, which is
+       tested), `notes` (`get_clip_notes`) and `looping`, `loop_start` and `loop_end`
+       (`get_session_snapshot`, Decision 27, repeated until the three loop fields agree, since a
+       whole snapshot holds the song time). Each read is made only when a field needs it. An
+       empty slot reads as `has_clip: false`, and its other fields as "(no clip)". A note is
+       `[pitch, start, length]` or `[pitch, start, length, velocity]`. Notes match in any order,
+       and a muted note matches none. `add_notes_to_clip` takes the same lists, with velocity
+       100 when it is left out. `requires` takes `drum_racks` (AbletonMCP's device type
+       `drum_machine`) and `empty_slots`, both only named when missing. 229 tests. Open: the
+       Live check below, which needs AbletonMCP and the user. Until then `get_clip_notes`,
+       `get_session_snapshot`, `add_notes_to_clip` and `clear_notes_from_clip` stay off `TESTED`.
    - The skill mentions the rig (Decision 20) in 0003 step 6.
 
 ## Out of scope

@@ -6,7 +6,7 @@ Protocol (AbletonMCP 1.7.1, read from its `__init__.py`): the client writes one 
 `{"status": "success", "result": ...}` or `{"status": "error", "message": ...}` on the same
 connection. Reads run off Live's main thread; writes are scheduled on it.
 
-Only the commands in `ALLOWED` are ever sent (Decisions 6, 25); never its rating, dataset-consent,
+Only the commands in `ALLOWED` are ever sent (Decisions 6, 25, 27); never its rating, dataset-consent,
 browser or clip-deleting commands. A read is repeated until two answers agree, because a first read after the user
 reopened Live failed once (`Boost.Python.ArgumentError … None(Song)`, 2026-11-18). With another
 script version, or no socket, the rig runs without AbletonMCP.
@@ -20,7 +20,8 @@ import socket
 HOST, PORT = "127.0.0.1", 9877
 SCRIPT_VERSION, PROTOCOL_VERSION = "1.7.1", 1
 READS = {"get_script_info", "get_session_info", "get_track_info", "get_device_parameters",
-         "drain_passive_events", "get_clip_notes"}
+         "drain_passive_events", "get_clip_notes",
+         "get_session_snapshot"}  # only for a clip's looping, loop_start, loop_end: Decision 27
 WRITES = {"create_midi_track", "create_audio_track", "create_clip", "set_tempo", "set_device_parameter",
           "fire_clip", "stop_clip", "start_playback", "stop_playback",
           "add_notes_to_clip", "clear_notes_from_clip"}  # the notes three: Decision 25
@@ -75,14 +76,18 @@ class AbletonMCP:
             raise AbletonMCPError(f"`{command}`: {answer.get('message', answer)}")
         return answer.get("result")
 
-    def read(self, command: str, tries: int = 4, **params):
-        """A read repeated until two answers in a row agree (or an error the last time)."""
+    def read(self, command: str, tries: int = 4, project=None, **params):
+        """A read repeated until two answers in a row agree (or an error the last time). With
+        `project`, only `project(answer)` must agree, and it is what comes back: a snapshot holds
+        the song time, so two whole ones never agree while Live plays."""
         if command not in READS - {"drain_passive_events"}:
             raise Forbidden(f"`{command}` is not a repeatable read")
         last, error = None, None
         for _ in range(tries):
             try:
                 answer = self.call(command, **params)
+                if project is not None:
+                    answer = project(answer)
             except AbletonMCPError as e:
                 error, last = e, None
                 continue
