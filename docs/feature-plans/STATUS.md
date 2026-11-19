@@ -395,6 +395,15 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
   `(self, index)` with `index.setter`, not a property; controls and `@listens` slots show as
   methods; a `NamedTuple`'s fields (annotations) are missing. The stubs work around all three;
   the index fix changes its content (a rebuild): grill.
+- [todo, skill] (user, 2026-11-20, "if it helps do that", on the architect's proposal): the
+  skill's validate step also runs basedpyright (or pyright) with the project's stubs
+  (`build-stubs --project`) when one is installed, as an extra check of the script's own code
+  (a misspelled `self._attribute`, a wrong argument count, an undefined name), which
+  `check-names` doesn't cover. It reports those and leaves out the known false errors: the v3
+  control idiom ("refers to itself") and an attribute that may be `None`. Optional: no checker
+  installed means the step is skipped with a note, never a failure. A task for arsm-skill, with
+  an eval case; open for its task text: whether the skill writes the stubs itself or asks the
+  user, and the `reportOptionalMemberAccess` handling (off in the run, or filtered).
 - [idea, validate/install] (user's run, 2026-11-19): `install examples/APC_mini_mk1_Plus` (the
   repo root) gave `create-instance` "no __init__.py". When the folder has none but exactly one
   subfolder that has one, say "did you mean `<folder>/<sub>`?". Also: without `--build` the
