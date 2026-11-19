@@ -296,10 +296,13 @@ _Last updated: 2026-11-19 (0003 step 5's first task built, the rig's selection, 
   {selected_track, selected_scene}`), `checks.yaml`'s `select-track` is a `do` with its state
   read back, and the track-choice steps read the selected track. The fork's half is committed on
   its own branch `feat/select-clip-slot` (from `cmdabl-testing`; the user merges and pushes).
-  242 tests here, 59 in the fork. Still open: the user installs the fork's script into the User
-  Library (`AbletonMCP/__init__.py`) and reloads it in Live; then a `rig run`; once the user saw
-  the selection move in Live, `select_clip_slot` and the two fields join `TESTED`. Then step 5's
-  main part: the full check file passing, the user's pattern on the panel and on the APC.
+  242 tests here, 59 in the fork. The fork's script is installed in the User Library (the old
+  one kept as `__init__.py.bak` there). `rig run` 2026-11-19: 31 passed, 0 failed, 2 asked
+  (answered yes); the user saw the selection move, so `select_clip_slot`, `create_clip` and
+  `fire_clip` joined `TESTED` (results page). Open: the user's glance for `create_midi_track` and
+  `stop_playback`. **First task done.** Next: step 5's main part, the user's pattern on the panel
+  (`rig panel`), then on the APC (Decisions 12, 14), in a fresh session. Before a run: delete
+  track 9's three clips and track 10 (or restart Live without saving); keep track 9.
 
 ## After grilling
 

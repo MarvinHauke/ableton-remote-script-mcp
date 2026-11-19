@@ -55,9 +55,10 @@ NO_CLIP = "(no clip)"
 DEFAULT_VELOCITY = 100  # AbletonMCP's own default for a note without one
 REQUIRE_KEYS = {"tracks", "returns", "devices", "clips", "drum_racks", "empty_slots"}
 CLIP_LENGTH = 4.0  # beats, for a clip `requires` creates
-# Fields of a tested read that came later (the fork's selection, Decision 29): untested until a
-# value the user saw in Live was read back.
-UNTESTED_FIELDS = {"get_session_info": {"selected_track", "selected_scene"}}
+# Fields of a tested read that came later: untested until a value the user saw in Live was read
+# back. The fork's selection (Decision 29) was, 2026-11-19, so none are listed now.
+UNTESTED_FIELDS: dict[str, set[str]] = {}
+SELECTION_FIELDS = {"selected_track", "selected_scene"}  # the fork's, in get_session_info
 NO_SELECTION = "(no selection: needs an AbletonMCP with select_clip_slot)"
 
 
@@ -255,7 +256,7 @@ def check_state(mcp, state: dict) -> list[dict]:
         empty_slot = got.get("has_clip") is False and " clip " in key
         for name, want in fields.items():
             command = field_command(key, name)
-            missing = (NO_CLIP if empty_slot else NO_SELECTION if name in UNTESTED_FIELDS.get(command, ())
+            missing = (NO_CLIP if empty_slot else NO_SELECTION if key == "song" and name in SELECTION_FIELDS
                        else "(no such field)")
             have = got.get(name, missing)
             ok = _same_notes(want, have) if name == "notes" and " clip " in key else _same(want, have)

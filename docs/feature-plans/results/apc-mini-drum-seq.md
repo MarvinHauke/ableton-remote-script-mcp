@@ -197,6 +197,19 @@ selection set explicitly, a check for it): 30 passed, 0 failed, 3 asked.
 - The user saw the box around tracks 1-8, and, by hand, track 9's auto-arm go off while track 1
   was armed. `log: clean` in every step.
 
+**Step 5, first task, 2026-11-19, Live 12.4.16** (the test Set after a restart with the fork's
+AbletonMCP, track 9 "Yellow Kit" created and loaded through AbletonMCP at the user's request; the
+rig selects the slot itself now, plan 0002 Decision 29): 31 passed, 0 failed, 2 asked.
+- `select-track`: `select_clip_slot` selected track 9 and scene 1; `get_session_info` read back
+  `selected_track: 9`, `selected_scene: 1`. The track-choice steps read the selected track as
+  10, 9, 10, 1 and 2. The user saw Session View's selection jump at the start and at the end:
+  `select_clip_slot` and the two fields are `tested` (12.4.16).
+- The user heard the kit while the rig held the pad, and saw the box around tracks 1-8 and the
+  master. Whether track 9's arm button was lit wasn't answered this time (step 4's run saw it).
+- `create_clip` and `fire_clip` joined `TESTED` (the user saw the clips and heard them);
+  `create_midi_track` and `stop_playback` are read back by the rig but not yet confirmed by the
+  user.
+
 ## The user's results
 
 Not yet (panel and hardware after step 7, Decision 14).

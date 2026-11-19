@@ -372,7 +372,7 @@ def test_the_selection_is_set_and_read_back_counting_from_one():
     mcp.call("select_clip_slot", track_index=1, scene_index=1)
     good = check_state(mcp, {"song": {"selected_track": 2, "selected_scene": 2}})
     assert [(r["state"], r["ok"], r["tested"]) for r in good] == [
-        ("song selected_track", True, False), ("song selected_scene", True, False)]  # untested until seen in Live
+        ("song selected_track", True, True), ("song selected_scene", True, True)]  # seen in Live, 2026-11-19
     live.selection = (None, 0)  # a return track or the master: no index, so its name
     master, = check_state(mcp, {"song": {"selected_track": "Main"}})
     assert master["ok"]
@@ -386,7 +386,11 @@ def test_select_needs_an_abletonmcp_that_has_it():
     assert "select_clip_slot" not in {r["type"] for r in live.sent}
 
 
-def test_a_run_names_the_untested_selection_fields_and_the_write(tmp_path):
+def test_a_run_names_untested_fields_and_writes(tmp_path, monkeypatch):
+    from ableton_remote_script_mcp.rig import abletonmcp, state
+
+    monkeypatch.setattr(state, "UNTESTED_FIELDS", {"get_session_info": {"selected_track"}})
+    monkeypatch.delitem(abletonmcp.TESTED, "select_clip_slot")
     path = tmp_path / "checks.yaml"
     path.write_text("settle: 0.01\nsteps:\n  - id: select\n    do:\n      - select_clip_slot: {track: 2, scene: 1}\n"
                     "    state:\n      song: {selected_track: 2, tempo: 120}\n"

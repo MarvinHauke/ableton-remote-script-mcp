@@ -237,7 +237,10 @@ All by the user, 2026-11-18, grilling round 1–5 (Q1–Q25), on the agent's rec
     rig checks before sending it. In the rig: `do: select_clip_slot: {track, scene}`,
     `song: {selected_track, selected_scene}` counting from 1 (a return or the master by its
     name), both labelled untested; the run's untested list now names the `do` writes too, as
-    Decision 25 asks (the reviewer's finding: only reads were listed before).
+    Decision 25 asks (the reviewer's finding: only reads were listed before). Tested 2026-11-19
+    (Live 12.4.16, 0003 step 5's run): the selection set and read back, the user saw it move;
+    `select_clip_slot` joins `TESTED`, and with it `Song.View.selected_track` and
+    `selected_scene` are `tested` for 12.4.16.
 
 ## Open questions
 

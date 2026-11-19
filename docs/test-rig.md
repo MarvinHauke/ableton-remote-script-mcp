@@ -193,7 +193,7 @@ Leave out `track` or `scene` to keep that part of the selection. A selected retu
 master reads as its name (for example `Main`) instead of a number. This needs an AbletonMCP whose
 `capabilities` list `select_clip_slot`, such as the MarvinHauke/ableton-mcp fork from 2026-11-19
 (still version 1.7.1). With upstream AbletonMCP 1.7.1 the `do` step fails with a message saying
-so, and a selection field reads as missing. The selection fields are untested until a run has read back a selection you saw in Live.
+so, and a selection field reads as missing.
 
 Without AbletonMCP, `do` steps are skipped, and their state and events are listed as not checked.
 

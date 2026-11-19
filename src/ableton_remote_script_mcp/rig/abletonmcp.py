@@ -46,6 +46,15 @@ TESTED = {
                             "is still to be read, in 0003's checks)",
     "add_notes_to_clip": "2026-11-19, Live 12.4.16: a D3 on 1.1 read back and seen by the user, the two notes kept",
     "clear_notes_from_clip": "2026-11-19, Live 12.4.16: the three notes gone, read back and seen by the user",
+    # plan 0002 Decision 29, the user's fork; get_session_info's selected_track and selected_scene with it
+    "select_clip_slot": "2026-11-19, Live 12.4.16: track 9, scene 1 selected and read back at the start of "
+                        "0003's run, the track choice read back as 10, 9, 10, 1, 2; the user saw Session "
+                        "View's selection jump at the start and at the end",
+    # plan 0003 step 5's first run, track 9 "Yellow Kit"
+    "create_clip": "2026-11-19, Live 12.4.16: a 1-bar and a 4-bar clip on track 9 read back (has_clip, length 4 "
+                   "and 16) and seen by the user",
+    "fire_clip": "2026-11-19, Live 12.4.16: the two clips played: the playhead's LEDs moved over the 1-bar "
+                 "clip's steps, and the user heard the kit",
 }
 
 
