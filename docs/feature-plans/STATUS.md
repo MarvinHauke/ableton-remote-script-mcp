@@ -403,8 +403,15 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
   `check-names` doesn't cover. It reports those and leaves out the known false errors: the v3
   control idiom ("refers to itself") and an attribute that may be `None`. Optional: no checker
   installed means the step is skipped with a note, never a failure. A task for arsm-skill, with
-  an eval case; open for its task text: whether the skill writes the stubs itself or asks the
-  user, and the `reportOptionalMemberAccess` handling (off in the run, or filtered).
+  an eval case. Settled (user, 2026-11-20, "it should ask you to write them but keeps reasons to
+  do so. If there are errors it should handle them"):
+  - **Stubs:** the skill doesn't write them; it asks the user to run `build-stubs --project`, and
+    says why (the check, completion in their editor), so the user can decide.
+  - **Errors:** the skill handles every error the checker reports, by fixing the script: a
+    real mistake is corrected, an attribute that may be `None` gets its check, and the v3
+    control idiom gets `# pyright: ignore[reportGeneralTypeIssues]` on the decorator's line
+    (Decision 56). Nothing is filtered out of the result unseen. Standard mode
+    (`typeCheckingMode`), whatever the project's config says (architect, 2026-11-20).
 - [idea, validate/install] (user's run, 2026-11-19): `install examples/APC_mini_mk1_Plus` (the
   repo root) gave `create-instance` "no __init__.py". When the folder has none but exactly one
   subfolder that has one, say "did you mean `<folder>/<sub>`?". Also: without `--build` the
