@@ -168,6 +168,16 @@ def old_build() -> Index:
     ix.module("ableton.v3.control_surface.components.drum_group", imports={"Component": "ableton.v3.control_surface.Component"})
     ix.cls("ableton.v3.control_surface.components.drum_group", "DrumGroupComponent", ["Component"], line=12,
            members={"set_pads": method(14, p("pads"))})
+    # what the index keeps as methods (the last `def` of a name; 0001 Decision 56)
+    ix.module("ableton.v3.control_surface.components.grid_resolution",
+              imports={"Component": "ableton.v3.control_surface.Component", "NamedTuple": "typing.NamedTuple"})
+    ix.cls("ableton.v3.control_surface.components.grid_resolution", "GridResolutionComponent", ["Component"],
+           line=10, members={
+               "resolution_buttons": method(12, p("button"), decorators=["resolution_buttons.checked"]),
+               "index": method(20, p("index"), decorators=["index.setter"]),
+               "_GridResolutionComponent__on_clip_changed": method(30, decorators=["listens('clip')"]),
+           })
+    ix.cls("ableton.v3.control_surface.components.grid_resolution", "GridEntry", ["NamedTuple"], line=40)
     ix.module("ableton.v3.control_surface.display.notifications")
     ix.cls("ableton.v3.control_surface.display.notifications", "Notifications", ["object"], line=5)
     ix.cls("ableton.v3.control_surface.display.notifications", "Notifications.Device", ["object"], line=6,

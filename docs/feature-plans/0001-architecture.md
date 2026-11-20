@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -897,12 +897,59 @@ meant to do, and uses only API names that exist in the Live build they target.
        `looping`) are checked for the same cause. Done when basedpyright in standard mode, run
        on the four examples, reports no error from a gap in the stubs. A test reads the
        generated stub of a `listenable_property` with a setter.
+       - **Built 2026-11-20** (architect, solo). The cause was the index: it keeps the last `def`
+         of a name, so three kinds of member came out as plain methods. The stubs now read them
+         from their decorators:
+         - `@<name>.setter` (or `.deleter`): a `@property` with its setter (123 in 12.4.16);
+         - `@<name>.<event>` (a control's handler under the control's own name, `@matrix.released`)
+           and `@listens`, `@listens_group`, `@subject_slot(_group)`, `@lazy_attribute`: an
+           attribute, since at runtime it is the control or the slot (`.subject` can be set);
+         - a `NamedTuple` (its fields are annotations, which the index doesn't hold): a plain
+           class that takes any arguments and has any attribute.
+
+         pyright 1.1.404 and basedpyright 1.31 (standard mode) on the four examples against
+         12.4.16: `APC_mini_mk1_Plus` 13 → 2 errors, the other three 5 as before, `Rig_Identity` 0.
+         All 7 come from pyright reading the scripts' own code: an attribute that may be `None`
+         (3), and the control idiom (4).
+       - **The control idiom can't be fixed in the stubs** (architect, 2026-11-20, tried): for
+         `b = ButtonControl(…)` followed by `@b.pressed` over `def b`, pyright reports "refers to
+         itself" whatever type the stub gives `pressed` (`Any`, a method returning the control,
+         `Self`, a generic `F -> F`). pyright special-cases only a property's `.setter`. A script
+         avoids it with `b: Any = ButtonControl(…)`, no change at runtime.
+       - **Accepted** (user, 2026-11-20, "yes like suggested"): the examples stay as they are;
+         the "Editor setup" page (task 3) explains the error and the `b: Any = …` workaround.
+       - **Workaround corrected** (architect, 2026-11-20, from the review of task 3, tested with
+         pyright 1.1.404 and basedpyright 1.31 in standard mode): `b: Any = …` clears the error in
+         pyright and Pylance, but basedpyright then reports `reportRedeclaration`. The page leads
+         with `# pyright: ignore[reportGeneralTypeIssues]` on the `@b.pressed` line, which clears
+         it in both, and mentions `b: Any` as the pyright-only form.
     2. **`build-stubs --project <folder>` (core).** It writes the stubs to `<folder>/stubs`,
        creates a `pyrightconfig.json` there when there is none (`stubPath: "stubs"`,
-       `pythonVersion: "3.11"`, `reportMissingModuleSource: false`; an existing one is left
+       `pythonVersion: "3.11"`, `reportMissingModuleSource: false`, and from 2026-11-20
+       `typeCheckingMode: "standard"`, see below; an existing one is left
        alone and the settings are printed), and adds `stubs/` to `<folder>/.gitignore` when the
        folder is a git repo and the line is missing. `--out` and `--project` exclude each other.
        It doesn't change the answer core, the MCP tools or the exit codes.
+       - **Built 2026-11-20** (architect, solo). `build_stubs(…, project=)` adds a `project` part
+         to its answer (`config`: `created` or `kept`; `gitignore`: `added`, `present` or
+         `not_a_repo`); `build_stubs` isn't in the API or the MCP tools, so no `answer_version`.
+         A missing folder is `not_found` (exit 2); `--out` with `--project` is argparse's usage
+         error (exit 2). Run on `APC_mini_mk1_Plus` (config and ignore line kept) and on a fresh
+         git folder (both created). Small choices (architect, 2026-11-20):
+         - "a git repo" means the folder or one above it has a `.git` (a folder, or the file of a
+           submodule or worktree), so a script folder inside a bigger repo still gets the line;
+         - the ignore line counts as there when `git check-ignore stubs/` says so (any
+           `.gitignore` up the repo, any pattern), else when `stubs`, `stubs/`, `/stubs` or
+           `/stubs/` is a line of `<folder>/.gitignore` (git not on the PATH, a fake repo);
+         - an existing `pyrightconfig.json` whose `stubPath` is `"stubs"` is reported as ready;
+           otherwise the settings are printed (from the review, 2026-11-20);
+         - a repo in `~` (dotfiles) makes every project under it "in a git repo": harmless, it
+           only adds a line (review, noted, left as it is);
+         - `[tool.pyright]` or `[tool.basedpyright]` in `pyproject.toml` counts as an existing
+           config, since a new `pyrightconfig.json` would override it.
+       - **For task 3:** pyright picks the Python on the PATH for the standard library; with
+         Homebrew's 3.15 it reports 2 errors in 3.15's `string/templatelib.py`. The page says to
+         point it at a 3.11 (`pythonVersion` alone doesn't stop this) or to ignore those.
     3. **A docs page "Editor setup" (docs agent).** For someone who writes a script by hand:
        clone this repo, `build-index`, `build-stubs --project .`; then nvim (lspconfig with
        pyright or basedpyright), VS Code (Pylance) and pylsp. It also covers stubs per project
@@ -910,6 +957,23 @@ meant to do, and uses only API names that exist in the Live build they target.
        errors mean. Getting started and the README link to it, and so does `APC_mini_mk1_Plus`'s
        README, whose stubs line also needs `build-index`. pylsp stays documented, not tested
        (Decision 53).
+       - **Built 2026-11-20** (architect, solo; docs subagent): `docs/editor-setup.md`, in the
+         nav after Getting started; Getting started's section shortened to the `--project` form
+         and a link; the README's item 4 and `APC_mini_mk1_Plus`'s README use it. Every command
+         runs in the clone with `--project path/to/My_Project` (from the review: a bare `uv run`
+         in a script project doesn't find the tool, and `--project .` in the clone would write
+         the stubs into the tool's repo). Checked: nvim-lspconfig's `basedpyright` config has
+         `pyrightconfig.json` among its root markers. Not checked here: Pylance's
+         `python.analysis.stubPath`, the pre-0.11 `lspconfig` form.
+       - **`"typeCheckingMode": "standard"` in the created config** (user, 2026-11-20, "if it
+         helps add typecheckingMode", on the architect's finding): basedpyright 1.40 without a
+         mode runs "recommended", which gave `APC_mini_mk1_Plus` 4 errors and 280 warnings
+         (missing annotations, instance variables set outside `__init__`); standard gives the 2
+         of the control idiom. Part 2's created `pyrightconfig.json` adds the mode, and the
+         printed settings name it; a kept config is not changed. Also checked: a `_Framework`
+         and `ableton.v2` script resolves against the stubs and a misspelled
+         `SessionComponent.set_offsetz` is flagged (12.4.16, basedpyright standard); the page
+         now names the three generations.
 
 ## Open questions
 

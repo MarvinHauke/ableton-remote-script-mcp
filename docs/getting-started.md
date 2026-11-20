@@ -111,40 +111,18 @@ from Python and as MCP tools.
 
 ## Completion in your editor
 
-`build-stubs` writes type stubs (`.pyi` files) of a build, which your editor's Python language
-server reads. Then it completes the framework's and the `Live` module's names, shows their
-signatures and docstrings, and marks a name the build doesn't have:
+`build-stubs` writes type stubs of a build into your script project, so your editor completes the
+framework's and the `Live` module's names, shows their signatures and marks a name the build
+doesn't have:
 
 ```sh
-uv run ableton-remote-script-mcp build-stubs --build 12.4.16
-```
-
-The stubs go to `stubs/12.4.16` in the index folder, and the command prints the settings to use.
-For basedpyright or pyright, put a `pyrightconfig.json` in the folder you write scripts in:
-
-```json
-{
-  "stubPath": "/Users/you/.local/share/ableton-remote-script-mcp/index/stubs/12.4.16",
-  "pythonVersion": "3.11",
-  "reportMissingModuleSource": false
-}
+uv run ableton-remote-script-mcp build-stubs --build 12.4.16 --project path/to/My_Project
 ```
 
 The stubs are built from Ableton's code, like the index, so keep them on your machine.
-
-What the stubs hold:
-- everything the index has: modules, classes with their bases, methods with their parameters,
-  properties, class attributes, and the attributes a class's methods set on `self`;
-- the `Live` package, from the Push 3 helper's model of it. With
-  [Structure Void's pages](#build-the-index) imported, it also gets the members those pages
-  list, marked `# documented`.
-
-`--observed-only` leaves out the documented members.
-
-Some limits: types are `Any` throughout, so the language server checks names, not types. It
-also reads your own code. In standard mode it reports things such as an attribute that may be
-`None`, or the v3 control idiom (`@button.pressed` above a method of the same name). The
-framework's own scripts look the same to it.
+[Editor setup](editor-setup.md) has the editor configuration, what `--project` changes in your
+project and what the errors left in your editor mean. `--observed-only` leaves out the members
+that only Structure Void's pages (see [above](#build-the-index)) list.
 
 ## Install it and read the log
 

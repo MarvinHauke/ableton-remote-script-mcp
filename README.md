@@ -48,12 +48,15 @@ claude mcp add ableton-remote-script -- uv run --project "$PWD" ableton-remote-s
 
 For another client, the command is `uv run --project /path/to/clone ableton-remote-script-mcp mcp`.
 
-**4. Completion in your editor.** `build-stubs` writes type stubs of a build for basedpyright,
-pyright or pylsp. It prints the settings to use:
+**4. Completion in your editor.** `build-stubs` writes type stubs of a build into your script
+project, for basedpyright, pyright or pylsp. Run it in the clone, after `build-index`:
 
 ```sh
-uv run ableton-remote-script-mcp build-stubs --build 12.4.16
+uv run ableton-remote-script-mcp build-stubs --build 12.4.16 --project path/to/My_Project
 ```
+
+[Editor setup](https://marvinhauke.github.io/ableton-remote-script-mcp/editor-setup/) has the
+editor configuration.
 
 **The commands** behind all of these:
 

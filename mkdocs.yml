@@ -33,6 +33,7 @@ exclude_docs: |
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Editor setup: editor-setup.md
   - How it works: how-it-works.md
   - Answers, API and MCP server: answers.md
   - Testing with the rig: test-rig.md

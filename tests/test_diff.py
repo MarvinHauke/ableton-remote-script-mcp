@@ -66,7 +66,7 @@ def test_cli_prints_counts_then_details(index_dir, capsys):
     base = ["--index-dir", str(index_dir), "diff", OLD, NEW]
     assert main(base) == 0
     out = capsys.readouterr().out
-    assert f"Live {OLD} -> {NEW}" in out and "ableton: modules +1 -9" in out and "package removed: Fake_Script" in out
+    assert f"Live {OLD} -> {NEW}" in out and "ableton: modules +1 -10" in out and "package removed: Fake_Script" in out
     assert main([*base, "--under", "ableton.v3"]) == 0
     out = capsys.readouterr().out
     assert f"class changed: {COMP}" in out and "~ is_enabled: method(self, explicit=False) -> method(self, explicit=True)" in out

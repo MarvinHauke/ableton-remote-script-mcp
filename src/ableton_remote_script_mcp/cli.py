@@ -541,20 +541,53 @@ def _cmd_check_names(args: argparse.Namespace) -> int:
     return 1 if unknown else 0
 
 
+def _print_project(project: dict, out: str) -> None:
+    """What `build-stubs --project` did to the project folder (Decision 56, task 2)."""
+    if project["config"] == "created":
+        print("created pyrightconfig.json (basedpyright, pyright and Pylance read it)")
+    else:
+        config = Path(project["folder"]) / "pyrightconfig.json"
+        try:
+            ready = json.loads(config.read_text(encoding="utf-8")).get("stubPath") == "stubs"
+        except (OSError, ValueError, AttributeError):
+            ready = False
+        where = "pyrightconfig.json is there" if config.exists() else "pyproject.toml has pyright settings"
+        if ready:
+            print(f'{where}, left as it is; its "stubPath" is already "stubs"')
+            print('  (with "reportMissingModuleSource": false, "pythonVersion": "3.11" and')
+            print('  "typeCheckingMode": "standard" if they are missing)')
+        else:
+            print(f"{where}, left as it is; these settings use the stubs:")
+            print('  "stubPath": "stubs",')
+            print('  "pythonVersion": "3.11",')
+            print('  "reportMissingModuleSource": false,   (Live has the modules; the stubs stand in for them)')
+            print('  "typeCheckingMode": "standard"   (basedpyright is stricter by default)')
+    if project["gitignore"] == "added":
+        print("added stubs/ to .gitignore")
+    elif project["gitignore"] == "not_a_repo":
+        print("not in a git repo: if you make it one, keep stubs/ out of it")
+    print("pylsp (jedi): in its settings")
+    print(f'  pylsp.plugins.jedi.extra_paths = ["{out}"]')
+
+
 def _cmd_build_stubs(args: argparse.Namespace) -> int:
     from .query import build_stubs
 
-    answer = build_stubs(Path(args.index_dir), args.build, args.out, args.observed_only)
+    answer = build_stubs(Path(args.index_dir), args.build, args.out, args.observed_only, args.project)
     if args.json:
         print(json.dumps(answer, indent=1))
     elif answer["status"] == "ok":
-        out = answer["out"]
+        out, project = answer["out"], answer.get("project")
         marked = "" if not answer["documented"] else " (documented members marked `# documented`)"
         print(f"wrote {answer['files']} stub files of Live {answer['live_build']} to {out}{marked}")
         print("They are built from Ableton's code: keep them on this machine.")
+        if project:
+            _print_project(project, out)
+            return 0
         print("basedpyright / pyright: in your script project's pyrightconfig.json (or [tool.basedpyright])")
         print(f'  "stubPath": "{out}",')
-        print('  "reportMissingModuleSource": false   (Live has the modules; the stubs stand in for them)')
+        print('  "reportMissingModuleSource": false,   (Live has the modules; the stubs stand in for them)')
+        print('  "typeCheckingMode": "standard"   (basedpyright is stricter by default)')
         print("pylsp (jedi): in its settings")
         print(f'  pylsp.plugins.jedi.extra_paths = ["{out}"]')
     else:
@@ -775,8 +808,12 @@ def make_parser() -> argparse.ArgumentParser:
     bs = sub.add_parser("build-stubs", help="write type stubs (.pyi) of a Live build for your editor's Python "
                         "language server (local only)")
     bs.add_argument("--build", help="Live build, e.g. 12.4.16 (default: newest indexed)")
-    bs.add_argument("--out", help="the folder to write (default: <index dir>/stubs/<build>); a folder of earlier "
-                    "stubs is replaced")
+    where = bs.add_mutually_exclusive_group()
+    where.add_argument("--out", help="the folder to write (default: <index dir>/stubs/<build>); a folder of earlier "
+                       "stubs is replaced")
+    where.add_argument("--project", metavar="FOLDER",
+                       help="your script project: the stubs go to FOLDER/stubs, a pyrightconfig.json is created "
+                       "when it has none, and stubs/ is added to its .gitignore when it is in a git repo")
     bs.add_argument("--observed-only", action="store_true",
                     help="leave out the documented members (listener methods, Structure Void's Live members)")
     bs.add_argument("--json", action="store_true", help="print the answer as JSON")

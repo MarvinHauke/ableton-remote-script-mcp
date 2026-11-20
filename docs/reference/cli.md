@@ -178,13 +178,14 @@ ableton-remote-script-mcp check-names [--names NAME] [--build BUILD] [--json] [-
 Write type stubs (.pyi) of a Live build for your editor's Python language server (local only).
 
 ```text
-ableton-remote-script-mcp build-stubs [--build BUILD] [--out OUT] [--observed-only] [--json]
+ableton-remote-script-mcp build-stubs [--build BUILD] [--out OUT] [--project FOLDER] [--observed-only] [--json]
 ```
 
 | Argument | What it does |
 | --- | --- |
 | `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
 | `--out OUT` | The folder to write (default: <index dir>/stubs/<build>); a folder of earlier stubs is replaced. |
+| `--project FOLDER` | Your script project: the stubs go to FOLDER/stubs, a pyrightconfig.json is created when it has none, and stubs/ is added to its .gitignore when it is in a git repo. |
 | `--observed-only` | Leave out the documented members (listener methods, Structure Void's Live members). |
 | `--json` | Print the answer as JSON. |
 
