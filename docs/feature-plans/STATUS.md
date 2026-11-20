@@ -382,7 +382,7 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
 
 ## Small items
 
-- **In work (0001 Decision 56):** stubs for writing scripts by hand, three tasks in order, branch
+- **Done (0001 Decision 56), merged 2026-11-20:** stubs for writing scripts by hand, three tasks in order, branch
   `feat/0001-stubs-hand-dev` (from `chore/submodule-guards`, both unmerged): (1) the stubs'
   property and control-decorator fix, **built 2026-11-20** (`APC_mini_mk1_Plus` 13 → 2 errors,
   both the control idiom, which no stub can fix; accepted by the user 2026-11-20, task 3's page
@@ -390,7 +390,7 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
   (3) the docs page "Editor setup", **built 2026-11-20** (the control idiom's workaround is now
   `# pyright: ignore[reportGeneralTypeIssues]`, as `b: Any` fails under basedpyright); the
   created config sets `"typeCheckingMode": "standard"` (user, 2026-11-20). Decision 56
-  done; both branches await the user's merge.
+  done; merged into `main` in both repos 2026-11-20 (user).
 - [needs-triage] 0001 (index): the index keeps only the last `def` of a name (architect,
   2026-11-20, from task 1). `lookup class GridResolutionComponent` shows `index` as a method
   `(self, index)` with `index.setter`, not a property; controls and `@listens` slots show as
