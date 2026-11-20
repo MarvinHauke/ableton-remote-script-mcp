@@ -925,7 +925,8 @@ meant to do, and uses only API names that exist in the Live build they target.
          it in both, and mentions `b: Any` as the pyright-only form.
     2. **`build-stubs --project <folder>` (core).** It writes the stubs to `<folder>/stubs`,
        creates a `pyrightconfig.json` there when there is none (`stubPath: "stubs"`,
-       `pythonVersion: "3.11"`, `reportMissingModuleSource: false`; an existing one is left
+       `pythonVersion: "3.11"`, `reportMissingModuleSource: false`, and from 2026-11-20
+       `typeCheckingMode: "standard"`, see below; an existing one is left
        alone and the settings are printed), and adds `stubs/` to `<folder>/.gitignore` when the
        folder is a git repo and the line is missing. `--out` and `--project` exclude each other.
        It doesn't change the answer core, the MCP tools or the exit codes.
@@ -964,6 +965,15 @@ meant to do, and uses only API names that exist in the Live build they target.
          the stubs into the tool's repo). Checked: nvim-lspconfig's `basedpyright` config has
          `pyrightconfig.json` among its root markers. Not checked here: Pylance's
          `python.analysis.stubPath`, the pre-0.11 `lspconfig` form.
+       - **`"typeCheckingMode": "standard"` in the created config** (user, 2026-11-20, "if it
+         helps add typecheckingMode", on the architect's finding): basedpyright 1.40 without a
+         mode runs "recommended", which gave `APC_mini_mk1_Plus` 4 errors and 280 warnings
+         (missing annotations, instance variables set outside `__init__`); standard gives the 2
+         of the control idiom. Part 2's created `pyrightconfig.json` adds the mode, and the
+         printed settings name it; a kept config is not changed. Also checked: a `_Framework`
+         and `ableton.v2` script resolves against the stubs and a misspelled
+         `SessionComponent.set_offsetz` is flagged (12.4.16, basedpyright standard); the page
+         now names the three generations.
 
 ## Open questions
 

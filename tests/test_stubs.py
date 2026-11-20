@@ -133,7 +133,12 @@ def test_a_project_gets_its_stubs_config_and_ignore_line(stubs, tmp_path, capsys
     out = capsys.readouterr().out
     assert (project / "stubs" / MARKER).is_file() and (project / "stubs" / "ableton" / "__init__.pyi").is_file()
     config = json.loads((project / "pyrightconfig.json").read_text(encoding="utf-8"))
-    assert config == {"stubPath": "stubs", "pythonVersion": "3.11", "reportMissingModuleSource": False}
+    assert config == {
+        "stubPath": "stubs",
+        "pythonVersion": "3.11",
+        "reportMissingModuleSource": False,
+        "typeCheckingMode": "standard",
+    }
     assert (project / ".gitignore").read_text(encoding="utf-8") == "__pycache__/\nstubs/\n"
     assert "created pyrightconfig.json" in out and "added stubs/ to .gitignore" in out
     # again: the stubs are replaced, the config and the ignore file stay as they are
@@ -146,6 +151,7 @@ def test_a_project_gets_its_stubs_config_and_ignore_line(stubs, tmp_path, capsys
     main(["--index-dir", str(index_dir), "build-stubs", "--build", OLD, "--project", str(project)])
     out = capsys.readouterr().out
     assert "pyrightconfig.json is there, left as it is; these settings" in out and '"stubPath": "stubs"' in out
+    assert '"typeCheckingMode": "standard"' in out
     (project / "pyrightconfig.json").write_text('{"stubPath": "stubs"}', encoding="utf-8")
     main(["--index-dir", str(index_dir), "build-stubs", "--build", OLD, "--project", str(project)])
     assert '"stubPath" is already "stubs"' in capsys.readouterr().out

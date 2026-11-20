@@ -3,7 +3,9 @@
 If you write a Remote Script by hand in your own editor, this page gets you completion, signatures
 and docstrings for the framework and the `Live` module, and a mark on a name your Live build
 doesn't have. It works through type stubs (`.pyi` files), which your editor's Python language
-server reads. Types are `Any` throughout, so the server checks names, not types.
+server reads. They cover all three framework generations (`_Framework`, `ableton.v2` and
+`ableton.v3`) and Live's own controller scripts. Types are `Any` throughout, so the server checks
+names, not types.
 
 ## What you need
 
@@ -37,8 +39,11 @@ What `--project` does:
 - The stubs go to `stubs/` in that folder. A folder of earlier stubs is replaced; a `stubs/`
   folder this tool didn't write is refused, so your own files are never deleted.
 - When the folder has no pyright settings, it creates `pyrightconfig.json` with
-  `"stubPath": "stubs"`, `"pythonVersion": "3.11"` and `"reportMissingModuleSource": false`
-  (Live has the modules; the stubs stand in for them).
+  `"stubPath": "stubs"`, `"pythonVersion": "3.11"`, `"reportMissingModuleSource": false` (Live
+  has the modules; the stubs stand in for them) and `"typeCheckingMode": "standard"`. Without a
+  mode, basedpyright runs its stricter "recommended" mode, with hundreds of warnings about
+  missing annotations; pyright's default is already standard. If you already have pyright
+  settings, add the mode to them yourself.
 - When there are settings already (a `pyrightconfig.json`, or `[tool.pyright]` or
   `[tool.basedpyright]` in `pyproject.toml`), it leaves them alone. It prints the settings to use,
   or says the project is ready when its `stubPath` is already `"stubs"`.

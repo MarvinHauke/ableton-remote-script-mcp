@@ -554,12 +554,14 @@ def _print_project(project: dict, out: str) -> None:
         where = "pyrightconfig.json is there" if config.exists() else "pyproject.toml has pyright settings"
         if ready:
             print(f'{where}, left as it is; its "stubPath" is already "stubs"')
-            print('  (with "reportMissingModuleSource": false and "pythonVersion": "3.11" if they are missing)')
+            print('  (with "reportMissingModuleSource": false, "pythonVersion": "3.11" and')
+            print('  "typeCheckingMode": "standard" if they are missing)')
         else:
             print(f"{where}, left as it is; these settings use the stubs:")
             print('  "stubPath": "stubs",')
             print('  "pythonVersion": "3.11",')
-            print('  "reportMissingModuleSource": false   (Live has the modules; the stubs stand in for them)')
+            print('  "reportMissingModuleSource": false,   (Live has the modules; the stubs stand in for them)')
+            print('  "typeCheckingMode": "standard"   (basedpyright is stricter by default)')
     if project["gitignore"] == "added":
         print("added stubs/ to .gitignore")
     elif project["gitignore"] == "not_a_repo":
@@ -584,7 +586,8 @@ def _cmd_build_stubs(args: argparse.Namespace) -> int:
             return 0
         print("basedpyright / pyright: in your script project's pyrightconfig.json (or [tool.basedpyright])")
         print(f'  "stubPath": "{out}",')
-        print('  "reportMissingModuleSource": false   (Live has the modules; the stubs stand in for them)')
+        print('  "reportMissingModuleSource": false,   (Live has the modules; the stubs stand in for them)')
+        print('  "typeCheckingMode": "standard"   (basedpyright is stricter by default)')
         print("pylsp (jedi): in its settings")
         print(f'  pylsp.plugins.jedi.extra_paths = ["{out}"]')
     else:

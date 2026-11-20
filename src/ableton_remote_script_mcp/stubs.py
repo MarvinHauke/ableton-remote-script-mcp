@@ -333,7 +333,13 @@ def write_stubs(index: dict, out: Path, documented: dict | None = None, observed
             "documented": not observed_only, "structure_void": documented is not None and not observed_only}
 
 
-PROJECT_CONFIG = {"stubPath": "stubs", "pythonVersion": "3.11", "reportMissingModuleSource": False}
+PROJECT_CONFIG = {
+    "stubPath": "stubs",
+    "pythonVersion": "3.11",
+    "reportMissingModuleSource": False,
+    # basedpyright defaults to its strict "recommended" mode; standard keeps to real mistakes
+    "typeCheckingMode": "standard",
+}
 _IGNORE_LINES = {"stubs", "stubs/", "/stubs", "/stubs/"}
 
 

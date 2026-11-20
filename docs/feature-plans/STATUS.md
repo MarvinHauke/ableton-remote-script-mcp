@@ -388,7 +388,8 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
   both the control idiom, which no stub can fix; accepted by the user 2026-11-20, task 3's page
   explains it and the `b: Any = …` workaround); (2) `build-stubs --project`, **built 2026-11-20**;
   (3) the docs page "Editor setup", **built 2026-11-20** (the control idiom's workaround is now
-  `# pyright: ignore[reportGeneralTypeIssues]`, as `b: Any` fails under basedpyright). Decision 56
+  `# pyright: ignore[reportGeneralTypeIssues]`, as `b: Any` fails under basedpyright); the
+  created config sets `"typeCheckingMode": "standard"` (user, 2026-11-20). Decision 56
   done; both branches await the user's merge.
 - [needs-triage] 0001 (index): the index keeps only the last `def` of a name (architect,
   2026-11-20, from task 1). `lookup class GridResolutionComponent` shows `index` as a method
