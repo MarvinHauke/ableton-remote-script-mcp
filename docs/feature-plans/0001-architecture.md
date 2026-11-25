@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -1054,6 +1054,32 @@ meant to do, and uses only API names that exist in the Live build they target.
     contract change: the same messages, the same exit code 4. The ports stay in the commands:
     `rig run` opens its own when no `rig serve` runs, `rig panel` needs `rig serve`.
     - **Built 2026-11-25** (architect, solo). `tests/test_rig_session.py` (5 tests). 283 tests.
+60. **The Elements reader's smells** (user, 2026-11-25, the same message; the eight smells the
+    standards axis of the code review of Decision 57 named). Changes Decision 57 point 1's names;
+    no behaviour changes but one (point 1):
+    1. **One switch:** `ElementCall.role` (element, matrix, submatrix, or none: a call the
+       reader only names), set from the method when the record is made (`ROLES`). The reader
+       and the rig's `build_controller` read the role, not the method. The one change: a matrix
+       call with no identifiers is an empty matrix in the rig now, where it was one element
+       with no channel and no number.
+    2. **One way to a name:** `ElementCall.attr`; a modified control's name goes through
+       `attribute_name` too.
+    3. **Names:** `Built` is `ElementCall`, `Item` is `MatrixItem`, `_given` is `_argument_text`.
+    4. **No middle man:** the validator keeps the reader's `Elements` record, not a tuple of it.
+    5. **On the data it reads:** the parameters of a framework method are
+       `Outliner.method_params`. `_entries` stays in `elements.py`: where the calls are is the
+       reader's rule, not the outline's.
+    6. **No refused bequest:** a comprehension's variable is `Constants.with_local`, not a
+       subclass that skips its parent's `__init__`.
+    7. **No hidden import cycle:** `element_names_of_folder` is in `validator.py`, beside
+       `read_sources`, which already imports the framework checks and the reader; `LIVE_PYTHON`
+       is defined once, in `framework_checks.py` (the validator had its own copy).
+    8. **Kept:** `ElementCall` still holds the fields of all three roles, and `kind`, `msg_type`
+       and `map_mode` stay strings (the framework's names); `role` says which fields hold.
+    - **Built 2026-11-25** (architect, solo). Checked against Decision 59's commit on the four
+      examples and the v3 scripts of the local Live 12 decompile (12.4.16, 29 folders): the rig's
+      controller model, `validate`'s findings and `check_names`' unknown names and `not_read` are
+      the same for all. 283 tests.
 
 ## Open questions
 

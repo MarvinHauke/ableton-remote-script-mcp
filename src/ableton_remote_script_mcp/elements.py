@@ -32,15 +32,16 @@ can't be worked out is given with the reason in `why`, never guessed.
 from __future__ import annotations
 
 import ast
-import sys
+import copy
 from dataclasses import dataclass, field
-from pathlib import Path
 
-from .outline import Outliner, bind_arguments, literal_str
+from .outline import bind_arguments, literal_str
 
 MSG_TYPES = {"MIDI_NOTE_TYPE": "note", "MIDI_CC_TYPE": "cc", "MIDI_PB_TYPE": "pitchbend"}
 ADDERS = {"add_button": "button", "add_encoder": "encoder", "add_modifier_button": "button",
           "add_button_matrix": "button", "add_encoder_matrix": "encoder"}
+# What each adder's call builds (`ElementCall.role`).
+ROLES = {**{m: "matrix" if m.endswith("_matrix") else "element" for m in ADDERS}, "add_submatrix": "submatrix"}
 # The parameters the reader binds a call to when it has no index to take them from (the rig's
 # tests): as `ElementsBase` names them, observed 12.4.16.
 PARAMS = {**{m: ["identifier", "name"] for m in ("add_button", "add_encoder", "add_modifier_button")},
@@ -53,7 +54,7 @@ class Unresolved(Exception):
 
 
 @dataclass
-class Item:
+class MatrixItem:
     """One element of a matrix."""
     name: str  # `<matrix>[i]`
     identifier: int
@@ -61,8 +62,11 @@ class Item:
 
 
 @dataclass
-class Built:
-    """What one `self.add_…(...)` call builds."""
+class ElementCall:
+    """What one `self.add_…(...)` call builds. `role` says which of the fields below hold it:
+    "element" (`channel`, `identifier`), "matrix" (`items`, `width`), "submatrix" (`part_of`,
+    `part`), or None: a call the reader names (at most) but doesn't read the MIDI of. A call with
+    a role whose `why` is set couldn't be read."""
     method: str  # add_button, add_button_matrix, add_submatrix, … (or the class or factory, for others)
     line: int | None
     unit: str  # the method it is written in, `Script.elements.Elements.__init__`
@@ -74,18 +78,24 @@ class Built:
     identifier: int | None = None  # note or CC number
     feedback: bool = False
     map_mode: str = "absolute"
-    items: list[Item] = field(default_factory=list)  # a matrix's elements, row by row
+    items: list[MatrixItem] = field(default_factory=list)  # a matrix's elements, row by row
     width: int = 0  # a matrix's columns
     part_of: str | None = None  # a submatrix: the matrix it names a part of
     part: list[str] = field(default_factory=list)  # a submatrix: the items of that matrix it names
     why: str | None = None  # what the reader couldn't work out, and why
+    role: str | None = None  # element | matrix | submatrix | None (see above)
     arguments: dict | None = field(default=None, repr=False)  # by parameter, from the source; None: not read
+
+    @property
+    def attr(self) -> str | None:
+        """The attribute the framework sets for it (`Shift Button` -> `shift_button`)."""
+        return attribute_name(self.name) if self.name is not None else None
 
 
 @dataclass
 class Elements:
     """A script's Elements class(es), read."""
-    built: list[Built] = field(default_factory=list)
+    built: list[ElementCall] = field(default_factory=list)
     names: set[str] | None = None  # every name the mappings may use; None: no Elements class
     computed: bool = False  # some names can't be worked out without running the script
     why: str = ""  # why there are no names
@@ -118,8 +128,17 @@ class Constants:
         self.modules = modules
         self.packages = packages
         self.seen = seen if seen is not None else set()  # (module, name) being evaluated, across imports
+        self.local: dict[str, object] = {}  # a comprehension's variables
+
+    def with_local(self, name: str, value) -> Constants:
+        """These constants with a comprehension's variable bound to `value`."""
+        inner = copy.copy(self)
+        inner.local = {**self.local, name: value}
+        return inner
 
     def lookup(self, name: str):
+        if name in self.local:
+            return self.local[name]
         if name in MSG_TYPES:
             return MSG_TYPES[name]
         if name in self.binds:
@@ -193,20 +212,9 @@ class Constants:
             if isinstance(gen.target, ast.Name):
                 out = []
                 for value in self.eval(gen.iter):
-                    out.append(_Local(self, gen.target.id, value).eval(node.elt))
+                    out.append(self.with_local(gen.target.id, value).eval(node.elt))
                 return out
         raise Unresolved(f"`{ast.unparse(node)}` can't be worked out without running the script")
-
-
-class _Local(Constants):
-    """A comprehension's variable over the module's constants."""
-
-    def __init__(self, outer: Constants, name: str, value):
-        self.__dict__.update(outer.__dict__)
-        self.outer, self.name, self.value = outer, name, value
-
-    def lookup(self, name: str):
-        return self.value if name == self.name else self.outer.lookup(name)
 
 
 def _absolute(module: str, name: str | None, level: int, is_package: bool) -> str:
@@ -286,17 +294,17 @@ class ScriptSource:
         return module, (unit[len(module) + 1:].split(".")[0] if module else None)
 
 
-def read_calls(entries: list[dict], source: ScriptSource, params_of=None) -> list[Built]:
+def read_calls(entries: list[dict], source: ScriptSource, params_of=None) -> list[ElementCall]:
     """What each element entry of an outline builds, read from the script's source. `params_of`
     gives a `defined_by` method's parameter names from the index; without it, `PARAMS`."""
-    built: list[Built] = []
-    matrices: dict[str, Built] = {}
+    built: list[ElementCall] = []
+    matrices: dict[str, ElementCall] = {}
     for entry in entries:
         defined_by = entry.get("defined_by") or ""
         method = defined_by.rsplit(".", 1)[-1]
         unit = entry.get("in", "")
-        b = Built(method or entry.get("class") or "", entry.get("line"), unit,
-                  name=entry.get("name") if isinstance(entry.get("name"), str) else None)
+        b = ElementCall(method or entry.get("class") or "", entry.get("line"), unit,
+                        name=entry.get("name") if isinstance(entry.get("name"), str) else None, role=ROLES.get(method))
         built.append(b)
         if not defined_by:
             b.why = f"built by {entry.get('class') or entry.get('via')}, not by an Elements class's add_… call"
@@ -330,18 +338,18 @@ def _name(args: dict, key: str, consts: Constants) -> str:
     return name
 
 
-def _read_name(b: Built, args: dict, consts: Constants) -> None:
+def _read_name(b: ElementCall, args: dict, consts: Constants) -> None:
     for key in ("name", "base_name"):
         if key in args:
             b.name = _name(args, key, consts)
 
 
-def _read(b: Built, args: dict, consts: Constants, tree: ast.Module, cls: str | None,
-          matrices: dict[str, Built]) -> None:
+def _read(b: ElementCall, args: dict, consts: Constants, tree: ast.Module, cls: str | None,
+          matrices: dict[str, ElementCall]) -> None:
     def global_channel() -> int:
         return _global_channel(tree, cls, consts)
 
-    if b.method == "add_submatrix":
+    if b.role == "submatrix":
         b.name = _name(args, "name", consts)
         source = args.get("matrix")
         if not (isinstance(source, ast.Attribute) and isinstance(source.value, ast.Name) and source.value.id == "self"):
@@ -359,9 +367,9 @@ def _read(b: Built, args: dict, consts: Constants, tree: ast.Module, cls: str | 
         rows = range(*slice(*(rows or (0, height))).indices(height))
         b.part = [m.items[r * width + c].name for r in rows for c in columns]
         return
-    if b.method not in ADDERS:
+    if b.role is None:
         return _read_name(b, args, consts)
-    matrix = b.method.endswith("_matrix")
+    matrix = b.role == "matrix"
     b.name = _name(args, "base_name" if matrix else "name", consts)
     b.kind = ADDERS[b.method]
     msg_type = consts.eval(args["msg_type"]) if "msg_type" in args else "cc"  # MIDI_CC_TYPE, observed 12.4.16
@@ -370,7 +378,7 @@ def _read(b: Built, args: dict, consts: Constants, tree: ast.Module, cls: str | 
     b.msg_type = msg_type
     b.feedback = bool(consts.eval(args["is_feedback_enabled"])) if "is_feedback_enabled" in args else False
     b.map_mode = str(consts.eval(args["map_mode"])) if "map_mode" in args else "absolute"
-    attr = attribute_name(b.name)
+    attr = b.attr
     if not matrix:
         b.channel = int(consts.eval(args["channel"]) if "channel" in args else global_channel())
         b.identifier = int(consts.eval(args["identifier"]))
@@ -385,7 +393,7 @@ def _read(b: Built, args: dict, consts: Constants, tree: ast.Module, cls: str | 
         channels = [[channels] * len(r) for r in rows]
     for row, chans in zip(rows, channels):
         for identifier, channel in zip(row, chans):
-            b.items.append(Item(f"{attr}[{len(b.items)}]", int(identifier), int(channel)))
+            b.items.append(MatrixItem(f"{attr}[{len(b.items)}]", int(identifier), int(channel)))
     b.width = len(rows[0]) if rows else 0
     matrices[attr] = b
 
@@ -402,7 +410,7 @@ def read_elements(outliner, sources: dict | None = None) -> Elements:
     entries = _entries(outliner, classes)
 
     def params_of(defined_by: str) -> list[str] | None:  # the positional ones, as outline binds them
-        params = _params(outliner, defined_by)
+        params = outliner.method_params(defined_by)
         return None if params is None else [
             p["name"] for p in params
             if p["name"] not in ("self", "cls") and p["kind"] in ("positional_only", "positional_or_keyword")]
@@ -412,7 +420,7 @@ def read_elements(outliner, sources: dict | None = None) -> Elements:
     originals: dict[str, str] = {}
     pending = []
     for b, entry in zip(built, entries):
-        if not {"name", "base_name"} & {p["name"] for p in _params(outliner, entry["defined_by"]) or []}:
+        if not {"name", "base_name"} & {p["name"] for p in outliner.method_params(entry["defined_by"]) or []}:
             continue  # a method that names nothing
         args = b.arguments
         text = entry.get("arguments", {})
@@ -422,7 +430,7 @@ def read_elements(outliner, sources: dict | None = None) -> Elements:
         if b.name is None:
             result.computed = True
             continue
-        attr = attribute_name(b.name)
+        attr = b.attr
         b.names = [attr]
         originals[attr] = b.name
         given = set(args) if args is not None else set(text)
@@ -432,13 +440,13 @@ def read_elements(outliner, sources: dict | None = None) -> Elements:
             b.names.append(f"{attr}_command")
         result.names.update(b.names)
     for args, text in pending:  # create_name_for_modified_control: <control>_with_<modifier without _button>
-        control, modifier = _given(args, text, "control"), _given(args, text, "modifier")
+        control, modifier = _argument_text(args, text, "control"), _argument_text(args, text, "modifier")
         if control not in originals or modifier not in originals:
             result.computed = True
             continue
         mod = originals[modifier][:-7] if originals[modifier].lower().endswith("button") else originals[modifier]
         prep = "With" if any(c.isupper() for c in originals[control]) else "with"
-        attr = f"{originals[control]}_{prep}_{mod}".lower().replace(" ", "_")
+        attr = attribute_name(f"{originals[control]}_{prep}_{mod}")
         result.names |= {attr, f"{attr}_raw"}
     for cls in classes:
         result.names |= outliner.instance_attributes(cls)
@@ -473,41 +481,8 @@ def _entries(outliner, classes: list[str]) -> list[dict]:
     return entries
 
 
-def _given(args: dict | None, text: dict, key: str) -> str:
+def _argument_text(args: dict | None, text: dict, key: str) -> str:
     """An argument of a call as source text without `self.`: from the source, else the summary."""
     if args is not None and key in args:
         return ast.unparse(args[key]).removeprefix("self.")
     return (text.get(key) or "").removeprefix("self.")
-
-
-def _params(outliner, defined_by: str) -> list[dict] | None:
-    """The parameters of a `defined_by` framework method in the index, or None."""
-    key, _, method = defined_by.rpartition(".")
-    member = outliner.index["classes"].get(key, {}).get("members", {}).get(method)
-    return member.get("params") if member else None
-
-
-def element_names_of_folder(folder: Path, index: dict) -> tuple[set[str], str]:
-    """(the element names a script folder's Elements class builds, against an index with
-    statements; why they couldn't be read, or ""). A script without an Elements class has none,
-    and that needs no reason."""
-    from .framework_checks import LIVE_PYTHON, compile_sources, overlay_index
-    from .validator import read_sources
-
-    if sys.version_info[:2] != LIVE_PYTHON:
-        return set(), (f"the Elements class's names (they need Live's Python {LIVE_PYTHON[0]}.{LIVE_PYTHON[1]}; "
-                       f"this is {sys.version_info[0]}.{sys.version_info[1]})")
-    folder = Path(folder)
-    findings: list[dict] = []
-    not_checked: list[dict] = []
-    sources, _ = read_sources(folder, findings)
-    codes = compile_sources(sources, findings, not_checked)
-    if not codes:
-        return set(), "the Elements class's names (no source of the script compiles)"
-    overlay = overlay_index(index, folder.name, sources, codes, not_checked)
-    if folder.name not in overlay["packages"]:
-        return set(), "the Elements class's names (the folder has no __init__.py: it is not a Remote Script)"
-    read = read_elements(Outliner(overlay, folder.name), sources)
-    why = ("some of the Elements class's names (it builds them from values that can't be read without "
-           "running the script)") if read.computed else ""
-    return read.names or set(), why

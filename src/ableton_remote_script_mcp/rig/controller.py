@@ -17,7 +17,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from ..elements import ADDERS, ScriptSource, attribute_name, read_calls
+from ..elements import ScriptSource, read_calls
 
 STATUS = {"note": 0x90, "cc": 0xB0, "pitchbend": 0xE0}
 RELATIVE_MODES = {"LinearTwoCompliment", "LinearSignedBit", "LinearSignedBit2", "LinearBinaryOffset",
@@ -90,24 +90,22 @@ def build_controller(outline: dict, folder: Path) -> Controller:
     ctl = Controller(outline.get("script", folder.name), str(folder))
     entries = [e for e in outline.get("elements", []) if e.get("defined_by") or e.get("class")]
     for b in read_calls(entries, ScriptSource.of(sources)):
-        if b.method not in ADDERS and b.method != "add_submatrix":
+        if b.role is None:
             ctl.unresolved.append({"line": b.line, "in": b.unit, "reason": f"built by {b.method}, which the rig doesn't read"})
         elif b.why:
             ctl.unresolved.append({"line": b.line, "in": b.unit, "reason": b.why})
-        elif b.method == "add_submatrix":
-            ctl.submatrices[attribute_name(b.name or "")] = b.part
+        elif b.role == "submatrix":
+            ctl.submatrices[b.attr] = b.part
         else:
             common = {"kind": b.kind, "msg_type": b.msg_type, "feedback": b.feedback, "map_mode": b.map_mode,
                       "line": b.line}
-            if not b.items:
-                attr = attribute_name(b.name or "")
-                ctl.elements[attr] = Element(attr, channel=b.channel, identifier=b.identifier, **common)
+            if b.role == "element":
+                ctl.elements[b.attr] = Element(b.attr, channel=b.channel, identifier=b.identifier, **common)
                 continue
             for item in b.items:
                 ctl.elements[item.name] = Element(item.name, channel=item.channel, identifier=item.identifier, **common)
-            attr = attribute_name(b.name or "")
-            ctl.matrices[attr] = [item.name for item in b.items]
-            ctl.widths[attr] = b.width
+            ctl.matrices[b.attr] = [item.name for item in b.items]
+            ctl.widths[b.attr] = b.width
     return ctl
 
 

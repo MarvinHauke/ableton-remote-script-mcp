@@ -51,8 +51,8 @@ import re
 import sys
 from pathlib import Path
 
-from .elements import element_names_of_folder
 from .resolve import Resolver, lineage
+from .validator import element_names_of_folder
 
 # Not int, range or slice: they bring `start`, `stop`, `real`, names a script may invent on Live objects.
 CONTAINER_TYPES = (str, bytes, list, tuple, dict, set, frozenset)

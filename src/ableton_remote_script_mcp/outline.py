@@ -113,6 +113,12 @@ class Outliner:
                     break
         return self._roles[key]
 
+    def method_params(self, qualified: str) -> list[dict] | None:
+        """The parameters of a method by its qualified name (`<class key>.<method>`), or None."""
+        key, _, method = qualified.rpartition(".")
+        member = self.classes.get(key, {}).get("members", {}).get(method)
+        return member.get("params") if member else None
+
     def instance_attributes(self, key: str) -> set[str]:
         """Names a class's methods set on `self`, along its MRO (`self.x = ...`)."""
         if key not in self._inst:
