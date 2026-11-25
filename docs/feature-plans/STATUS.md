@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-20 (0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-25 (where to continue: four choices; 0003 step 6 merged; 0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -381,6 +381,38 @@ _Last updated: 2026-11-20 (0003 step 6 built, Decision 37: the skill's step sequ
   20 new, with finding 5's item); 4 and 12 are in the skill now. Next: 0003 step 7 (the
   sequencer eval case and the MCP round; the user's go for its cost).
   Merged into `main` in both repos 2026-11-25 (user); `APC_mini_mk1_Plus` at `44f2b40`.
+
+- **Where to continue** (architect, 2026-11-25; the user chooses in the next session):
+  1. 0003 step 7: the sequencer eval case and the MCP round (costs the user's usage: their go).
+  2. The architecture review's top pick (2026-11-25, report in the OS temp folder, not kept):
+     **one Elements reader**. Today three modules work out what a script's Elements class
+     builds: `outline.py`'s elements section, `framework_checks.py`'s element-name rule (on
+     outline's private `_Outliner`, `_bind`, `_parse`) and `rig/controller.py` (outline plus its
+     own `ast` pass for MIDI numbers); `names.py` has none (finding 16). One module returning
+     every element (name, attribute, kind, MIDI message, submatrix, what it couldn't read and
+     why) would serve all four. No contract change. The other candidates, weaker:
+     - the cut cuts only declared collections, never a record (`answers.py` `bounded`;
+       findings 1, 8; touches the answer core: user);
+     - one class-name ranking (`query.find_class_keys`, `names.check_list`, `names.py:265`;
+       findings 10, 13);
+     - every CLI command through the answer core, one exit-code table (`not_found` exits 1 or
+       2 by command; exit codes are a contract: user);
+     - a rig session module (`_cmd_rig_run`, `_cmd_rig_panel` repeat the set-up);
+     - the default build: newest release, and the answer says which (`query._open`,
+       finding 11; a default of the tools: user).
+  3. Reopen plan 0001 Decision 23, the runtime probe of the `Live` module (user's ChatGPT
+     chat, 2026-11-25, on Structure Void's `dump_runtime_api.py`). Decision 23's condition
+     ("when Claude gets LOM calls wrong") has shown twice: a float into an int property and a
+     tuple into `set_feedback_channels` (`Boost.Python.ArgumentError`), types only Live's own
+     docstrings show. Our own probe script, not Structure Void's code; the dump stays local;
+     an index schema change (user). Later on it: paths through the LOM (`Song` → `DrumPad`).
+  4. A plan for hardware discovery (the same chat): the user presses each control, the tool
+     records the messages into a device profile. Reads the user's controller port, which no
+     rule allows yet: a plan and a decision of its own. Step locks (below) are the other 0004
+     candidate.
+  From the chat, already built: version diffs (`diff_builds`), device profiles, verified
+  examples, observed/documented/tested. Wrong in it: the `Live` module does have `.pyc` (the
+  Push 3 helper's model); `self.song()` is `_Framework`, v3 has `self.song`.
 
 ## After grilling
 
