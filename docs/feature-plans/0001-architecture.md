@@ -1013,6 +1013,17 @@ meant to do, and uses only API names that exist in the Live build they target.
       `validate` is the same except the UC4, where 15 element names it skipped ("builds some
       names in a loop") are now checked, 0 findings; `check_names` has no new unknown name and
       7 fewer in Ableton's scripts, and names an Elements class builds count as `own`. 274 tests.
+    - **`answer_version` 2: `check_names` says what it couldn't read** (user, 2026-11-25, "fix the
+      two spec gaps", on the code review's spec axis; changes point 3). Off Live's Python, or
+      when no source compiles, the reader can't run, and when the Elements class builds names
+      from values known only at run time, it can't name them; either way `check_names` called
+      an element attribute unknown with no reason. Its folder answer now has `not_read` (a list of
+      reasons) then, the text output prints it, and `answer_version` is 2 (`docs/answers.md`).
+      The tests now also check that the names count as `own` (against the check without the
+      reader) and that a `**NOTE` call over several lines is found in the source. 277 tests.
+    - **The rig reads the global channel only where it is needed** (architect, 2026-11-25, from
+      the code review): an unreadable `global_channel` marks only the elements without their own
+      `channel=` unresolved, not every element. No check file or test changes.
 
 ## Open questions
 

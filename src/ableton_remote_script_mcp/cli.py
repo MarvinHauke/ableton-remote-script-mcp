@@ -520,6 +520,7 @@ def format_names(answer: dict) -> str:
     lines += [f"  {k['file']}:{k['line']}: {k['class']} takes no keyword {k['keyword']}"
               for k in answer["kwargs_unknown"]]
     lines += [f"  {b['file']}: not parsed ({b['error']})" for b in answer["broken"]]
+    lines += [f"  not read: {why}" for why in answer.get("not_read", [])]
     return "\n".join(lines)
 
 

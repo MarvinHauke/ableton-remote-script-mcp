@@ -6,7 +6,8 @@ import sys
 import pytest
 from hand_index import OLD, write_hand_index
 
-from ableton_remote_script_mcp import api
+from ableton_remote_script_mcp import api, framework_checks, names
+from ableton_remote_script_mcp.cli import format_names
 from ableton_remote_script_mcp.elements import read_elements
 from ableton_remote_script_mcp.framework_checks import compile_sources, overlay_index
 from ableton_remote_script_mcp.outline import Outliner
@@ -82,12 +83,36 @@ def test_no_elements_class(tmp_path, index_dir):
     assert read.names is None and "no Elements class" in read.why
 
 
-def test_check_names_knows_the_attributes_the_elements_class_builds(tmp_path, index_dir):
+def test_check_names_counts_the_attributes_the_elements_class_builds_as_own(tmp_path, index_dir, monkeypatch):
     """Finding 16: `self.scene_buttons` comes from `add_button_matrix(…, "Scene Buttons")`."""
-    folder = _script(tmp_path)
+    folder = _script(tmp_path, ELEMENTS.replace("        self.add_button(7, name_of_button())\n", ""))
     answer = api.check_names(folder, build=OLD, index_dir=index_dir)
-    assert answer["status"] == "ok"
+    assert answer["status"] == "ok" and "not_read" not in answer
     assert "scene_buttons" not in [u["name"] for u in answer["unknown"]]
+    monkeypatch.setattr(names, "element_names_of_folder", lambda folder, index: (set(), ""))
+    without = api.check_names(folder, build=OLD, index_dir=index_dir)  # the check without the reader
+    moved = [u["name"] for u in without["unknown"]]
+    assert {"scene_buttons", "shift_button"} <= set(moved)
+    assert answer["attribute_counts"]["own"] == without["attribute_counts"]["own"] + len(moved)
+
+
+def test_check_names_says_when_it_cant_read_the_elements_class(tmp_path, index_dir, monkeypatch):
+    """Off Live's Python the reader can't compile the script: `not_read` says so, never silence."""
+    monkeypatch.setattr(framework_checks, "LIVE_PYTHON", (3, 99))
+    answer = api.check_names(_script(tmp_path), build=OLD, index_dir=index_dir)
+    assert answer["status"] == "ok" and "scene_buttons" in [u["name"] for u in answer["unknown"]]
+    assert len(answer["not_read"]) == 1 and "Python 3.99" in answer["not_read"][0]
+    assert "not read: the Elements class's names" in format_names(answer)
+
+
+def test_check_names_says_when_some_names_are_built_at_run_time(tmp_path, index_dir):
+    """A name built from a value known only at run time stays unknown, and `not_read` says why."""
+    elements = ELEMENTS.replace('"Scene Buttons"', "f\"Scene {'Buttons'}\"").replace(
+        "        self.add_button(7, name_of_button())\n", "")
+    answer = api.check_names(_script(tmp_path, elements), build=OLD, index_dir=index_dir)
+    assert "scene_buttons" in [u["name"] for u in answer["unknown"]]
+    assert answer["not_read"] == [("some of the Elements class's names (it builds them from values that can't "
+                                   "be read without running the script)")]
 
 
 @pytest.mark.parametrize("files, why", [

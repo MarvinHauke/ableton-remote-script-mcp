@@ -277,3 +277,16 @@ def test_element_names_through_double_star_keywords_are_checked(tmp_path, index_
     answer = check(tmp_path, index_dir, elements=elements, mappings=mappings)
     assert found(answer) == [("element-name", "error", "mappings.py", 4)]
     assert "(close: pads" in answer["findings"][0]["message"]
+
+
+
+def test_element_names_through_a_multi_line_double_star_call_are_checked(tmp_path, index_dir):
+    """The reader finds a call in the source by its line: a call over several lines too."""
+    elements = ELEMENTS.replace('self.add_button_matrix([range(36, 44)], "Pads")',
+                                'self.add_button_matrix(\n            [range(36, 44)],\n            "Pads",\n'
+                                '            **NOTE,\n        )').replace(
+        "class Elements", 'NOTE = {"msg_type": 0}\n\n\nclass Elements')
+    mappings = MAPPINGS.replace('send_controls="pads"', 'send_controls="padz"')
+    answer = check(tmp_path, index_dir, elements=elements, mappings=mappings)
+    assert found(answer) == [("element-name", "error", "mappings.py", 4)]
+    assert not [n for n in skipped(answer) if n[0] == "element-name"]

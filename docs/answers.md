@@ -13,7 +13,7 @@ Each answer is a JSON object with:
   - `ok`;
   - `not_found` (with a `message` that names the build);
   - `index_missing` (with the command that builds the index).
-- `answer_version`: the version of the answer's shape, now **1**.
+- `answer_version`: the version of the answer's shape, now **2**.
 - `live_build`: the build the facts come from.
 - each fact's `confidence`:
   - `observed`: in that build's index;
@@ -66,6 +66,12 @@ into one of these:
 | `documented` | on Structure Void's pages |
 | `python` | Python's own |
 | `unknown` | none of these |
+
+The names a v3 Elements class builds are read by compiling the script as Live's Python 3.11
+does. When some can't be read (another Python, no source compiles, or names built from values
+known only when the script runs), the answer's `not_read` says why, and an `unknown` name may
+be one the Elements class builds. `outline` of a folder has a `not_read` of the same shape, a
+list of reasons, for the files it couldn't read.
 
 **For a list,** each name is one of these:
 
@@ -134,3 +140,6 @@ A change to an answer's shape raises `answer_version`, and gets a line here.
   - for `outline`: `sections`, and with a section, `section` and `offset`;
   - for `lookup`: `missing_members`;
   - for `validate`: `counts`.
+- **2** (2026-11-25, plan 0001 Decision 57): `check_names` of a folder counts the names its v3
+  Elements class builds as `own`, and adds `not_read` (a list of reasons) when it couldn't
+  read them.

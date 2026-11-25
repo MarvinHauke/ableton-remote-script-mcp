@@ -387,7 +387,9 @@ _Last updated: 2026-11-25 (0001 Decision 57 built, one Elements reader, on `refa
   2. ~~The architecture review's top pick: **one Elements reader**~~ (report in the OS temp
      folder, not kept). Built 2026-11-25 as 0001 Decision 57 on `refactor/elements-reader`
      (`elements.py`; the validator, the rig and `check_names` read from it; findings 3 and 16
-     fixed; 274 tests). Not merged yet: the user's word. The other candidates, weaker:
+     fixed; `check_names` says in `not_read` when it can't read the Elements class,
+     `answer_version` 2; 277 tests). Not merged yet: the user's word. The other candidates,
+     weaker:
      - the cut cuts only declared collections, never a record (`answers.py` `bounded`;
        findings 1, 8; touches the answer core: user);
      - one class-name ranking (`query.find_class_keys`, `names.check_list`, `names.py:265`;
