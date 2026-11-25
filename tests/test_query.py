@@ -4,7 +4,7 @@ import pytest
 from hand_index import NEW, OLD, write_hand_index
 
 from ableton_remote_script_mcp.cli import main
-from ableton_remote_script_mcp.query import get_class, search
+from ableton_remote_script_mcp.query import check_names, get_class, search
 
 COMP = "ableton.v3.control_surface.component.Component"
 CM = "ableton.v2.control_surface.control.control.ControlManager"
@@ -176,3 +176,22 @@ def test_index_missing(tmp_path, capsys):
                    get_class("Component", tmp_path / "none", "12.4.16")):
         assert answer["status"] == "index_missing" and "build-index" in answer["message"]
     assert main(["--index-dir", str(tmp_path / "none"), "search", "Component"]) == 3
+
+
+def test_classes_of_one_name_rank_module_level_live_and_re_exported_first(index_dir):
+    """One ranking for `get_class` and `check_names` (plan 0001 Decision 58)."""
+    names = [c["qualified_name"] for c in get_class("Device", index_dir, OLD)["classes"]]
+    assert names == ["push3-helper:live_model.Live.Device.Device",
+                     "ableton.v3.control_surface.display.notifications.Notifications.Device",
+                     "Fake_Script.display.Notifications.Device"]
+    exported = "ableton.v3.control_surface.components.note_editor_component.NoteEditorComponent"
+    assert [c["qualified_name"] for c in get_class("NoteEditorComponent", index_dir, OLD)["classes"]] == [
+        exported, "ableton.v3.control_surface.components.sequence.NoteEditorComponent"]
+    answer = check_names(index_dir, OLD, names=["NoteEditorComponent", "NoteEditorComponent.set_pitches"])
+    first, member = answer["names"]
+    assert first["classes"][0] == exported
+    # the first class of that name that has the member
+    assert member["class"] == "ableton.v3.control_surface.components.sequence.NoteEditorComponent"
+    # a bare name's holders in the same order: the re-exported class, though its key is longer
+    assert check_names(index_dir, OLD, names=["set_steps"])["names"][0]["in"] == [
+        exported, "ableton.v3.control_surface.components.sequence.NoteEditorComponent"]

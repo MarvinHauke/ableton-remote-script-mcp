@@ -80,9 +80,10 @@ list of reasons, for the files it couldn't read.
   `not_a_member` when the class lacks it.
 - a bare name: in which classes it is defined.
 
-A short class name stands for every class of that name; the framework's newest generation
-comes first. A member found on a model of a `Live` class (the Push 3 helper's `live_model`) is
-marked `proxy_of`.
+A short class name stands for every class of that name, best first: a class at module level
+before a nested one, then the framework's newest generation (a model of a `Live` class ranks
+with it), then the class its package re-exports before another of that name. A member found
+on a model of a `Live` class (the Push 3 helper's `live_model`) is marked `proxy_of`.
 
 The exit code is 1 when a name is unknown.
 

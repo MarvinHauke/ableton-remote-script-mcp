@@ -152,7 +152,7 @@ def get_class(name: str, index_dir: Path, live_build: str | None = None) -> dict
 
 
 def find_class_keys(index: dict, resolver: Resolver, name: str) -> tuple[list[str], dict | None]:
-    """The class keys a class name stands for, the Remote Scripts' first, and the re-export it
+    """The class keys a class name stands for, best first (`class_rank`), and the re-export it
     was found through (`get_class`'s name forms)."""
     classes = index["classes"]
     resolved_from = None
@@ -167,8 +167,23 @@ def find_class_keys(index: dict, resolver: Resolver, name: str) -> tuple[list[st
         found = resolver.resolve(bare, root)
         if found.status == "class":
             keys, resolved_from = [found.key], {"name": name, "via": list(found.via)}
-    keys.sort(key=lambda k: (classes[k]["root"] != SCRIPTS_ROOT, k))
+    keys.sort(key=lambda k: class_rank(index, resolver, k))
     return keys, resolved_from
+
+
+def class_rank(index: dict, resolver: Resolver, key: str) -> tuple:
+    """Where a class goes among classes of the same name, best first: the one ranking of
+    `get_class`, `check_names` and a member's holders (plan 0001 Decision 58).
+
+    A class at module level before a nested one (`Notifications.Clip`); then by package as
+    `search` ranks, a model of a `Live` class (`Live.Clip.Clip`) with the newest framework;
+    then the one its package re-exports (v3's `components.NoteEditorComponent` is
+    `note_editor`'s, not `bar_based_sequence`'s); then the shorter key."""
+    c = index["classes"][key]
+    rank = 0 if c.get("proxy_of") else _package_rank(index, c["root"], c["module"])
+    parent = c["module"].rpartition(".")[0]
+    exported = bool(parent) and resolver.resolve(f"{parent}.{c['qualname']}", c["root"]).key == key
+    return ("." in c["qualname"], rank, not exported, len(key), key)
 
 
 def _framework_page(framework: dict, c: dict, index: dict) -> dict | None:
@@ -470,7 +485,7 @@ def check_names(index_dir: Path, live_build: str | None = None, folder: Path | N
     if folder is not None:
         return {"status": "ok", "confidence": "observed", **check(folder.resolve(), index, statements, doc)}
     resolver = Resolver(index)
-    return {"status": "ok", **check_list(names, index, statements, doc,
+    return {"status": "ok", **check_list(names, index, statements, doc, resolver,
                                           lambda n: find_class_keys(index, resolver, n))}
 
 

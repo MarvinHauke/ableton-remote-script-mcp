@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -1024,6 +1024,26 @@ meant to do, and uses only API names that exist in the Live build they target.
     - **The rig reads the global channel only where it is needed** (architect, 2026-11-25, from
       the code review): an unreadable `global_channel` marks only the elements without their own
       `channel=` unresolved, not every element. No check file or test changes.
+58. **One class-name ranking** (user, 2026-11-25, "lets now continue with the points from 2",
+    the architecture review's candidates in STATUS; findings 10 and 13). `get_class` sorted the
+    classes of a name with the Remote Scripts' first and then alphabetically, `check_names`
+    re-sorted them by package, and a member's holders sorted once more: three orders, and
+    `get_class("Clip")` put skin and notification classes before Live's own `Clip`, which the
+    cut then dropped. Now one key, `query.class_rank`, for all three, best first:
+    1. a class at module level before a nested one (`Notifications.Clip`, `Colors.Clip`);
+    2. by package as `search` ranks (the framework, newest generation first; libraries;
+       Remote Scripts; the Push 3 helper's copies last), with a model of a `Live` class
+       (`Live.Clip.Clip`) as high as the newest framework;
+    3. the class its package re-exports before one it doesn't (v3's
+       `components.NoteEditorComponent` is `note_editor`'s, not `bar_based_sequence`'s);
+    4. the shorter key, then the key.
+    No contract change: the same answers in another order. Finding 13's other half (attributes
+    `__init__` sets, `_clip`) is finding 5's and stays open.
+    - **Built 2026-11-25** (architect, solo). Against the local 12.4.16 index, the first class
+      `check_names` picks changed for a few dozen of the names that have more than one class,
+      all by the rules above (Live's `Clip`, `Track`, `Device`, `Quantization` before skin and
+      notification classes; v3's re-exported `NoteEditorComponent` and `LoopSelectorComponent`
+      first). 278 tests.
 
 ## Open questions
 
