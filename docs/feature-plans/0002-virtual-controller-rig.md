@@ -302,7 +302,9 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
    - **Built** (2026-11-18, agent; branch `feat/0002-step-2-rig-run`), not yet run against Live:
      - `outline` takes a script folder (`outline examples/Faderfox_UC4`), read like the
        validator reads it (sources compiled, then the index overlay).
-     - The controller model (`rig/controller.py`, `rig elements <folder>`): `outline` finds the
+     - The controller model (`rig/controller.py`, `rig elements <folder>`; since 2026-11-25 the
+       reading below lives in the Elements reader, `elements.py`, plan 0001 Decision 57, with the
+       same output): `outline` finds the
        calls that build elements; the arguments come from those calls in the script's source,
        because the statement summary drops the keywords of a call that also passes `**k`
        (`channel=CH14` next to `**SHOWS_VALUE`). Defaults observed in the 12.4.16 index:

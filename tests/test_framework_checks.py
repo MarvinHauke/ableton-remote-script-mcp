@@ -266,3 +266,14 @@ def test_code_that_parses_but_does_not_compile_is_a_syntax_error(tmp_path, index
     answer = check(tmp_path, index_dir, mappings=MAPPINGS + "\nreturn None\n")
     assert found(answer) == [("syntax-error", "error", "mappings.py", 19)]
     assert "'return' outside function" in answer["findings"][0]["message"]
+
+
+def test_element_names_through_double_star_keywords_are_checked(tmp_path, index_dir):
+    """Finding 3 (plan 0001 Decision 57): `**NOTE` hides the name from the statement summary;
+    the Elements reader takes it from the source."""
+    elements = ELEMENTS.replace('"Pads")', '"Pads", **NOTE)').replace(
+        "class Elements", 'NOTE = {"msg_type": 0}\n\n\nclass Elements')
+    mappings = MAPPINGS.replace('send_controls="pads"', 'send_controls="padz"')
+    answer = check(tmp_path, index_dir, elements=elements, mappings=mappings)
+    assert found(answer) == [("element-name", "error", "mappings.py", 4)]
+    assert "(close: pads" in answer["findings"][0]["message"]

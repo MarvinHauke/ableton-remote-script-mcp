@@ -60,7 +60,7 @@ into one of these:
 
 | Name | Meaning |
 |---|---|
-| `own` | defined by the script |
+| `own` | defined by the script, or built by its v3 Elements class |
 | `index` | in the index |
 | `used` | used in a call by Ableton's own scripts |
 | `documented` | on Structure Void's pages |

@@ -10,7 +10,9 @@ Python's parser (never runs them) and puts every attribute name (`x.name`) and e
 argument of a framework constructor into one of these:
 
 - `own`: the script defines it (a def, a class, an assigned attribute, a `setattr` name, also one
-  built from a literal start such as `"set_" + key`; a parameter defines none)
+  built from a literal start such as `"set_" + key`; a parameter defines none), or its v3
+  Elements class builds it (`self.scene_buttons` from `add_button_matrix(…, "Scene_Buttons")`,
+  read by the Elements reader, `elements.py`; only on Live's Python, 3.11)
 - `index`: a class, module or member name in the build's API index (observed)
 - `used`: not a member in the index, but Ableton's own scripts use it in a call
   (the statement summaries), which covers most `Live` object attributes (`song().tracks`)
@@ -47,6 +49,7 @@ import re
 import sys
 from pathlib import Path
 
+from .elements import element_names_of_folder
 from .resolve import Resolver, lineage
 
 # Not int, range or slice: they bring `start`, `stop`, `real`, names a script may invent on Live objects.
@@ -205,7 +208,7 @@ def check(folder: Path, index: dict, statements: dict | None, doc: dict | None =
         except (SyntaxError, UnicodeDecodeError) as e:
             broken.append({"file": str(path.relative_to(folder)), "error": str(e)})
     defined, used = known_names(index, statements)
-    own = own_names([t for _, t in trees])
+    own = own_names([t for _, t in trees]) | element_names_of_folder(folder, index)
     resolver = Resolver(index)
     documented = documented_names(doc)
     counts = {"own": 0, "python": 0, "index": 0, "used": 0, "documented": 0, "unknown": 0}
