@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: fix-typecheck-errors
+expected_outcome: |
+  Tap_Box's jump button works: SceneJumpComponent's `_next_index` is called with every argument
+  it needs and reads `self._step`, not `self._stpe`. The control idiom (`jump_button` declared,
+  then its handler of the same name) is kept, with `# pyright: ignore[reportGeneralTypeIssues]`
+  on the decorator's line. The skill's type check ran with the project's stubs and reports 0
+  errors (or, if there were no stubs, the user was asked to build them). The validator reports
+  0 findings against Live 12.4.16. Tap Tempo is unchanged.
+context:
+  scaffold_script: place-files.sh

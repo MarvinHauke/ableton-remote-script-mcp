@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-20 (0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -370,6 +370,16 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
     (git-ignored, never published). The 12.0-era decompiled reference was wrong or empty on
     three facts this step needed (the loop selector's slot order, `_update_matrix`, the note
     editor's `set_clip`), and step 6's facts are to be checked against 12.4.16.
+- 0003 step 6 on `feat/0003-step-6-skill` (2026-11-20, solo; Decision 37), in both repos. The
+  facts checked against 12.4.16's bytecode first (results page). The skill's v3 reference has
+  "A step sequencer" (its snippets as one script: `validate` 0 findings, `check-names` 0
+  unknown, `typecheck.sh` 0 errors, 12.4.16) and two general rules in Elements and Skins;
+  `references/test-rig.md` and `scripts/rig.sh` put the rig in the skill (0002 Decision 20);
+  `scripts/typecheck.sh` and SKILL.md's step 7 add the type check, with the eval case
+  `fix-typecheck-errors`. `APC_mini_mk1_Plus`: the ignore comment on its two control
+  decorators, type check clean. `uv run pytest` 263 passed. Tool findings: all filed (finding
+  20 new, with finding 5's item); 4 and 12 are in the skill now. Next: 0003 step 7 (the
+  sequencer eval case and the MCP round; the user's go for its cost).
 
 ## After grilling
 
@@ -396,7 +406,7 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
   `(self, index)` with `index.setter`, not a property; controls and `@listens` slots show as
   methods; a `NamedTuple`'s fields (annotations) are missing. The stubs work around all three;
   the index fix changes its content (a rebuild): grill.
-- [todo, skill] (user, 2026-11-20, "if it helps do that", on the architect's proposal): the
+- **Done (0003 step 6, Decision 37):** (user, 2026-11-20, "if it helps do that", on the architect's proposal): the
   skill's validate step also runs basedpyright (or pyright) with the project's stubs
   (`build-stubs --project`) when one is installed, as an extra check of the script's own code
   (a misspelled `self._attribute`, a wrong argument count, an undefined name), which
@@ -424,8 +434,8 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
     self-reference, and `MethodType` attribute writes fail (`subject`, `name`, `looping`).
   - Fix in the stubs (emit a property, give controls a `pressed` decorator type) before the user
     relies on them. Done 2026-11-20, except the control idiom (above).
-- [todo, APC_mini_mk1_Plus] (user, 2026-11-19): the LICENSE holder becomes `MarvinHauke` with that
-  repo's next commit.
+- **Done** (`APC_mini_mk1_Plus` `9f2fee7`): the LICENSE holder is `Marvin Hauke` (the todo of
+  2026-11-19 said `MarvinHauke`; the commit wrote the name with a space).
 - [idea, later] From the user's test list (0003 results page): pad preview as an option; the
   first loop extension duplicates the content (Elektron); playhead and following in Arrangement
   View; a new clip's launch quantization (v3 starts it at once, legato).
@@ -444,6 +454,12 @@ _Last updated: 2026-11-20 (0001 Decision 56 done, task 3 built, the Editor setup
   registers, which method calls which) is not in the index; 0003 step 5 needed it twice and read
   the `.pyc` bytecode by hand. A statements feature for the MCP? Touches the index schema: grill.
 
+- [needs-triage] Tool findings from 0003 step 6 (results page, finding 20): `check_names` doesn't
+  list `ControlSurface._auto_arm`, set in v3's `ControlSurface.__init__`: finding 5's gap
+  (instance attributes a base's `__init__` sets).
+- [open, user] (reviewer, 2026-11-20, 0003 Decision 37): may a value read from a build's own
+  bytecode (the local disassembly in `reference/`) count as `observed`? Today `observed` means
+  "in the index", so such values are `documented`. A yes changes CLAUDE.md and the glossary.
 - [needs-triage] Tool findings from 0003 step 1 (results page, findings 3 and 5–10): `element-name`
   gives up on `**dict` in `add_…` calls; `check_names` counts instance attributes of a mixin's
   `__init__` (`component_map`) as not members; no tool says which dependencies the framework

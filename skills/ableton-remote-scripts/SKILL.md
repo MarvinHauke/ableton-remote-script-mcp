@@ -42,8 +42,10 @@ If a script says the command or the index is missing, tell the user the command 
 | `scripts/lookup.sh outline <Script>` | one of Ableton's own scripts: its classes, elements with their MIDI numbers, components and layers (`--section <name>` for one part of a large one) |
 | `scripts/lookup.sh names <folder>` | every attribute and constructor keyword the script uses: known in the index (observed), on Structure Void's pages (documented), or unknown; `--names A.b C.d` checks a list |
 | `scripts/validate.sh <folder>` | findings (file, line, rule, fix) for a script folder against a build |
+| `scripts/typecheck.sh <folder>` | basedpyright or pyright over the script's own code, with the project's stubs, in standard mode |
 | `scripts/install.sh <folder>` | validates, then copies the script into the User Library (`--replace` for a new version) |
 | `scripts/log.sh --script <Folder>` | the tracebacks and messages of that script in Live's `Log.txt` since Live last started |
+| `scripts/rig.sh run <checks.yaml>` | the test rig: plays the controller to the script over a virtual port and checks Live's replies (optional, [references/test-rig.md](references/test-rig.md)) |
 
 Live's own objects (`lookup.sh class Live.Clip.Clip`) are partly known to the index. If the user
 ran `ableton-remote-script-mcp import-structure-void`, the lookup also shows members from
@@ -74,7 +76,7 @@ script, call the tool in its place:
   which may be a beta.
 - Give a script folder as an absolute path: the server's working folder may not be yours.
 - A cut answer says so; ask again with `offset`, `section` or `full=True`.
-- `install.sh` and `log.sh` have no tool: run the scripts for those.
+- `typecheck.sh`, `install.sh`, `log.sh` and `rig.sh` have no tool: run the scripts for those.
 - Without the server, everything works through the scripts.
 
 ## Workflow
@@ -101,7 +103,8 @@ script, call the tool in its place:
    Look up whichever you choose; never mix generations in one script. For `_Framework`, read
    [references/framework-script.md](references/framework-script.md) and start from
    `assets/framework_template/`. For v3, read [references/v3-script.md](references/v3-script.md)
-   (Specification, elements, mappings and modes, skins, components of your own) and start from
+   (Specification, elements, mappings and modes, skins, components of your own, a step
+   sequencer) and start from
    `assets/v3_template/`.
 
 5. **Read a reference script.** Find one of Ableton's scripts for similar hardware
@@ -134,8 +137,25 @@ script, call the tool in its place:
    (`self._session.set_foo(...)`) are not checked either: run `scripts/lookup.sh names <folder>` on
    each draft and look at every `unknown` name; a `documented` one is labelled as such in the report. The index has names and signatures, not behaviour: when the
    code relies on what a method does (which LED value it sends, whether it releases a button),
-   say so in the report and put it on the checklist. Then `scripts/install.sh <folder>` (add `--replace` after
-   the first time).
+   say so in the report and put it on the checklist.
+
+   Then type-check the script's own code: `scripts/typecheck.sh <folder>`. It finds what the
+   name check can't (a misspelled `self._attribute`, a wrong number of arguments, a name never
+   defined). It needs the project's stubs:
+   - **No stubs (exit 3):** don't build them yourself. Ask the user to run the command the script
+     prints (`build-stubs --build <build> --project <the folder that holds the script>`), with
+     the reasons: this check, and completion and signatures in their own editor. They are built
+     from their Live and stay on their machine. If they decline, go on and say the check was
+     skipped.
+   - **No checker installed (exit 4):** go on, and say in the report that the check was skipped.
+   - **The checker failed on its own (exit 5):** nothing to fix in the script; report its message.
+   - **Errors (exit 1):** fix every one in the script, none left out unread. A real mistake gets
+     corrected; an attribute that may be `None` gets its check; the v3 control idiom (a control
+     and its handler of the same name, "refers to itself") gets
+     `# pyright: ignore[reportGeneralTypeIssues]` on the decorator's line, which changes
+     nothing at run time. Run it again until it is clean.
+
+   Then `scripts/install.sh <folder>` (add `--replace` after the first time).
 
 8. **Load it in Live: the user's step.** Only the user operates Live. Tell them exactly what to do,
    then read the log yourself — see [references/loading-and-logs.md](references/loading-and-logs.md):
@@ -143,15 +163,21 @@ script, call the tool in its place:
    the controller's input and output ports, then `scripts/log.sh --script <Folder>`. A
    traceback means the script did not load (or broke later); fix it, validate, reinstall with
    `--replace`, and ask for another restart. With no traceback, walk the user through the
-   behaviour checklist one item at a time and note what passed.
+   behaviour checklist one item at a time and note what passed. For a script with much
+   behaviour (LEDs that follow Live, pages, modes, a sequencer), offer the test rig first: it
+   checks the list over a virtual port after every change, and the user then checks on the
+   controller what only the hardware shows
+   ([references/test-rig.md](references/test-rig.md)).
 
 9. **Report.** The files written, the build, every framework name used with its confidence (they
-   become `tested` once the script loaded with no traceback), the validator result, the log
-   result, and the checklist result. Say what was not tested.
+   become `tested` once the script loaded with no traceback), the validator and type check
+   results, the log result, and the checklist result (on the rig and on the controller). Say what
+   was not tested.
 
 ## Done means
 
 - `scripts/validate.sh` reports 0 findings for the build the user runs.
+- `scripts/typecheck.sh` reports 0 errors, or the report says why it was skipped.
 - After the user loaded it, `scripts/log.sh --script <Folder>` shows no traceback and shows the
   script's own start-up message.
 - The user confirmed each checklist item, or you listed the ones that failed or were not tried.

@@ -19,11 +19,11 @@ Live 12.4.16. `observed`: in the index. `documented`: read in gluon's decompiled
 | The target clip is the clip playing on the selected track, else its clip in the selected scene; `prepare_new_clip_slot` may move the selected scene to an empty slot (Decision 22) | documented |
 | The mappings can't hand a component to another: the pitch provider is set in `setup()` with `component_map["Step_Sequence"].set_pitch_provider(component_map["Drum_Group"])` (Launchkey MK4 does the same from code) | observed (statements) |
 | `SequencerClip.create_clip(length)` creates the clip in the target track's slot (`prepare_new_clip_slot`), fires it at once and shows it in the detail view; the note editor calls it on the first step press of an empty slot | observed (statements) |
-| `GridResolutionComponent(resolutions=, default_index=)`; `GRID_RESOLUTIONS` holds 1/32t … 1/4 with step lengths in beats; four without triplets give 1/32, 1/16, 1/8, 1/4 | observed (names), documented (values) |
+| `GridResolutionComponent(resolutions=, default_index=)`; `GRID_RESOLUTIONS` holds 1/32t … 1/4 with step lengths in beats; four without triplets give 1/32, 1/16, 1/8, 1/4 | observed (names), tested (1/16 0.25, 1/8 0.5), documented (the other values, read from 12.4.16's bytecode in step 6: not in the index) |
 | The note editor gives its step buttons a translation channel, channel 2 (`DEFAULT_STEP_TRANSLATION_CHANNEL` = 1, 0-based); LED feedback still goes out on the element's own channel, channel 1 | observed (the channel), tested (feedback on channel 1) |
-| New notes: one step long, velocity 100 (`DEFAULT_VELOCITY`), 127 with full velocity | documented |
-| Skin names: `NoteEditor.StepFilled`, `StepEmpty`, `StepMuted`, `StepDisabled`, `NoClip`, `NoteEditor.Resolution.Selected`/`NotSelected`; `DrumGroup.PadSelected`, `PadFilled`, `PadEmpty`, `PadMuted`, `PadSoloed`, `PadAction` | documented |
-| The drum group's matrix puts the lowest pad bottom left (matrix rows top first) | documented |
+| New notes: one step long, velocity 100 (`DEFAULT_VELOCITY`), 127 with full velocity | observed (the name), tested (100), documented (127, 12.4.16 bytecode) |
+| Skin names: `NoteEditor.StepFilled`, `StepEmpty`, `StepMuted`, `StepDisabled`, `NoClip`, `NoteEditor.Resolution.Selected`/`NotSelected`; `DrumGroup.PadSelected`, `PadFilled`, `PadEmpty`, `PadMuted`, `PadSoloed`, `PadAction`; all in 12.4.16's default skin, with `LoopSelector.*` and `DrumGroup.Scroll`/`ScrollPressed` | observed (the names, step 6), documented (their 127 and 0, 12.4.16 bytecode), tested (the script's values) |
+| The drum group's matrix puts the lowest pad bottom left (matrix rows top first) | tested (step 1: `pads[12]` = 36) |
 | `Device.can_have_drum_pads` (a Drum Rack), `Clip.name`, `Clip.looping` | observed (Push 3 helper's proxy model) |
 | A clip is created only on a track with a Drum Rack directly on it; v3's instrument finder also finds one inside another rack, where the pads work but no clip is created (v1's limit) | observed (the script's own code) |
 | The created clip fires at once (`q_no_q`), so the transport runs | tested |
@@ -34,7 +34,7 @@ Live 12.4.16. `observed`: in the index. `documented`: read in gluon's decompiled
 | v3's note editor shows the whole page of steps past the clip's loop end (no `StepDisabled` there); a note added there extends the loop (`_add_note_in_step` calls `extend_loop_for_region`) | observed, tested (no colour change without our code) |
 | `NoteEditorComponent._get_alternate_color_for_step(index, visible_steps)` overrides a step's colour when it returns a skin name; its `_page_time`, `step_length`, `_clip`, `_clip_notes` and `TimeStep.filter_notes` give the step's time and notes | observed, tested |
 | `Clip.playing_position` and `playing_status` listeners (`@listens`) fire while a session clip plays, often enough to light every 1/16 step at 120 BPM | tested |
-| A skin name the note editor or the pad bank asks for through `LiveObjSkinEntry` has no fallback: a missing one raises `KeyError` (so the skin sets every name) | documented |
+| A skin name the note editor or the pad bank asks for through `LiveObjSkinEntry` has no fallback: a missing one raises `KeyError` (so the skin sets every name); other names fall back to `BasicColors.ON` or `OFF` by their suffix | observed (12.4.16 `Skin.__getitem__`, step 6) |
 | `MixerComponent`, `SessionComponent`, `ViewControlComponent`, `SessionNavigationComponent` depend on the session ring | observed |
 | A pad press plays its sound only on an armed track: silent unarmed, heard armed by hand and with the script's auto-arm | tested |
 | v3's `AutoArmComponent`, built by the script in `setup()` and enabled, sets the target track's implicit arm without identification | tested |
@@ -70,8 +70,8 @@ back. Fixed in step 1 unless a STATUS item is named.
    `msg_type=MIDI_NOTE_TYPE`, the names are checked. Open: a STATUS item for the validator.
 4. **The rig and the validator can't read MIDI numbers a script's own helper computes**
    (`grid_rows(4, 7)`: "can't be worked out without running the script"). Rows as `range(…)`
-   lists are read. For the skill: write element numbers as literals or ranges (step 6's skill
-   section).
+   lists are read. For the skill: write element numbers as literals or ranges. In the skill's
+   v3 reference (Elements) since step 6, with finding 3's `**` keywords.
 5. **`check_names` calls `ControlSurface.component_map` not a member:** it is set in
    `ControlSurfaceMappingMixin.__init__` as an instance attribute. The skill already uses
    `self.component_map[...]` (tested on the UC4). Open: a STATUS item.
@@ -98,7 +98,8 @@ back. Fixed in step 1 unless a STATUS item is named.
    Asked again with `build: 12.4.16`. Open: a STATUS item (the newest release as the default).
 12. **`validate` can't see a wrong argument type into Live's C++ objects:** a tuple for
    `playhead_channels` passed, and the script failed to load (`ArgumentError`). Not a validator
-   rule; for the skill (step 6): Live's objects take lists where they take a sequence.
+   rule; for the skill: Live's objects take lists where they take a sequence. In the skill's
+   v3 reference (A step sequencer, the playhead) since step 6.
 13. **`check_names NoteEditorComponent.…` resolves the bare name to
    `bar_based_sequence.NoteEditorComponent` first**, and reports `_page_time`, `_clip`,
    `_clip_notes` as not members, though `__init__` sets them (finding 5 again). The statements of
@@ -126,6 +127,10 @@ back. Fixed in step 1 unless a STATUS item is named.
    User Library, which `install --replace` writes; after a `rig restart-live` without it the
    first step-4 run tested step 3's code (20 passed, 10 failed: no reply from any new control).
    Open: a STATUS item (warn when the installed copy differs from the check file's `script:`).
+
+20. **`check_names` doesn't list `ControlSurface._auto_arm`** (step 6), which v3's
+   `ControlSurface.__init__` sets (12.4.16 statements): finding 5's gap, instance attributes
+   set in `__init__`. With finding 5's STATUS item.
 
 ## Rig runs
 
