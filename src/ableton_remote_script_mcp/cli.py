@@ -1053,30 +1053,17 @@ def _cmd_rig_serve(args: argparse.Namespace) -> int:  # pragma: no cover - needs
 
 def _cmd_rig_panel(args: argparse.Namespace) -> int:  # pragma: no cover - serves until Ctrl-C
     """Exit 2: no `rig serve` (it owns the port, Decision 9); 4: the script or its profile can't be read."""
-    from .rig.controller import controller_for_folder
     from .rig.panel import DEFAULT_PORT as PANEL_PORT
     from .rig.panel import PanelServer
-    from .rig.profile import (
-        ProfileError,
-        check_profile_names,
-        load_profile,
-        profile_beside,
-    )
     from .rig.serve import DEFAULT_PORT, connect
+    from .rig.session import SessionError, prepare
 
-    ctl, why = controller_for_folder(Path(args.folder), Path(args.index_dir), args.build)
-    if ctl is None:
-        print(why, file=sys.stderr)
-        return 4
     try:
-        profile = load_profile(Path(args.profile)) if args.profile else profile_beside(Path(args.folder))
-    except (ProfileError, ImportError) as e:
+        session = prepare(Path(args.folder), Path(args.index_dir), args.build, profile=args.profile)
+    except SessionError as e:
         print(e, file=sys.stderr)
         return 4
-    problems = check_profile_names(profile, ctl) if profile else []
-    if problems:
-        print("\n".join(problems), file=sys.stderr)
-        return 4
+    ctl, profile = session.controller, session.profile
     port = connect(port=args.port or DEFAULT_PORT)
     if port is None:
         print("no `rig serve` is running: start it first (`ableton-remote-script-mcp rig serve`); the panel plays "
@@ -1117,10 +1104,10 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
         load_check_file,
         run_checks,
     )
-    from .rig.controller import controller_for_folder
     from .rig.ports import DEFAULT_NAME, RigUnavailable, wait_for
     from .rig.report import format_report, write_result
     from .rig.serve import DEFAULT_PORT, connect
+    from .rig.session import SessionError, prepare
 
     say = (lambda *_: None) if args.json else (lambda text: print(text, flush=True))
     try:
@@ -1128,21 +1115,13 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
     except (CheckFileError, ImportError) as e:
         print(e, file=sys.stderr)
         return 3 if isinstance(e, ImportError) else 4
-    ctl, why = controller_for_folder(checks.script_folder, Path(args.index_dir), args.build or checks.build)
-    if ctl is None:
-        print(why, file=sys.stderr)
-        return 4
-    from .rig.profile import ProfileError, check_profile_names, profile_beside
-
     try:
-        profile = profile_beside(checks.path)
-    except ProfileError as e:
+        session = prepare(checks.script_folder, Path(args.index_dir), args.build or checks.build, beside=checks.path,
+                          names=lambda ctl: check_names(checks, ctl))
+    except SessionError as e:
         print(e, file=sys.stderr)
         return 4
-    problems = check_names(checks, ctl) + (check_profile_names(profile, ctl) if profile else [])
-    if problems:
-        print("\n".join(problems), file=sys.stderr)
-        return 4
+    ctl, profile = session.controller, session.profile
     log_path = Path(args.log) if args.log else find_log(args.build or checks.build)
     if any(s.log_clean for s in checks.steps) and log_path is None:
         print("the check file asks for `log: clean`, and no Log.txt was found; pass --log", file=sys.stderr)

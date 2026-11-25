@@ -304,7 +304,8 @@ for the user's approval. Order: 1 → 2 → 3 → 4 → 5 → 6.
        validator reads it (sources compiled, then the index overlay).
      - The controller model (`rig/controller.py`, `rig elements <folder>`; since 2026-11-25 the
        reading below lives in the Elements reader, `elements.py`, plan 0001 Decision 57, with the
-       same output): `outline` finds the
+       same output; what `rig run` and `rig panel` read before they play, the controller, the
+       profile and the name checks, is `rig/session.py`, plan 0001 Decision 59): `outline` finds the
        calls that build elements; the arguments come from those calls in the script's source,
        because the statement summary drops the keywords of a call that also passes `**k`
        (`channel=CH14` next to `**SHOWS_VALUE`). Defaults observed in the 12.4.16 index:

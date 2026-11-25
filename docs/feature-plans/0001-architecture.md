@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -1044,6 +1044,16 @@ meant to do, and uses only API names that exist in the Live build they target.
       all by the rules above (Live's `Clip`, `Track`, `Device`, `Quantization` before skin and
       notification classes; v3's re-exported `NoteEditorComponent` and `LoopSelectorComponent`
       first). 278 tests.
+59. **A rig session module** (user, 2026-11-25, the same message; the architecture review's
+    candidate in STATUS). `rig run` and `rig panel` each read the script's controller model,
+    its `device.yaml` and checked the profile's element names, in two copies of the same code.
+    Now `rig/session.py` `prepare(folder, index dir, build, profile=, beside=, names=)` does it
+    once and returns the controller and the profile, or raises `SessionError` with the reason.
+    `rig run` passes the check file's names (`names=`) and looks for `device.yaml` beside the
+    check file (`beside=`); `rig panel` passes `--profile` or finds it beside the script. No
+    contract change: the same messages, the same exit code 4. The ports stay in the commands:
+    `rig run` opens its own when no `rig serve` runs, `rig panel` needs `rig serve`.
+    - **Built 2026-11-25** (architect, solo). `tests/test_rig_session.py` (5 tests). 283 tests.
 
 ## Open questions
 
