@@ -25,8 +25,10 @@ format) walks the agent through a script:
 - the device facts and a reference script;
 - the `_Framework` or `ableton.v3` template;
 - lookups and a name check of each draft;
-- validate and install;
-- reading Live's log after you loaded the script.
+- validate, an optional type check of the script's own code (basedpyright or pyright with the
+  stubs of [Editor setup](docs/editor-setup.md)), and install;
+- reading Live's log after you loaded the script, and optionally checking it with the
+  [test rig](docs/test-rig.md).
 
 Its scripts call the `ableton-remote-script-mcp` command, so put the command on your PATH and
 link the skill where your agent finds skills (for Claude Code, `~/.claude/skills`):

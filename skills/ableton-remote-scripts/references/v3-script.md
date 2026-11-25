@@ -17,6 +17,7 @@ user runs (`scripts/lookup.sh class <Name>`), and outline one of those scripts f
 - Mappings and modes
 - Skins and LED values
 - A component of your own
+- A step sequencer
 - Rules that keep a script loading
 - Logging
 
@@ -105,6 +106,12 @@ others.
 `create_matrix_identifiers(start, stop, width=, flip_rows=)` makes the rows for a block of
 consecutive numbers; `flip_rows=True` puts the top row first when the hardware numbers its pads
 from the bottom up.
+
+**Write the numbers so a reader can see them.** The validator and the test rig read `Elements`
+without running it: literal numbers, `range(…)` rows and `create_matrix_identifiers` are read; a
+helper of your own that computes the rows (`grid_rows(4, 7)`) is not, and its elements go
+unchecked. Pass keywords by name (`msg_type=MIDI_NOTE_TYPE`), not from a dict (`**NOTE`): the
+validator can't read element names behind a `**`.
 
 **Names.** The mappings name an element by its `name` in lower case with spaces as underscores:
 `"Play_Button"` is `play_button`. A matrix also gives `<name>_raw`, the flat list of its
@@ -214,8 +221,15 @@ class Skin:
 
 - **Missing names.** A name the skin doesn't have is sent as `BasicColors.ON` when it ends in
   `On`, `Pressed`, `Selected` or `Enabled`, else `OFF`; the default skin covers the framework's
-  names with 127 and 0 (`documented`, decompiled 12.0 framework). So a one-colour controller
-  that takes 127 and 0 needs only the names it wants otherwise.
+  names (`observed` in 12.4.16's `Skin.__getitem__` and default skin), with 127 and 0
+  (`documented`: read from 12.4.16's bytecode, not in the index). So a
+  one-colour controller that takes 127 and 0 needs only the names it wants otherwise. A
+  controller that takes colours as velocities (0 off, 1 green, …) sets every name its
+  components use: 127 is no colour there.
+- **No fallback for a track's colour.** A name a component asks for through `LiveObjSkinEntry`
+  (the note editor and the drum group do) is looked up directly: a name the skin and the default
+  skin both lack raises `KeyError` (`observed` in 12.4.16's `Skin.__getitem__`). Put every name
+  of your own into the skin.
 - **Names the framework uses.** Ableton's v3 skins in 12.4.16 set `Session.ClipStopped`,
   `ClipPlaying`, `ClipTriggeredPlay`, `ClipRecording`, `ClipTriggeredRecord`, `Slot`,
   `StopClip`, `StopClipTriggered`, `StopClipDisabled`, `Navigation`, `NavigationPressed`;
@@ -278,6 +292,177 @@ class SceneLaunchComponent(Component):
 - **Live's objects.** `self.song` is the `Live.Song.Song`; `liveobj_valid(obj)` from
   `ableton.v3.live` tells whether a Live object still exists. Live's own classes are only partly
   in the index; a member from Structure Void's pages is `documented`: say so.
+
+## A step sequencer
+
+A drum step sequencer on a grid: one row of buttons per bar of steps, pads that pick the drum
+sound the steps write, the clip's notes edited in place. v3 has the parts. Everything here is
+from building one for the APC mini mk1 in Live 12.4.16: `tested` there unless marked. The
+methods starting with `_` are the framework's private ones: `observed` in 12.4.16's index, and
+they can change in another build. Look each one up in the user's build before you rely on it.
+
+**The parts.** `StepSequenceComponent` (in `ableton.v3.control_surface.components`) holds a note
+editor (the step buttons), a loop selector (one button per page of steps), Live's playhead and a
+grid resolution. `DrumGroupComponent` is the pad bank and gives the steps their pitch.
+`Step_Sequence` is not in the default component map (`observed`; Ableton's `APC_mini_mk2` has
+none), so add it to the Specification's `component_map`, with the pad bank of your own (below)
+in place of the default `Drum_Group`, and map them:
+
+```python
+component_map = {"Step_Sequence": StepSequenceComponent, "Drum_Group": PadBankComponent}
+
+mappings["Step_Sequence"] = dict(step_buttons="steps", loop_buttons="page_buttons",
+                                 resolution_buttons="resolution_buttons")
+mappings["Drum_Group"] = dict(matrix="pads", scroll_up_button="up_button",
+                              scroll_down_button="down_button")
+```
+
+- `scroll_up_button` and `scroll_down_button` reach the drum group's own scroll component through
+  `__getattr__`: the validator lists them as not checked. One press moves the bank by a row of 4;
+  a button that can't move further is off (`DefaultButton.Disabled`).
+- The drum group's matrix puts the lowest pad bottom left: give the matrix its rows top first.
+
+**Two dependencies the framework doesn't build.** The sequencer's `__init__` asks for a
+`grid_resolution`, its note editor for a `sequencer_clip` (`observed`: `@depends`). The framework
+injects `target_track`, `session_ring`, `full_velocity` and a few more, not these; the control
+surface hands them in from `_get_additional_dependencies()`. Each value there is a function the
+framework calls to get the dependency (`observed` in the statements of `get_dependency_for`), so
+an object goes in wrapped in `const` (`ableton.v3.base`); the framework would call an object
+passed bare (`observed`, not tried). The validator doesn't check this.
+
+```python
+from ableton.v3.base import const
+from ableton.v3.control_surface import ControlSurface
+from ableton.v3.control_surface.components import (
+    AutoArmComponent, GridResolutionComponent, SequencerClip)
+from ableton.v3.control_surface.components.grid_resolution import GRID_RESOLUTIONS
+
+class My_Sequencer(ControlSurface):
+    def _get_additional_dependencies(self):
+        dependencies = super()._get_additional_dependencies() or {}
+        resolutions = tuple(r for r in GRID_RESOLUTIONS if not r.is_triplet)
+        dependencies["grid_resolution"] = const(
+            GridResolutionComponent(resolutions=resolutions, default_index=1))
+        dependencies["sequencer_clip"] = const(
+            self.register_disconnectable(SequencerClip(target_track=self._target_track)))
+        return dependencies
+
+    def setup(self):
+        super().setup()
+        # the mappings can't hand one component to another: the pads give the steps their pitch
+        self.component_map["Step_Sequence"].set_pitch_provider(self.component_map["Drum_Group"])
+        # pads play only on an armed track (below)
+        self._drum_auto_arm = AutoArmComponent(is_enabled=True)
+```
+
+- **Resolutions.** `GRID_RESOLUTIONS` (`observed`) holds eight, 1/32t to 1/4, each with its
+  step length in beats: 1/16 is 0.25 and 1/8 0.5 (`tested`), 1/32 0.125 (`documented`). Without
+  the triplets four remain: 1/32, 1/16, 1/8, 1/4. `resolution_buttons` are radio buttons, one per resolution; the active one gets
+  `NoteEditor.Resolution.Selected`. A new note is one step long at the active resolution.
+- **Notes.** A step press writes a note of the selected pad's pitch, one step long, velocity 100
+  (`DEFAULT_VELOCITY`: the name `observed`, the value `tested`), 127 with Live's full velocity
+  on (`documented`). A second press clears it.
+- **The step buttons' channel.** The note editor moves its step buttons to MIDI channel 2
+  (`DEFAULT_STEP_TRANSLATION_CHANNEL` = 1, `observed`); the LEDs still go out on the element's
+  own channel (`tested`).
+
+**The clip.** `SequencerClip` is the clip the steps edit. On an empty slot the note editor calls
+its `create_clip(length)` on the first step press; it creates the clip in the target track's slot,
+fires it at once with no quantization and legato, in phase with what plays (`observed` in the
+statements, `tested`), and shows it in Live's detail view. Subclass it for a clip preset:
+
+```python
+from ableton.v3.live import get_bar_length, liveobj_valid
+
+class PresetClip(SequencerClip):
+    def create_clip(self, length=None):
+        super().create_clip(length=2 * get_bar_length())   # 2 bars, whatever v3 asked for
+        clip = self.clip
+        if liveobj_valid(clip):
+            clip.name = "Steps"
+            clip.looping = True
+        return clip
+```
+
+Which clip it edits comes from the target track: v3 takes the track's playing clip first, then
+its clip in the selected scene (`observed`). Live still counts a clip as playing after the
+transport stops, so the steps often edit another clip than the selected slot's. For "always the
+selected slot", subclass `TargetTrackComponent`, override `_target_clip_from_session()` to return
+the selected scene's clip on the target track, and set `target_track_component_type` in the
+Specification. `ViewControlComponent`'s `prev_scene_button` and `next_scene_button` then move the
+slot the steps edit.
+
+**The pads.** Two things v3's drum group doesn't do on its own:
+- **Select by pressing.** It selects a pad only while its select button is held, and its pads go
+  to Live as notes without the script seeing them (`observed`). Build it with
+  `matrix_always_listenable=True` and select in `_on_matrix_pressed`:
+
+  ```python
+  class PadBankComponent(DrumGroupComponent):
+      def __init__(self, *a, **k):
+          super().__init__(*a, matrix_always_listenable=True, **k)
+
+      def _on_matrix_pressed(self, button):
+          pad = self._pad_for_button(button)
+          if liveobj_valid(pad):
+              self._do_select_pad(pad, str(pad.name))
+          super()._on_matrix_pressed(button)
+  ```
+- **Sound.** A pad press plays its sound only on an armed track. The framework builds its own
+  auto-arm only with `include_auto_arming` and an identity reply (`observed`); without one,
+  build `AutoArmComponent(is_enabled=True)` in `setup()`: the selected MIDI track gets Live's
+  implicit arm, and steps back while the user arms a track by hand. Don't call it `_auto_arm`:
+  the control surface's `__init__` sets an attribute of that name (`observed` in the statements;
+  `check_names` doesn't list it).
+- **Feedback.** Live sent no LED value for a pad the drum group played: light a held pad from the
+  script (set its `button.color` in `_update_button_color`).
+- **Which tracks.** The drum group finds a Drum Rack on the track or inside an Instrument Rack
+  (`find_drum_group_device`, `ableton.v3.control_surface.instrument_finder`). On a track without
+  one the pads stay dark; v3's note editor still tries to create a clip on a step press, so guard
+  the note editor's `_on_pad_pressed` with the same finder if the steps should do nothing there.
+
+**Pages and the loop.** The loop selector gives each of its buttons one bar of the clip
+(`_update_matrix` and `_on_matrix_pressed` divide by its `bar_length`, `observed`). A subclass
+whose `bar_length` property returns `self._paginator.page_length` makes each button one page of
+steps; holding two buttons sets the clip's loop in pages. It has no "follow the playhead": a
+subclass that sets `self._paginator.page_time` to the playhead's page from `_update_matrix` adds
+it. Steps past the clip's loop end are shown like the others (no `StepDisabled`), and a note set
+there extends the loop (`_add_note_in_step` calls `extend_loop_for_region`, `observed`).
+
+**The playhead.** `StepSequenceComponent` builds a `PlayheadComponent` around
+`c_instance.playhead`, Live's own playhead, which sends the playing step as note feedback. On the
+APC mini mk1's port it sent nothing while the clip played: neither on v3's default notes 0-7 nor
+on the 32 step notes on channel 2 (`tested` twice; cause not found, and Ableton's v3 scripts use
+it). Try it first on the user's controller; if no step lights, draw the playhead in the note
+editor:
+- give the sequencer `note_editor_component_type=` a `NoteEditorComponent` subclass that listens
+  to its clip's `playing_position` and `playing_status` (`@listens`; they fire often enough to
+  light every 1/16 step at 120 BPM);
+- return a skin name of your own from `_get_alternate_color_for_step(index, visible_steps)` for
+  the playing step (the step's time is `self._page_time + index * self.step_length`); and
+- give the sequencer `playhead_component_type=` a `PlayheadComponent` subclass that keeps Live's
+  playhead off (its `update()` sets `self._playhead.clip = None`), so a later build doesn't draw
+  a second one.
+
+`Playhead.set_feedback_channels` takes a list: a tuple raises `Boost.Python.ArgumentError` when
+the script loads. The same holds for Live's objects in general: where one takes a sequence, pass
+a list. The validator doesn't see argument types.
+
+**The skin.** The names the parts ask for are in 12.4.16's default skin (`observed`), with 127
+and 0 (`documented`):
+- `NoteEditor`: `StepFilled`, `StepEmpty`, `StepMuted`, `StepDisabled`, `NoClip`, and
+  `NoteEditor.Resolution.Selected`, `NotSelected`;
+- `LoopSelector`: `InsideLoopSelected`, `InsideLoop`, `OutsideLoopSelected`, `OutsideLoop`,
+  `Playhead`, `PlayheadRecord`, `Navigation`, `NavigationPressed`;
+- `DrumGroup`: `PadEmpty`, `PadFilled`, `PadSelected`, `PadMuted`, `PadMutedSelected`,
+  `PadSoloed`, `PadSoloedSelected`, `PadAction`, `Scroll`, `ScrollPressed`.
+
+The note editor and the drum group ask through `LiveObjSkinEntry`, so a name of your own
+(`NoteEditor.Playhead`) that the skin lacks raises `KeyError` (Skins and LED values, above).
+
+**The faders beside it.** `MixerComponent` reads its tracks from the session ring, so on a
+controller with no identity reply the ring needs to enable itself (The Specification, above);
+`volume_controls` and `master_track_volume_control` then set tracks 1-8 and the master.
 
 ## Rules that keep a script loading
 

@@ -1,6 +1,6 @@
 # 0003 — A drum step sequencer for the APC mini mk1
 
-_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 5; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons), 30 (resolution pads) and 31 (the page follows the playhead); the APC run gave 32 (always the selected slot), the user's test list 33-35 (nested Drum Rack, follow again, own repo); Decision 36 (the repo `APC_mini_mk1_Plus`, the script `APC_mini_mk1_Plus`, a submodule) built 2026-11-19 on `feat/0003-own-repo`; next: step 6._
+_Stage: in work — spec and steps written 2026-11-19 (Decisions 17–20), steps approved by the user 2026-11-19 (Decision 21). Frontier: step 7; step 1 done 2026-11-19 on `feat/0003-step-1-tracer` (rig: 6 passed), step 2 done 2026-11-19 on `feat/0003-step-2-playhead` (rig: 11 passed, Decisions 24–25), step 3 done 2026-11-19 on `feat/0003-step-3-pad-bank` (rig: 19 passed, Decisions 26–27), step 4 done 2026-11-19 on `feat/0003-step-4-resolution-tracks-faders` (rig: 30 passed, Decision 28); step 5 on `feat/0003-step-5-hardware`: the panel run gave Decisions 29 (scene choice, resolution on two buttons), 30 (resolution pads) and 31 (the page follows the playhead); the APC run gave 32 (always the selected slot), the user's test list 33-35 (nested Drum Rack, follow again, own repo); Decision 36 (the repo `APC_mini_mk1_Plus`, the script `APC_mini_mk1_Plus`, a submodule) built 2026-11-19 on `feat/0003-own-repo`; step 6 built 2026-11-20 on `feat/0003-step-6-skill` (Decision 37); next: step 7._
 _Depends on: 0001 (the skill, the MCP server), 0002 (the test rig: its steps 6a and 6b before step 1; Decision 19)._
 
 ## Problem
@@ -423,6 +423,35 @@ Device facts: [milestone-1/apc-mini-mk1.md](milestone-1/apc-mini-mk1.md), "Devic
       `branch = main`, and `git submodule update --remote --merge` follows it. This repo's local
       config has `push.recurseSubmodules = check`, so a push of `main` here fails while the
       pinned commit is not on GitHub. A fresh clone sets that again (`CLAUDE.md`).
+37. **Step 6's parts** (architect, 2026-11-20, step 6; the type check: user, 2026-11-20, STATUS):
+    - **Facts first:** the results page's `documented` facts the section needs were checked
+      against 12.4.16's bytecode (the user's wish after step 5). Names and statements the index
+      has are `observed` (`DEFAULT_VELOCITY`, `GRID_RESOLUTIONS`, the default skin's names,
+      `Skin.__getitem__`'s fallback); values only the local disassembly shows (1/32 = 0.125,
+      the default skin's 127 and 0, full velocity 127) stay `documented`, and those seen on the
+      rig are `tested` (velocity 100, 1/16 and 1/8, the lowest pad bottom left). The reviewer's
+      point (2026-11-20): `observed` means "in the index". Whether a build's own bytecode should
+      count as observed is the user's to decide (open).
+    - **No mk1 colours in the section:** step 6's "the mk1 skin" became the rule for any
+      controller that takes colours as velocities (set every name) plus the default skin's
+      names; the mk1's own values are device facts of one unit, and the skill's agent gets
+      those from the user's manual (workflow step 2).
+    - **The section** "A step sequencer" in the skill's v3 reference: our own words and our own
+      code, built from the results page; the framework's private methods it names are marked as
+      such (observed in 12.4.16, may change). The example script is not named: the eval scorer
+      counts reading it as a leak. Two general rules moved into the reference's Elements and
+      Skins sections (findings 3-4; a colour-by-velocity device sets every skin name).
+    - **The rig in the skill** (0002 Decision 20, proven on the UC4 and the sequencer):
+      `references/test-rig.md` and `scripts/rig.sh`, offered at step 8 for a script with much
+      behaviour. The skill's agent sends only after the user says the port is picked, never
+      saves, and uses `rig restart-live` only with the user's go in that conversation.
+    - **The type check** (STATUS, settled with the user 2026-11-20): `scripts/typecheck.sh`, at
+      step 7 after the name check. The stubs are found in the folder that holds the script
+      folder (`build-stubs --project`'s layout); the checker runs through a config of its own in
+      standard mode. Exit 0 clean, 1 errors, 2 no folder (also a bad option), 3 no stubs, 4 no checker,
+      5 the checker's own failure. A new eval
+      case `fix-typecheck-errors`, run with step 7's round. The example script got the ignore
+      comment on its two control decorators, so it type-checks clean.
 
 ## Open questions
 
