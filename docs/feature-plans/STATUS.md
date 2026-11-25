@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-25 (where to continue: four choices; 0003 step 6 merged; 0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-25 (0001 Decision 57 built and merged, one Elements reader; where to continue: four choices; 0003 step 6 merged; 0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -384,13 +384,12 @@ _Last updated: 2026-11-25 (where to continue: four choices; 0003 step 6 merged; 
 
 - **Where to continue** (architect, 2026-11-25; the user chooses in the next session):
   1. 0003 step 7: the sequencer eval case and the MCP round (costs the user's usage: their go).
-  2. The architecture review's top pick (2026-11-25, report in the OS temp folder, not kept):
-     **one Elements reader**. Today three modules work out what a script's Elements class
-     builds: `outline.py`'s elements section, `framework_checks.py`'s element-name rule (on
-     outline's private `_Outliner`, `_bind`, `_parse`) and `rig/controller.py` (outline plus its
-     own `ast` pass for MIDI numbers); `names.py` has none (finding 16). One module returning
-     every element (name, attribute, kind, MIDI message, submatrix, what it couldn't read and
-     why) would serve all four. No contract change. The other candidates, weaker:
+  2. ~~The architecture review's top pick: **one Elements reader**~~ (report in the OS temp
+     folder, not kept). Built 2026-11-25 as 0001 Decision 57 on `refactor/elements-reader`
+     (`elements.py`; the validator, the rig and `check_names` read from it; findings 3 and 16
+     fixed; `check_names` says in `not_read` when it can't read the Elements class,
+     `answer_version` 2; 277 tests). Merged into `main` 2026-11-25 (user). The other candidates,
+     weaker:
      - the cut cuts only declared collections, never a record (`answers.py` `bounded`;
        findings 1, 8; touches the answer core: user);
      - one class-name ranking (`query.find_class_keys`, `names.check_list`, `names.py:265`;
@@ -493,8 +492,8 @@ _Last updated: 2026-11-25 (where to continue: four choices; 0003 step 6 merged; 
 - [open, user] (reviewer, 2026-11-20, 0003 Decision 37): may a value read from a build's own
   bytecode (the local disassembly in `reference/`) count as `observed`? Today `observed` means
   "in the index", so such values are `documented`. A yes changes CLAUDE.md and the glossary.
-- [needs-triage] Tool findings from 0003 step 1 (results page, findings 3 and 5–10): `element-name`
-  gives up on `**dict` in `add_…` calls; `check_names` counts instance attributes of a mixin's
+- [needs-triage] Tool findings from 0003 step 1 (results page, findings 5–10; finding 3, `**dict`
+  in `add_…` calls, fixed by 0001 Decision 57): `check_names` counts instance attributes of a mixin's
   `__init__` (`component_map`) as not members; no tool says which dependencies the framework
   injects and that `_get_additional_dependencies()` takes functions (a validator rule?);
   `lookup class <short name>` with many matches prints nothing but the cut note; `outline` of
@@ -503,8 +502,8 @@ _Last updated: 2026-11-25 (where to continue: four choices; 0003 step 6 merged; 
   `outline` default to the newest index, the Live 13 beta (the newest release instead?);
   `check_names` resolves bare `NoteEditorComponent` to `bar_based_sequence` first; a one-`return`
   method has no statements; nothing says where a `__getattr__` forwards control names to.
-- [needs-triage] Tool findings from 0003 step 4 (results page, 16 and 19): `check_names` calls an
-  attribute `add_button_matrix` creates (`self.scene_buttons`) unknown; `rig run` doesn't notice
+- [needs-triage] Tool findings from 0003 step 4 (results page, 19; 16, an attribute
+  `add_button_matrix` creates, fixed by 0001 Decision 57): `rig run` doesn't notice
   that the installed copy in the User Library is older than the check file's `script:` folder.
 - The rig can't select a track or slot (AbletonMCP 1.7.1 has no command for it), so `ask_user`
   stays for the selection. A track created through AbletonMCP is selected by Live (the user,

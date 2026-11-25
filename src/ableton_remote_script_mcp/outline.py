@@ -37,7 +37,7 @@ _SELF_TEST = re.compile(r"if (?P<negated>not )?self\.(?P<name>\w+)")
 _COMPONENT_IN_TEXT = re.compile(r"""component=['"](\w+)['"]""")
 
 
-def _literal_str(text: str | None) -> str | None:
+def literal_str(text: str | None) -> str | None:
     try:
         value = ast.literal_eval(text) if text else None
     except (ValueError, SyntaxError):
@@ -45,18 +45,18 @@ def _literal_str(text: str | None) -> str | None:
     return value if isinstance(value, str) else None
 
 
-def _parse(text: str) -> ast.expr | None:
+def parse_expression(text: str) -> ast.expr | None:
     try:
         return ast.parse(text, mode="eval").body
     except SyntaxError:  # "…" marks what the extractor did not model
         return None
 
 
-def _callee_text(node: ast.expr) -> str | None:
+def callee_text(node: ast.expr) -> str | None:
     if isinstance(node, ast.Name):
         return node.id
     if isinstance(node, ast.Attribute):
-        owner = _callee_text(node.value)
+        owner = callee_text(node.value)
         return f"{owner}.{node.attr}" if owner else None
     return None
 
@@ -67,14 +67,14 @@ def _plain(node: ast.expr):
         return node.value
     if isinstance(node, ast.Constant) and node.value is None:
         return None
-    if isinstance(node, ast.Call) and _callee_text(node.func) == "dict" and not node.args:
+    if isinstance(node, ast.Call) and callee_text(node.func) == "dict" and not node.args:
         return {k.arg: _plain(k.value) for k in node.keywords if k.arg}
     if isinstance(node, ast.Dict) and all(isinstance(k, ast.Constant) for k in node.keys):
         return {str(k.value): _plain(v) for k, v in zip(node.keys, node.values)}
     return ast.unparse(node)
 
 
-class _Outliner:
+class Outliner:
     def __init__(self, index: dict, package_key: str):
         self.index = index
         self.classes: dict = index["classes"]
@@ -82,6 +82,7 @@ class _Outliner:
         self.package = index["packages"][package_key]
         self.root = self.package["root"]
         self.resolver = Resolver(index)
+        self._inst: dict[str, set[str]] = {}
         self._roles: dict[str, str | None] = {}
         self._lineages: dict = {}
         self._factories: dict = {}
@@ -111,6 +112,19 @@ class _Outliner:
                     self._roles[key] = ROLE_ROOTS[self.classes[k]["name"]]
                     break
         return self._roles[key]
+
+    def instance_attributes(self, key: str) -> set[str]:
+        """Names a class's methods set on `self`, along its MRO (`self.x = ...`)."""
+        if key not in self._inst:
+            names: set[str] = set()
+            for k in self.resolver.mro(key) or []:
+                for m in self.classes[k]["members"].values():
+                    for st in m.get("statements", []):
+                        target = st.get("store") or st.get("target") or ""
+                        if target.startswith("self.") and target[5:].isidentifier():
+                            names.add(target[5:])
+            self._inst[key] = names
+        return self._inst[key]
 
     def framework_root(self, key: str, name: str) -> str | None:
         """The framework class called `name` on the MRO of `key`."""
@@ -239,10 +253,10 @@ class _Outliner:
                 _alias(st, aliases)
                 calls = [(st["call"], st["args"], st["kwargs"], st.get("target"), None)]
                 for text in [*st["args"], *st["kwargs"].values()]:
-                    node = _parse(text)
+                    node = parse_expression(text)
                     for sub in ast.walk(node) if node is not None else ():
-                        if isinstance(sub, ast.Call) and _callee_text(sub.func):
-                            calls.append((_callee_text(sub.func), [ast.unparse(a) for a in sub.args],
+                        if isinstance(sub, ast.Call) and callee_text(sub.func):
+                            calls.append((callee_text(sub.func), [ast.unparse(a) for a in sub.args],
                                           {k.arg or "**": ast.unparse(k.value) for k in sub.keywords}, None, st["call"]))
                 caller_under = []  # self._x = self._create_x(): the call site's conditions apply too
                 if st.get("target") == "return" and not unit["takes_arguments"] and unit["name"] in returned_to:
@@ -304,13 +318,13 @@ class _Outliner:
         r = self.resolve_callee(callee, unit["module"], unit["in_class"], aliases)
         if r is None:
             return
-        name = _literal_str(kwargs.get("name")) or kwargs.get("name")
+        name = literal_str(kwargs.get("name")) or kwargs.get("name")
         factory_result = where.pop("returned_by_factory", False)
         if r[0] == "method" and self.is_framework(r[1]) and r[2].startswith("add_") and unit["in_class"] and (
             self.role(unit["in_class"]) == "elements"
         ):  # v3: Elements.__init__ calls self.add_button(identifier, name, ...)
-            bound = _bind(r[3], args, kwargs)
-            elements.append({"name": _literal_str(bound.get("name") or bound.get("base_name")) or name,
+            bound = bind_arguments(r[3], args, kwargs)
+            elements.append({"name": literal_str(bound.get("name") or bound.get("base_name")) or name,
                              "defined_by": f"{r[1]}.{r[2]}", "arguments": bound, **where})
             return
         if r[0] == "class":
@@ -364,7 +378,7 @@ class _Outliner:
                         entries[ast.literal_eval(match["key"])] = self._map_entry(text, c["module"], "framework", st["line"])
         field = self.lineage(spec_key).members.get("component_map")
         if field and field["origin"] in self.classes and not self.is_framework(field["origin"]):
-            node = _parse(field.get("value") or "")
+            node = parse_expression(field.get("value") or "")
             if isinstance(node, ast.Dict):
                 module = self.classes[field["origin"]]["module"]
                 for k, v in zip(node.keys, node.values):
@@ -399,14 +413,14 @@ class _Outliner:
         return [{"name": n, **e} for n, e in entries.items()]
 
     def _map_entry(self, text: str, module: str, source: str, line) -> dict:
-        node = _parse(text)
+        node = parse_expression(text)
         target = text
-        if isinstance(node, ast.Call) and _callee_text(node.func) in ("partial", "functools.partial") and node.args:
+        if isinstance(node, ast.Call) and callee_text(node.func) in ("partial", "functools.partial") and node.args:
             target = ast.unparse(node.args[0])
         elif isinstance(node, ast.Call):  # DialogComponent(): an instance of the class called
             target = ast.unparse(node.func)
-        node = _parse(target)
-        found = self.resolver.resolve_in_module(target, module, self.root) if node is not None and _callee_text(node) else None
+        node = parse_expression(target)
+        found = self.resolver.resolve_in_module(target, module, self.root) if node is not None and callee_text(node) else None
         return {"component": text, "defined_in": found.key if found and found.status == "class" else None,
                 "from": source, "line": line}
 
@@ -438,14 +452,14 @@ class _Outliner:
                 sections.append((ast.literal_eval(match["key"]), dict(st["kwargs"]), st["line"]))
             elif "call" in st and st["call"] == "dict" and target == "return":
                 for k, v in st["kwargs"].items():
-                    node = _parse(v)
-                    if isinstance(node, ast.Call) and _callee_text(node.func) == "dict":
+                    node = parse_expression(v)
+                    if isinstance(node, ast.Call) and callee_text(node.func) == "dict":
                         sections.append((k, {kw.arg: ast.unparse(kw.value) for kw in node.keywords if kw.arg},
                                          st["line"]))
                     else:
                         complete = False
             elif "store" in st and match:
-                node = _parse(st["value"])
+                node = parse_expression(st["value"])
                 if isinstance(node, ast.Dict) and all(isinstance(k, ast.Constant) for k in node.keys):
                     sections.append((ast.literal_eval(match["key"]),
                                      {str(k.value): ast.unparse(v) for k, v in zip(node.keys, node.values)},
@@ -568,7 +582,7 @@ def _arguments(args: list, kwargs: dict) -> dict:
     return out
 
 
-def _bind(member: dict, args: list, kwargs: dict) -> dict:
+def bind_arguments(member: dict, args: list, kwargs: dict) -> dict:
     """Arguments of a call, named by the parameters of the method it calls."""
     params = [p for p in member.get("params", []) if p["name"] not in ("self", "cls")]
     positional = [p for p in params if p["kind"] in ("positional_only", "positional_or_keyword")]
@@ -583,7 +597,7 @@ def _mapping(name: str, kwargs: dict, line: int) -> dict:
     """One entry of a v3 mappings dict: controls connected to elements, or modes."""
     controls, modes, options = {}, {}, {}
     for k, text in kwargs.items():
-        node = _parse(text)
+        node = parse_expression(text)
         value = _plain(node) if node is not None else text
         if isinstance(value, str) and isinstance(node, ast.Constant):
             controls[k] = value
@@ -608,4 +622,4 @@ def find_script(index: dict, name: str) -> str | None:
 
 
 def outline_package(index: dict, package_key: str) -> dict:
-    return _Outliner(index, package_key).outline()
+    return Outliner(index, package_key).outline()

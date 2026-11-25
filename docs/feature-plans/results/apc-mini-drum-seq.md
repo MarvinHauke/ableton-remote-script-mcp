@@ -67,7 +67,8 @@ back. Fixed in step 1 unless a STATUS item is named.
    MRO) or the mappings can't be read (local-only tests).
 3. **`element-name` gave up on `**NOTE` in `add_button_matrix(..., **NOTE)`** ("builds some names
    in a loop or by computation"), although the names were literal. Written out as
-   `msg_type=MIDI_NOTE_TYPE`, the names are checked. Open: a STATUS item for the validator.
+   `msg_type=MIDI_NOTE_TYPE`, the names are checked. Fixed 2026-11-25 (0001 Decision 57): the
+   Elements reader takes the arguments from the source.
 4. **The rig and the validator can't read MIDI numbers a script's own helper computes**
    (`grid_rows(4, 7)`: "can't be worked out without running the script"). Rows as `range(…)`
    lists are read. For the skill: write element numbers as literals or ranges. In the skill's
@@ -115,7 +116,8 @@ back. Fixed in step 1 unless a STATUS item is named.
 16. **`check_names` doesn't know an attribute `add_button_matrix` creates** (`self.scene_buttons`
    in `add_submatrix(self.scene_buttons, ...)`): "unknown attribute scene_buttons". The element
    attributes come from `_create_attribute_name` at run time; the validator's element reader
-   knows them. Open: a STATUS item.
+   knows them. Fixed 2026-11-25 (0001 Decision 57): `check_names` reads them from the
+   Elements reader.
 17. **The rig's controller model didn't read `add_submatrix`** ("built by add_submatrix, which
    the rig doesn't read"). Fixed in step 4: `Controller.submatrices` names the part of a matrix
    built before it; no new elements, the panel unchanged. A slice past the matrix stops at its

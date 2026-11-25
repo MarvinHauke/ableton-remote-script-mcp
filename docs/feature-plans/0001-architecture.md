@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -974,6 +974,56 @@ meant to do, and uses only API names that exist in the Live build they target.
          and `ableton.v2` script resolves against the stubs and a misspelled
          `SessionComponent.set_offsetz` is flagged (12.4.16, basedpyright standard); the page
          now names the three generations.
+
+57. **One Elements reader** (user, 2026-11-25, "yes", on the architect's four points from the
+    architecture review; 2026-11-25). Three modules read a v3 Elements class each in their own way:
+    `outline`'s scan, the validator's `element-name` rule (on outline's private helpers) and the
+    rig's controller model (outline plus its own `ast` pass for the MIDI numbers). `check_names`
+    has none, so it calls an element attribute unknown (results page, finding 16). Decided:
+    1. **A module of its own, `elements.py`:** `read_elements(outliner, sources)` gives one
+       record per `self.add_…(...)` call (`Built`: the name as written, the names the mappings
+       may use, kind, MIDI type, channel, number, a matrix's items and width, a submatrix's part,
+       and `why` for what it couldn't read), plus the name set, `computed`, and why there is none.
+    2. **Index and source together:** the calls and their framework signatures come from the
+       statement summaries; the arguments come from the script's source with its constants
+       filled in (the rig's `Constants`, moved over). Python compiles a call that also passes
+       `**k` with all its positional arguments in one tuple, so the summary lost the name; now
+       the validator checks it (finding 3). Without a source (Ableton's `.pyc`), the literal
+       names of the summary only.
+    3. **No contract change:** `outline`'s answer and its `elements` section stay as they are
+       (they also cover `_Framework` scripts); the answer core, the MCP tools and the exit codes
+       are unchanged.
+    4. **Scope:** the validator, the rig and `check_names` use the reader; findings 3 and 16 are
+       fixed with tests; outline's helpers that the validator uses are public (`Outliner`,
+       `parse_expression`, `callee_text`, `literal_str`, `bind_arguments`,
+       `Outliner.instance_attributes`). Finding 4 (numbers a script's own helper computes)
+       stays "unresolved, with the reason".
+    - **Built 2026-11-25** (architect, solo). Two ways in, one reading: `read_elements` finds the
+      calls as the validator did before (a call to the script's own override of a framework
+      `add_…`, `def add_encoder(self, *a, **k)`, is named by the framework's signature; it gives
+      its name, not its MIDI messages, with the reason), and `read_calls` reads `outline`'s
+      element entries for the rig, so `build_controller(outline, folder)` keeps its interface.
+      One rig change: the global channel is read only for an element that needs it, so an
+      unreadable `global_channel` no longer marks elements with their own `channel=` unresolved.
+      Constants the reader can't use (modules that import a name from each other, `**` of
+      something not a dict, `*` of something not a sequence) are unresolved with the reason,
+      never a crash in `validate` or `check_names` (from the review). `docs/answers.md`'s `own`
+      row says so. Checked against `main` on the four examples and the v3 scripts of the local
+      Live 12 decompile (12.4.16, 29 folders): the rig's controller model is the same for all;
+      `validate` is the same except the UC4, where 15 element names it skipped ("builds some
+      names in a loop") are now checked, 0 findings; `check_names` has no new unknown name and
+      7 fewer in Ableton's scripts, and names an Elements class builds count as `own`. 274 tests.
+    - **`answer_version` 2: `check_names` says what it couldn't read** (user, 2026-11-25, "fix the
+      two spec gaps", on the code review's spec axis; changes point 3). Off Live's Python, or
+      when no source compiles, the reader can't run, and when the Elements class builds names
+      from values known only at run time, it can't name them; either way `check_names` called
+      an element attribute unknown with no reason. Its folder answer now has `not_read` (a list of
+      reasons) then, the text output prints it, and `answer_version` is 2 (`docs/answers.md`).
+      The tests now also check that the names count as `own` (against the check without the
+      reader) and that a `**NOTE` call over several lines is found in the source. 277 tests.
+    - **The rig reads the global channel only where it is needed** (architect, 2026-11-25, from
+      the code review): an unreadable `global_channel` marks only the elements without their own
+      `channel=` unresolved, not every element. No check file or test changes.
 
 ## Open questions
 

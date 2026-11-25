@@ -40,9 +40,10 @@ import re
 import sys
 import warnings
 
+from .elements import read_elements
 from .extractor import read_code
 from .index_store import SCRIPTS_ROOT, add_module_facts, package_facts
-from .outline import _bind, _callee_text, _literal_str, _Outliner, _parse
+from .outline import Outliner, callee_text, literal_str, parse_expression
 
 LIVE_PYTHON = (3, 11)
 MODES_SECTION_OPTIONS = {"modes_component_type", "is_private", "default_behaviour",
@@ -60,7 +61,7 @@ def _finding(rule, file, line, message, fix, severity="error") -> dict:
 
 
 def _is_str(text: str) -> bool:
-    node = _parse(text)
+    node = parse_expression(text)
     return isinstance(node, ast.Constant) and isinstance(node.value, str)
 
 
@@ -71,8 +72,8 @@ def _close(name: str, names) -> str:
 
 def _dict_of(text: str) -> dict[str, str] | None:
     """`dict(a='x', b=...)` or `{'a': 'x'}` as {key: value text}; None for anything else."""
-    node = _parse(text)
-    if isinstance(node, ast.Call) and _callee_text(node.func) == "dict" and not node.args:
+    node = parse_expression(text)
+    if isinstance(node, ast.Call) and callee_text(node.func) == "dict" and not node.args:
         if any(k.arg is None for k in node.keywords):
             return None
         return {k.arg: ast.unparse(k.value) for k in node.keywords}
@@ -176,11 +177,10 @@ class _Checker:
         self.findings: list[dict] = []
         self.not_checked: list[dict] = []
         self.overlay = overlay_index(index, script, sources, codes, self.not_checked)
-        self.o = _Outliner(self.overlay, script)
+        self.o = Outliner(self.overlay, script)
         self.has_statements = any("statements" in m for c in index["classes"].values()
                                   if c["module"].startswith("ableton.v3.") for m in c["members"].values())
         self._elements: tuple | None = None
-        self._inst: dict[str, set[str]] = {}
 
     # --- helpers --------------------------------------------------------------------------
 
@@ -196,19 +196,6 @@ class _Checker:
 
     def short(self, key: str) -> str:
         return self.overlay["classes"][key]["name"] if key in self.overlay["classes"] else key
-
-    def instance_attributes(self, key: str) -> set[str]:
-        """Names a class's methods set on `self`, along its MRO (`self.x = ...`)."""
-        if key not in self._inst:
-            names: set[str] = set()
-            for k in self.o.resolver.mro(key) or []:
-                for m in self.overlay["classes"][k]["members"].values():
-                    for st in m.get("statements", []):
-                        target = st.get("store") or st.get("target") or ""
-                        if target.startswith("self.") and target[5:].isidentifier():
-                            names.add(target[5:])
-            self._inst[key] = names
-        return self._inst[key]
 
     # --- v3: Specification, component map, mappings, elements ---------------------------
 
@@ -325,7 +312,7 @@ class _Checker:
     def _component_map_complete(self, spec: str) -> bool:
         field = self.o.lineage(spec).members.get("component_map")
         if field and self.own(field["origin"]):
-            node = _parse(field.get("value") or "")
+            node = parse_expression(field.get("value") or "")
             if not (isinstance(node, ast.Dict) and all(isinstance(k, ast.Constant) for k in node.keys)):
                 self.skip("unknown-component", self.file_of(self.overlay["classes"][field["origin"]]["module"]),
                           field.get("line"), "component_map", "the Specification's component_map is not a dict literal")
@@ -343,7 +330,7 @@ class _Checker:
         return found.key if found.status == "class" else None
 
     def mode(self, mode: str, text: str, where, cmap, cmap_complete, modes_sections, sections, module) -> None:
-        node = _parse(text)
+        node = parse_expression(text)
         if isinstance(node, ast.Constant) and node.value is None:
             return
         spec = _dict_of(text)
@@ -352,7 +339,7 @@ class _Checker:
         for option in MODE_OPTIONS:
             spec.pop(option, None)
         if "modes" in spec:
-            parts = _parse(spec.pop("modes"))
+            parts = parse_expression(spec.pop("modes"))
             for part in parts.elts if isinstance(parts, (ast.List, ast.Tuple)) else []:
                 d = _dict_of(ast.unparse(part))
                 if d is not None:
@@ -363,7 +350,7 @@ class _Checker:
     def mode_part(self, mode, part, where, cmap, cmap_complete, modes_sections, sections, module) -> None:
         file, line, section = where
         text = part.pop("component", None)
-        name = _literal_str(text)
+        name = literal_str(text)
         if text is None:
             self.findings.append(_finding(
                 "unknown-component", file, line,
@@ -403,7 +390,7 @@ class _Checker:
         out = set()
         for st in m.get("statements", []):
             if st.get("call", "").endswith(".startswith") and st["args"]:
-                value = _literal_str(st["args"][0])
+                value = literal_str(st["args"][0])
                 if value:
                     out.add(value)
         return out
@@ -421,7 +408,7 @@ class _Checker:
                 self.skip("mapping-key", file, line, f"mappings['{section}'] ({label})",
                           f"{self.short(cls)} has a base the index does not have")
             else:
-                inst = self.instance_attributes(cls) | set(extra)
+                inst = self.o.instance_attributes(cls) | set(extra)
                 prefixes = self.getattr_prefixes(cls)
                 for k in keys:
                     if k in LAYER_OPTIONS or k.startswith("_") or k in members or f"set_{k}" in members or k in inst:
@@ -444,67 +431,15 @@ class _Checker:
                 self.element(k, v, where)
 
     def element_names(self) -> tuple[set[str] | None, bool, str]:
-        """(names, some names are computed, why there are none)."""
-        if self._elements is not None:
-            return self._elements
-        classes = [k for k in self.o.class_keys if self.o.role(k) == "elements"]
-        if not classes:
-            self._elements = (None, False, "the script has no Elements class (an ElementsBase subclass) to read")
-            return self._elements
-        names: set[str] = set()
-        originals: dict[str, str] = {}
-        computed = False
-        pending = []
-        for unit in self.o.units():
-            if unit["in_class"] not in classes:
-                continue
-            members = self.o.lineage(unit["in_class"]).members
-            for st in unit["statements"]:
-                call = st.get("call", "")
-                if not call.startswith("self.add_") or call.count(".") != 1:
-                    continue
-                method = call[len("self."):]
-                found = members.get(method)
-                chain = [found["origin"], *found["overrides"]] if found else []
-                origin = next((k for k in chain if self.o.is_framework(k)), None)
-                if origin is None:
-                    continue  # the script's own helper: the add_* calls inside it are read instead
-                framework_method = self.overlay["classes"][origin]["members"][method]
-                if not {"name", "base_name"} & {p["name"] for p in framework_method.get("params") or []}:
-                    continue
-                args = _bind(framework_method, st["args"], st["kwargs"])
-                name = _literal_str(args.get("name") or args.get("base_name"))
-                if method == "add_modified_control" and name is None and "name" not in args:
-                    pending.append(args)
-                    continue
-                if name is None:
-                    computed = True
-                    continue
-                attr = name.lower().replace(" ", "_")
-                names.add(attr)
-                originals[attr] = name
-                if "base_name" in args or "matrix" in method or method == "add_modified_control":
-                    names.add(f"{attr}_raw")
-                if method == "add_sysex_display_line":
-                    names.add(f"{attr}_command")
-        for args in pending:  # create_name_for_modified_control: <control>_with_<modifier without _button>
-            control = (args.get("control") or "").removeprefix("self.")
-            modifier = (args.get("modifier") or "").removeprefix("self.")
-            if control not in originals or modifier not in originals:
-                computed = True
-                continue
-            mod = originals[modifier][:-7] if originals[modifier].lower().endswith("button") else originals[modifier]
-            prep = "With" if any(c.isupper() for c in originals[control]) else "with"
-            attr = f"{originals[control]}_{prep}_{mod}".lower().replace(" ", "_")
-            names |= {attr, f"{attr}_raw"}
-        for cls in classes:
-            names |= self.instance_attributes(cls)
-        self._elements = (names, computed, "")
+        """(names, some names are computed, why there are none), from the Elements reader."""
+        if self._elements is None:
+            read = read_elements(self.o, self.sources)
+            self._elements = (read.names, read.computed, read.why)
         return self._elements
 
     def element(self, key: str, value_text: str, where) -> None:
         file, line, section = where
-        value = _literal_str(value_text)
+        value = literal_str(value_text)
         names, computed, why = self.element_names()
         match = _LIST_ACCESS.match(value)
         base = match[1] if match else value
@@ -580,7 +515,7 @@ class _Checker:
                 if built:
                     self.guard_finding(file, call.lineno, built)
                     continue
-                callee = _callee_text(call.func) or ""
+                callee = callee_text(call.func) or ""
                 if not callee.startswith("self.") or callee.count(".") != 1 or callee == "self.setup":
                     continue
                 r = self.o.resolve_callee(callee, cls["module"], key, {})
@@ -596,7 +531,7 @@ class _Checker:
                         break
 
     def builds(self, call: ast.Call, module: str, key: str) -> str | None:
-        callee = _callee_text(call.func)
+        callee = callee_text(call.func)
         r = self.o.resolve_callee(callee, module, key, {}) if callee else None
         if r is None:
             return None

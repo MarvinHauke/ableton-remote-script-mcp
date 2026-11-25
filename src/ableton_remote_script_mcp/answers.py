@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 
-ANSWER_VERSION = 1
+ANSWER_VERSION = 2
 DEFAULT_MAX_TOKENS = 4000
 CHARS_PER_TOKEN = 4
 _NOTE_TOKENS = 40  # room left for each `cut` entry

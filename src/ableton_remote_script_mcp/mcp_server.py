@@ -76,8 +76,10 @@ def make_server(index_dir: Path | None = None) -> MCPServer:
         (then every attribute and constructor keyword its code uses).
 
         A name is `Class`, `Class.member` or a bare `name`. Each comes back as observed in the
-        index, documented, or unknown (not_a_member: the class lacks it). Facts, not errors:
-        check a whole draft in one call.
+        index, documented, or unknown (not_a_member: the class lacks it). A folder answer's
+        `not_read` says what couldn't be read, so an unknown there may still be the script's own
+        (an element its Elements class builds). Facts, not errors: check a whole draft in one
+        call.
 
         Example: check_names(names=["ControlSurface.schedule_message", "Song.tracks",
         "SessionRingComponent.set_offsets"], build="12.4.16")

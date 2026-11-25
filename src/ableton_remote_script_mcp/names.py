@@ -10,7 +10,11 @@ Python's parser (never runs them) and puts every attribute name (`x.name`) and e
 argument of a framework constructor into one of these:
 
 - `own`: the script defines it (a def, a class, an assigned attribute, a `setattr` name, also one
-  built from a literal start such as `"set_" + key`; a parameter defines none)
+  built from a literal start such as `"set_" + key`; a parameter defines none), or its v3
+  Elements class builds it (`self.scene_buttons` from `add_button_matrix(…, "Scene_Buttons")`,
+  read by the Elements reader, `elements.py`; only on Live's Python, 3.11: elsewhere, and
+  when the script doesn't compile or builds some names from values read only at run time,
+  the answer's `not_read` says so)
 - `index`: a class, module or member name in the build's API index (observed)
 - `used`: not a member in the index, but Ableton's own scripts use it in a call
   (the statement summaries), which covers most `Live` object attributes (`song().tracks`)
@@ -47,6 +51,7 @@ import re
 import sys
 from pathlib import Path
 
+from .elements import element_names_of_folder
 from .resolve import Resolver, lineage
 
 # Not int, range or slice: they bring `start`, `stop`, `real`, names a script may invent on Live objects.
@@ -205,7 +210,8 @@ def check(folder: Path, index: dict, statements: dict | None, doc: dict | None =
         except (SyntaxError, UnicodeDecodeError) as e:
             broken.append({"file": str(path.relative_to(folder)), "error": str(e)})
     defined, used = known_names(index, statements)
-    own = own_names([t for _, t in trees])
+    elements, not_read = element_names_of_folder(folder, index)
+    own = own_names([t for _, t in trees]) | elements
     resolver = Resolver(index)
     documented = documented_names(doc)
     counts = {"own": 0, "python": 0, "index": 0, "used": 0, "documented": 0, "unknown": 0}
@@ -241,10 +247,13 @@ def check(folder: Path, index: dict, statements: dict | None, doc: dict | None =
                 kwargs_checked += 1
                 if kw.arg not in accepted:
                     kwargs_unknown.append({"file": rel, "line": node.lineno, "class": found.key, "keyword": kw.arg})
-    return {"live_build": index["live_build"], "folder": str(folder), "files": len(sources), "broken": broken,
-            "attribute_counts": counts, "unknown": unknown, "used_only": sorted(set(used_only)),
-            "kwargs_checked": kwargs_checked, "kwargs_unknown": kwargs_unknown,
-            "invented_candidates": len(unknown) + len(kwargs_unknown)}
+    answer = {"live_build": index["live_build"], "folder": str(folder), "files": len(sources), "broken": broken,
+              "attribute_counts": counts, "unknown": unknown, "used_only": sorted(set(used_only)),
+              "kwargs_checked": kwargs_checked, "kwargs_unknown": kwargs_unknown,
+              "invented_candidates": len(unknown) + len(kwargs_unknown)}
+    if not_read:  # what the check couldn't read, so an `unknown` may be one of those names
+        answer["not_read"] = [not_read]
+    return answer
 
 
 
