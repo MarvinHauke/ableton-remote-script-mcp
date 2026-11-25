@@ -380,6 +380,7 @@ _Last updated: 2026-11-20 (0003 step 6 built, Decision 37: the skill's step sequ
   decorators, type check clean. `uv run pytest` 263 passed. Tool findings: all filed (finding
   20 new, with finding 5's item); 4 and 12 are in the skill now. Next: 0003 step 7 (the
   sequencer eval case and the MCP round; the user's go for its cost).
+  Merged into `main` in both repos 2026-11-25 (user); `APC_mini_mk1_Plus` at `44f2b40`.
 
 ## After grilling
 
