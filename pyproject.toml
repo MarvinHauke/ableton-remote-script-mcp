@@ -21,6 +21,7 @@ ableton-remote-script-mcp = "ableton_remote_script_mcp.cli:main"
 dev = [
     "pytest>=8",
     "pyyaml>=6",
+    "ruff==0.17.5",
     "zensical==0.1.1",
 ]
 
@@ -34,3 +35,8 @@ packages = ["src/ableton_remote_script_mcp"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["local_live: needs an installed Ableton Live build; skipped when it is absent"]
+
+[tool.ruff]
+# The fake scripts, the example script and the eval cases' broken scripts copy the style of
+# Ableton's scripts (or are wrong on purpose); the gate is our own code.
+extend-exclude = ["tests/fixtures", "examples", "skills/*/evals/*/files"]

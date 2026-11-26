@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); one exit-code table built 2026-11-26 (Decision 61); the cut cuts declared collections only, built 2026-11-26 (Decision 62); the default build, the newest release or a setting, built 2026-11-26 (Decision 63); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); one exit-code table built 2026-11-26 (Decision 61); the cut cuts declared collections only, built 2026-11-26 (Decision 62); the default build, the newest release or a setting, built 2026-11-26 (Decision 63); a guardrail, CI and a pre-commit hook, built 2026-11-26 (Decision 64); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -1146,6 +1146,23 @@ meant to do, and uses only API names that exist in the Live build they target.
       `default-build`; `list_builds`' `default`, `default_from`, `beta` and `default_problem`.
       Here the default is 12.4.16 now, no longer 13.0b25. `tests/test_default_build.py`.
       After the review: 304 tests.
+64. **A guardrail runs the checks** (user, 2026-11-26, the retro of Decisions 57–63: of the
+    reviewer's 13 must-fix items, two were a cut declared on a record, and ruff's noise hid a
+    bug). Before this, only `docs.yml` ran in CI and nothing ran before a commit. Now:
+    1. **CI:** `.github/workflows/tests.yml` runs `uv run ruff check` and `uv run pytest -q` on
+       every push to `main` and every pull request.
+    2. **Before a commit:** `scripts/hooks/pre-commit` runs ruff, `gen_cli_reference.py --check`
+       and the tests over the working tree; a clone turns it on with
+       `git config core.hooksPath scripts/hooks` (`CLAUDE.md`).
+    3. **Ruff is a gate:** pinned in the dev group (`ruff==0.17.5`), its default rules, with
+       `tests/fixtures`, `examples` and the eval cases' script files excluded (they copy
+       Ableton's style or are wrong on purpose). The four errors left in our code are fixed.
+    4. **The cut's declarations are tested:** `tests/test_cut_paths.py` walks every declared
+       path over the hand index's answers; a path that reaches a record (not a list or a
+       member map) fails. The paths the hand index can't reach are listed in the test.
+    5. A page check for real index output was weighed and left to the reviewer: the pages name
+       12.4.16 in commands on purpose, so a check by build number would mostly raise false alarms.
+    - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`. 312 tests.
 
 ## Open questions
 

@@ -42,9 +42,9 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .abletonmcp import TESTED
 from .controller import Controller, Element
 from .ports import describe, parse_message, wait_quiet
-from .abletonmcp import TESTED
 from .state import (
     StateError,
     check_events,

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# The local guardrail before each commit (plan 0001 Decision 64): the same checks CI runs in
+# .github/workflows/tests.yml, plus the CLI reference. It checks the working tree, not only the
+# staged files. Turn it on once per clone: git config core.hooksPath scripts/hooks
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+uv run ruff check --quiet
+uv run python scripts/gen_cli_reference.py --check
+uv run pytest -q -p no:cacheprovider
