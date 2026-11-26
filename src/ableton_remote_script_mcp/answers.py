@@ -19,7 +19,7 @@ import re
 
 from .live_install import is_beta
 
-ANSWER_VERSION = 3
+ANSWER_VERSION = 4
 DEFAULT_MAX_TOKENS = 4000
 CHARS_PER_TOKEN = 4
 _NOTE_TOKENS = 40  # room left for each `cut` entry

@@ -326,7 +326,7 @@ def check_list(names: list[str], index: dict, statements: dict | None, doc: dict
     for r in results:
         counts[r["known"]] = counts.get(r["known"], 0) + 1
     return {"live_build": index["live_build"], "names": results, "counts": counts,
-            "unknown": sum(r["known"] in ("unknown", "not_a_member") for r in results)}
+            "unknown": [r["name"] for r in results if r["known"] in ("unknown", "not_a_member")]}
 
 
 def _documented_member(doc: dict, cls: dict, member: str) -> bool:

@@ -81,7 +81,8 @@ def test_check_names_of_a_list(index_dir, capsys):
     assert by["SessionRingComponent.frobnicate"]["known"] == "not_a_member"
     assert by["Song.tempo"]["proxy_of"] == "Live.Song.Song"
     assert by["set_pads"]["known"] == "index" and by["set_pads"]["in"][0].startswith("ableton.v3")
-    assert by["frobnicate"]["known"] == "unknown" and answer["unknown"] == 2
+    assert by["frobnicate"]["known"] == "unknown"
+    assert answer["unknown"] == ["SessionRingComponent.frobnicate", "frobnicate"]  # a list, as for a folder
     assert main(["--index-dir", str(index_dir), "check-names", "--build", OLD, "--names", "Song.tempo"]) == 0
     assert "the Push 3 helper's model of Live.Song.Song" in capsys.readouterr().out
     assert main(["--index-dir", str(index_dir), "check-names", "--build", OLD, "--names", "frobnicate"]) == 1

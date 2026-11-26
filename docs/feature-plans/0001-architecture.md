@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); one exit-code table built 2026-11-26 (Decision 61); the cut cuts declared collections only, built 2026-11-26 (Decision 62); the default build, the newest release or a setting, built 2026-11-26 (Decision 63); a guardrail, CI and a pre-commit hook, built 2026-11-26 (Decision 64); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); one exit-code table built 2026-11-26 (Decision 61); the cut cuts declared collections only, built 2026-11-26 (Decision 62); the default build, the newest release or a setting, built 2026-11-26 (Decision 63); a guardrail, CI and a pre-commit hook, built 2026-11-26 (Decision 64); `unknown` a list in both `check_names` answers, `answer_version` 4, built 2026-11-27 (Decision 65); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -1176,6 +1176,12 @@ meant to do, and uses only API names that exist in the Live build they target.
     5. A page check for real index output was weighed and left to the reviewer: the pages name
        12.4.16 in commands on purpose, so a check by build number would mostly raise false alarms.
     - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`. 312 tests.
+65. **`unknown` is a list in both `check_names` answers** (user, 2026-11-27, "do the recommended
+    change"; found by `tests/test_cut_paths.py`, Decision 64; contract: `answer_version` 4). A
+    folder answer's `unknown` listed the unknown attributes, a list answer's was their count.
+    Now a list answer's `unknown` lists the names that are `unknown` or `not_a_member`; `counts`
+    keeps counting each kind.
+    - **Built 2026-11-27** (architect, solo) on `feat/answer-v3`. 316 tests.
 
 ## Open questions
 

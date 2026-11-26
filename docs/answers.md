@@ -17,7 +17,7 @@ Each answer is a JSON object with:
     compile, a stubs folder with other files in it);
   - `index_missing` (with the command that builds the index);
   - `not_imported`: `check-structure-void` before Structure Void's framework pages are imported.
-- `answer_version`: the version of the answer's shape, now **3**.
+- `answer_version`: the version of the answer's shape, now **4**.
 - `live_build`: the build the facts come from. Without a build named, it is the default
   build: the one set with `default-build` (stored in the index folder, so never in a repo),
   else the newest indexed release, else, when only betas are indexed, the newest beta. A
@@ -116,7 +116,9 @@ before a nested one, then the framework's newest generation (a model of a `Live`
 with it), then the class its package re-exports before another of that name. A member found
 on a model of a `Live` class (the Push 3 helper's `live_model`) is marked `proxy_of`.
 
-The exit code is 1 when a name is unknown.
+`unknown` lists the names that aren't known (`unknown` or `not_a_member`), as a folder answer's
+`unknown` lists its unknown attributes; `counts` counts each kind. The exit code is 1 when a
+name is unknown.
 
 ## The Python API
 
@@ -182,3 +184,5 @@ A change to an answer's shape raises `answer_version`, and gets a line here.
   The default build (Decision 63) is the setting or the newest release; `beta` marks a beta
   answer; `list_builds` marks `default` (with `default_from`) and each `beta`, and says in
   `default_problem` when the setting names a build with no index.
+- **4** (2026-11-27, plan 0001 Decision 65): `check_names` of a list gives `unknown` as the list
+  of unknown names, as a folder answer does; it was their count.
