@@ -1103,6 +1103,12 @@ meant to do, and uses only API names that exist in the Live build they target.
        codes (3 no stubs, 4 no checker, 5 the checker failed), all in the table's range.
     5. The rig's codes stay as they are (`rig probe --send` stays 4).
     - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`. 292 tests.
+    - **Code review 2026-11-27** (architect, the user's "yes do the fixes"): `outline` of a path
+      that isn't there answers `folder_missing` (it fell through to the search by name,
+      `not_found`); the Python API's `search` refuses an unknown kind, not only the MCP tool;
+      `rig panel` exits 3 without PyYAML, as `rig run` does; `log`, `list builds` and
+      `default-build` take their codes from `STATUS_EXIT`. A folder outline under another
+      Python than Live's stays `refused` (exit 2): the tool won't compile it there.
 62. **The cut cuts declared collections only** (user, 2026-11-26, grilling rounds 3 and 5;
     findings 1, 8; contract: `answer_version` 3). `bounded` cut the largest list or map anywhere
     in an answer, a record's own fields too (finding 8: a class's `bases`). Now:
@@ -1122,6 +1128,10 @@ meant to do, and uses only API names that exist in the Live build they target.
       it (review). On the local index, a short-name lookup keeps the first class and names the
       others, and a long `search` names 50 dropped results and counts the rest.
       `tests/test_cut.py`.
+    - **Code review 2026-11-27** (architect): point 1 also covers what was built: `get_class`
+      declares its `documented` lists (Structure Void's records), and `list_builds` its `builds`
+      and `installed_not_indexed`. `tests/test_cut_paths.py` (Decision 64) checks every
+      declaration.
 63. **The default build is the newest release, or a setting** (user, 2026-11-26, grilling
     rounds 4 and 5; finding 11; contracts: `answer_version` 3 and the tools' defaults). Without
     `build`, the tools used the newest indexed build, here the Live 13 beta. Now:
@@ -1146,6 +1156,9 @@ meant to do, and uses only API names that exist in the Live build they target.
       `default-build`; `list_builds`' `default`, `default_from`, `beta` and `default_problem`.
       Here the default is 12.4.16 now, no longer 13.0b25. `tests/test_default_build.py`.
       After the review: 304 tests.
+    - **Code review 2026-11-27** (architect): the message for a setting without an index is one
+      function, `query.default_without_index`, for `_open`, `list_builds` and `default-build`; the
+      `--build` help is one constant, `cli.BUILD_HELP`.
 64. **A guardrail runs the checks** (user, 2026-11-26, the retro of Decisions 57–63: of the
     reviewer's 13 must-fix items, two were a cut declared on a record, and ruff's noise hid a
     bug). Before this, only `docs.yml` ran in CI and nothing ran before a commit. Now:

@@ -145,7 +145,8 @@ overrides it.
 
 **Answer**:
 What a lookup returns, the same through the CLI's `--json`, the Python API and the MCP tools:
-a `status` (`ok`, `not_found` for no match, `folder_missing`, `refused`, `index_missing`), an
+a `status` (`ok`, `not_found` for no match, `folder_missing` for no folder or file at a path,
+`refused`, `index_missing`, `not_imported`), an
 `answer_version`, the build and the facts.
 
 **Cut**:

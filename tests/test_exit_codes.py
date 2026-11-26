@@ -69,3 +69,39 @@ def test_a_missing_log_file_is_folder_missing(tmp_path, capsys):
 
     assert read_log(tmp_path / "Log.txt")["status"] == "folder_missing"
     assert main(["log", "--log", str(tmp_path / "Log.txt"), "--json"]) == 2
+
+
+def test_outline_of_a_missing_path_is_folder_missing(index_dir, tmp_path):
+    """Review: a path that isn't there fell through to the search by name (`not_found`, exit 1)."""
+    from ableton_remote_script_mcp import api
+
+    answer = api.outline(str(tmp_path / "no_such_dir"), OLD, index_dir=index_dir)
+    assert answer["status"] == "folder_missing" and "no script folder" in answer["message"]
+    assert main(["--index-dir", index_dir, "outline", "./no_such_dir", "--build", OLD]) == 2
+    assert main(["--index-dir", index_dir, "outline", "No_Such_Script", "--build", OLD]) == 1  # a name: no match
+
+
+def test_an_unknown_search_kind_is_refused_in_the_api(index_dir):
+    from ableton_remote_script_mcp import api
+
+    answer = api.search("Component", OLD, kind="bogus", index_dir=index_dir)
+    assert answer["status"] == "refused" and "kind must be one of" in answer["message"]
+
+
+def test_the_rig_exits_3_without_pyyaml(index_dir, monkeypatch, tmp_path):
+    """The rig extra is missing: 3 for `rig panel` too, as for `rig run` (Decision 61, the table)."""
+    from ableton_remote_script_mcp.rig import session
+
+    def no_yaml(*a, **k):
+        raise ImportError("PyYAML is missing: uv sync --extra rig")
+    monkeypatch.setattr(session, "prepare", no_yaml)
+    assert main(["--index-dir", index_dir, "rig", "panel", str(tmp_path), "--build", OLD]) == 3
+
+
+def test_a_default_setting_without_an_index_exits_3(index_dir, capsys):
+    from ableton_remote_script_mcp.index_store import write_default_setting
+
+    write_default_setting(Path(index_dir), "9.9.9")
+    assert main(["--index-dir", index_dir, "default-build"]) == 3
+    assert "9.9.9, which has no index" in capsys.readouterr().out
+    assert main(["--index-dir", index_dir, "list", "builds"]) == 0  # the builds are there; it names the problem

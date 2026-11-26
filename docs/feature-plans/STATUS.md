@@ -406,10 +406,12 @@ _Last updated: 2026-11-26 (0001 Decision 64 built on `feat/answer-v3`: CI tests,
        304 tests), not merged yet.
      After these: a code review of `refactor/class-ranking` and `feat/answer-v3` (user,
      2026-11-25), then point 3. Before the review, the retro's guardrail (user, 2026-11-26):
-     built as 0001 Decision 64 on `feat/answer-v3` (312 tests). Next: the mattpocock
-     `code-review` of `main..feat/answer-v3`, its fixes, then `retro` (`skills-workflow.md`
-     step 6). For that review: in `check_names` the field `unknown` is a list for a folder and
-     a count for `names=[…]` (found by `test_cut_paths.py`; the cut skips the count).
+     built as 0001 Decision 64 on `feat/answer-v3` (312 tests). The mattpocock `code-review`
+     of `main..feat/answer-v3` ran 2026-11-27; its fixes are in (dated lines under Decisions
+     61–63; 316 tests). Next: `retro`, then the merge when the user asks. Open from the review
+     (user's decision): in `check_names` the field `unknown` is a list for a folder and a count
+     for `names=[…]` (found by `test_cut_paths.py`; the cut skips the count). Left as Small
+     items: the review's smaller smells.
   3. Reopen plan 0001 Decision 23, the runtime probe of the `Live` module (user's ChatGPT
      chat, 2026-11-25, on Structure Void's `dump_runtime_api.py`). Decision 23's condition
      ("when Claude gets LOM calls wrong") has shown twice: a float into an int property and a
@@ -435,6 +437,10 @@ _Last updated: 2026-11-26 (0001 Decision 64 built on `feat/answer-v3`: CI tests,
 
 ## Small items
 
+- [later] Smells from the code review of `feat/answer-v3` (2026-11-27), none blocking:
+  `ElementCall.role` as strings (`"element" | "matrix" | "submatrix"`, a `Literal` would name
+  them); `names.check_list` takes `find`, a closure over its own `resolver`;
+  `validator.element_names_of_folder` sits there only to break an import cycle.
 - [idea, rig] (user, 2026-11-25, grilling round 1): more rigs, e.g. one for the UC4 editor's
   layout. The default rig stays as it is: an 8x8 matrix, a few encoders, pots and extra buttons
   for testing. Later, its layout could follow where a controller's buttons usually are; for

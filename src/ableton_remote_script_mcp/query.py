@@ -68,6 +68,13 @@ def _load(index_dir: Path, live_build: str, with_statements: bool = False) -> tu
     return index, statements
 
 
+def default_without_index(index_dir: Path, live_build: str) -> str:
+    """The one message for a default-build setting that names a build with no index (Decision 63)."""
+    return (f"the default build set in {Path(index_dir) / SETTINGS_FILE} is {live_build}, which has no index, "
+            "so the tools refuse to answer without a build: name another with `default-build <build>`, "
+            "or remove the setting with `default-build --clear`")
+
+
 def _open(index_dir: Path, live_build: str | None,
           with_statements: bool = False) -> tuple[dict | None, dict | None]:
     """(index, None) or (None, an index_missing answer)."""
@@ -77,9 +84,7 @@ def _open(index_dir: Path, live_build: str | None,
         if live_build is None:
             return None, _index_missing(index_dir, None)
         if source == "setting" and live_build not in builds:
-            return None, _index_missing(index_dir, live_build, (
-                f"the default build set in {Path(index_dir) / SETTINGS_FILE} is {live_build}, which has no index; "
-                "name another with `default-build <build>`, or remove the setting with `default-build --clear`"))
+            return None, _index_missing(index_dir, live_build, default_without_index(index_dir, live_build))
     elif live_build not in builds:
         return None, _index_missing(index_dir, live_build)
     try:
@@ -294,6 +299,8 @@ def search(query: str, index_dir: Path, live_build: str | None = None, kind: str
     `kind` narrows to one of SEARCH_KINDS ("member" = any class member). `offset` skips that
     many results: the answer's `next_offset` is the next page, when there is one.
     """
+    if kind is not None and kind not in SEARCH_KINDS:
+        return {"status": "refused", "message": f"kind must be one of {', '.join(SEARCH_KINDS)}"}
     index, missing = _open(index_dir, live_build)
     if missing:
         return missing
@@ -387,14 +394,18 @@ def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> d
         return answer
     answer = {"status": "ok", "builds": builds, "installed_not_indexed": not_indexed}
     if source == "setting" and chosen not in indexed:
-        answer["default_problem"] = (f"the default build set in {Path(index_dir) / SETTINGS_FILE} is {chosen}, "
-                                     "which has no index: the tools refuse to answer without a build")
+        answer["default_problem"] = default_without_index(index_dir, chosen)
     return answer
 
 
 def is_script_folder(name: str) -> bool:
     """`outline`'s argument names a folder on disk (a path), not a script in Live's install."""
-    return ("/" in name or name.startswith(".")) and Path(name).expanduser().is_dir()
+    return _is_path(name) and Path(name).expanduser().is_dir()
+
+
+def _is_path(name: str) -> bool:
+    """A path (`./my_script`, `examples/X`, `~/x`), never a script's name: those have no `/`."""
+    return "/" in name or name.startswith((".", "~"))
 
 
 def outline_folder(folder: Path, index: dict) -> tuple[dict | None, str]:
@@ -457,6 +468,9 @@ def outline_script(name: str, index_dir: Path, live_build: str | None = None) ->
         if answer is None:
             return {"status": "refused", "live_build": live_build, "message": why}
         return {"status": "ok", "live_build": live_build, "confidence": "observed", **answer}
+    if _is_path(name):
+        return {"status": "folder_missing", "live_build": live_build,
+                "message": f"no script folder at {Path(name).expanduser()}"}
     key = find_script(index, name)
     if key is None:
         return _not_found(live_build, f"Remote Script {name!r}")

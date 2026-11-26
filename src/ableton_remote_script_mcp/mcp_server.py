@@ -18,7 +18,6 @@ from mcp.server.mcpserver import MCPServer
 from mcp_types import CallToolResult, TextContent, ToolAnnotations
 
 from . import api
-from .query import SEARCH_KINDS
 
 INSTRUCTIONS = """\
 Facts about the API of Ableton Live's MIDI Remote Script framework (ableton.v3, ableton.v2,
@@ -55,8 +54,6 @@ def make_server(index_dir: Path | None = None) -> MCPServer:
         Example: search_api(query="session ring", kind="class") gives
         ableton.v3.control_surface.components.session_ring.SessionRingComponent first.
         """
-        if kind is not None and kind not in SEARCH_KINDS:
-            return _result({"status": "refused", "message": f"kind must be one of {', '.join(SEARCH_KINDS)}"})
         return _result(api.search(query, build, kind=kind, limit=limit, offset=offset, full=full, **where))
 
     @server.tool(annotations=READ_ONLY)

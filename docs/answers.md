@@ -15,7 +15,8 @@ Each answer is a JSON object with:
   - `folder_missing`: no script folder, project folder or log file at that path;
   - `refused`: an input the tool won't use (an unknown section or kind, a folder it can't
     compile, a stubs folder with other files in it);
-  - `index_missing` (with the command that builds the index).
+  - `index_missing` (with the command that builds the index);
+  - `not_imported`: `check-structure-void` before Structure Void's framework pages are imported.
 - `answer_version`: the version of the answer's shape, now **3**.
 - `live_build`: the build the facts come from. Without a build named, it is the default
   build: the one set with `default-build` (stored in the index folder, so never in a repo),
@@ -68,7 +69,9 @@ The text output prints the same note as its last line.
 
 The CLI's exit code follows the answer's `status`: `ok` exits 0, or 1 when the answer has
 something to act on (findings, unknown names, tracebacks); `not_found` exits 1; `folder_missing`
-and `refused` exit 2; `index_missing` exits 3. A crash exits 5, never 1, so a script can tell a
+and `refused` exit 2; `index_missing` and `not_imported` exit 3, as does a missing extra (the
+rig without PyYAML). Exit 4 is for a file or value that can't be read: a check file, a device
+profile, a `--send` value. A crash exits 5, never 1, so a script can tell a
 bug from findings. The whole table is in the [CLI reference](reference/cli.md#exit-codes), and
 the skill's scripts name the same codes.
 

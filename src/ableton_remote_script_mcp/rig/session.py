@@ -2,7 +2,8 @@
 controller model, its device profile, and a check that every element name the profile (and a
 check file) uses is one the script has.
 
-A step that fails raises `SessionError` with the reason; both commands exit 4 on it.
+A step that fails raises `SessionError` with the reason; both commands exit 4 on it. A missing
+PyYAML (the rig extra) raises `ImportError`; both exit 3 on it (plan 0001 Decision 61).
 """
 
 from __future__ import annotations
@@ -35,14 +36,14 @@ def prepare(folder: Path, index_dir: Path, build: str | None, *, profile: Path |
             beside: Path | None = None, names: Callable[[Controller], list[str]] | None = None) -> Session:
     """The controller model of the script in `folder` and its profile: the file `profile`, else
     the `device.yaml` beside `beside` (default: the script folder), if any. `names(controller)`
-    gives more problems with element names (a check file's). A missing PyYAML is a
-    `SessionError` too; a caller that exits 3 for a missing rig extra checks that first."""
+    gives more problems with element names (a check file's). A missing PyYAML raises
+    `ImportError`."""
     controller, why = controller_for_folder(Path(folder), Path(index_dir), build)
     if controller is None:
         raise SessionError(why)
     try:
         loaded = load_profile(Path(profile)) if profile else profile_beside(Path(beside or folder))
-    except (ProfileError, ImportError) as e:
+    except ProfileError as e:
         raise SessionError(str(e)) from e
     problems = (names(controller) if names else []) + (check_profile_names(loaded, controller) if loaded else [])
     if problems:

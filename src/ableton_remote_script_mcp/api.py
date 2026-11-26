@@ -20,7 +20,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from . import query
-from .answers import DEFAULT_MAX_TOKENS, DROPPED_HINT, FULL_HINT, bounded, tokens
+from .answers import DEFAULT_MAX_TOKENS, FULL_HINT, bounded, cut_how, tokens
 from .index_store import default_index_dir
 
 __all__ = ["OUTLINE_SECTIONS", "check_names", "diff", "list_builds", "lookup", "outline", "search", "validate"]
@@ -34,9 +34,9 @@ _MEMBERS = {"all_members": None, "members": None, "documented": None}
 LOOKUP_CUTS = {"classes": "qualified_name", "documented": "qualified_name",
                **{f"classes[].{k}": v for k, v in _MEMBERS.items()}}
 SEARCH_CUTS = {"results": "qualified_name"}
-_RECORD_SECTIONS = {"specification": "fields", "mappings": "mappings"}  # a record: cut the list inside it
-OUTLINE_CUTS = {**dict.fromkeys(s for s in OUTLINE_SECTIONS if s not in _RECORD_SECTIONS),
-                **{f"{s}.{inner}": None for s, inner in _RECORD_SECTIONS.items()}, "classes[].members": None}
+_SECTION_INNER_LIST = {"specification": "fields", "mappings": "mappings"}  # a record: cut the list inside it
+OUTLINE_CUTS = {**dict.fromkeys(s for s in OUTLINE_SECTIONS if s not in _SECTION_INNER_LIST),
+                **{f"{s}.{inner}": None for s, inner in _SECTION_INNER_LIST.items()}, "classes[].members": None}
 VALIDATE_CUTS = {"findings": None, "not_checked": None}
 CHECK_NAMES_CUTS = {"names": "name", "names[].classes": None, "unknown": None, "used_only": None,
                     "kwargs_unknown": None, "broken": None, "not_read": None}
@@ -81,8 +81,8 @@ def search(text: str, build: str | None = None, *, kind: str | None = None, limi
     if cut and any(f["field"] == "results" for f in cut["fields"]):
         kept = next(f["kept"] for f in cut["fields"] if f["field"] == "results")
         answer["next_offset"] = answer["offset"] + kept
-        dropped = f"; {DROPPED_HINT}" if any("dropped" in f for f in cut["fields"]) else ""
-        cut["how"] = f"offset={answer['next_offset']} gives the next results (CLI: --offset); {FULL_HINT}{dropped}"
+        cut["how"] = cut_how(cut["fields"], f"offset={answer['next_offset']} gives the next results "
+                             f"(CLI: --offset); {FULL_HINT}")
     return answer
 
 

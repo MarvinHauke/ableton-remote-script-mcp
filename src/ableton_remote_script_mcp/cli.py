@@ -24,7 +24,7 @@ from .index_store import (
 from .install import default_user_library, install_script
 from .live_install import default_install, find_installs, is_beta, read_install
 from .live_log import find_log, read_log
-from .query import SEARCH_KINDS, validate_script
+from .query import SEARCH_KINDS, default_without_index, validate_script
 from .structure_void import LICENCE, import_pages
 
 EXIT_CODES = {
@@ -40,6 +40,11 @@ CLI reference; the skill's scripts name the same codes."""
 
 STATUS_EXIT = {"ok": 0, "not_found": 1, "folder_missing": 2, "refused": 2, "index_missing": 3, "not_imported": 3}
 """The exit code of each answer `status`."""
+
+
+DEFAULT_BUILD = "(default: the default build, see `default-build`)"
+BUILD_HELP = f"Live build, e.g. 12.4.16 {DEFAULT_BUILD}"
+"""The `--build` help of every command that reads an index (plan 0001 Decision 63)."""
 
 
 def _live(live_build: str) -> str:
@@ -704,9 +709,9 @@ def _cmd_log(args: argparse.Namespace) -> int:
     path = Path(args.log) if args.log else find_log(args.build)
     if path is None:
         where = f"Live {args.build}" if args.build else "any Live build"
-        message = f"no Log.txt found for {where}; pass --log <path to Log.txt>"
-        print(json.dumps({"status": "folder_missing", "message": message}) if args.json else message)
-        return 2
+        answer = {"status": "folder_missing", "message": f"no Log.txt found for {where}; pass --log <path to Log.txt>"}
+        print(json.dumps(answer) if args.json else answer["message"])
+        return _exit(answer)
     answer = read_log(path, args.script)
     if args.json:
         print(json.dumps(answer, indent=1, ensure_ascii=False))
@@ -714,16 +719,14 @@ def _cmd_log(args: argparse.Namespace) -> int:
         print(format_log(answer))
     else:
         print(answer["message"])
-    if answer["status"] != "ok":
-        return 2
-    return 1 if answer["tracebacks"] or answer["framework_only"] else 0
+    return _exit(answer, answer["status"] == "ok" and (answer["tracebacks"] or answer["framework_only"]))
 
 
 def _cmd_list_builds(args: argparse.Namespace) -> int:
     answer = api.list_builds(full=args.full, index_dir=args.index_dir, installs=find_installs())
     if args.json:
         print(json.dumps(answer, indent=1))
-        return 0 if answer["status"] == "ok" else 3
+        return _exit(answer)
     if answer["status"] == "ok":
         for b in answer["builds"]:
             if b["usable"]:
@@ -742,7 +745,7 @@ def _cmd_list_builds(args: argparse.Namespace) -> int:
         print(answer["message"])
     for i in answer["installed_not_indexed"]:
         print(f"installed, not indexed: {_live(i['live_build'])}  (build-index --app \"{i['app']}\")")
-    return 0 if answer["status"] == "ok" else 3
+    return _exit(answer)
 
 
 def _cmd_default_build(args: argparse.Namespace) -> int:
@@ -756,18 +759,19 @@ def _cmd_default_build(args: argparse.Namespace) -> int:
         if args.build and args.build not in indexed_builds(index_dir):
             print(f"no API index for Live {args.build} in {index_dir}: build it first, or pick one of "
                   + (", ".join(indexed_builds(index_dir)) or "(none indexed)"))
-            return 3
+            return STATUS_EXIT["index_missing"]
         path = write_default_setting(index_dir, None if args.clear else args.build)
         print(f"removed the default build from {path}" if args.clear else f"the default build is {_live(args.build)} ({path})")
         return 0
     chosen, source = default_build(index_dir)
     if chosen is None:
         print(f"no build indexed in {index_dir}")
-        return 3
-    missing = source == "setting" and chosen not in indexed_builds(index_dir)
-    print(f"the default build is {_live(chosen)} ({source})" + (": it has no index, so the tools refuse; "
-          "set another or --clear" if missing else ""))
-    return 3 if missing else 0
+        return STATUS_EXIT["index_missing"]
+    if source == "setting" and chosen not in indexed_builds(index_dir):
+        print(default_without_index(index_dir, chosen))
+        return STATUS_EXIT["index_missing"]
+    print(f"the default build is {_live(chosen)} ({source})")
+    return 0
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -809,7 +813,7 @@ def make_parser() -> argparse.ArgumentParser:
 
     cs = sub.add_parser("check-structure-void", help="compare Structure Void's framework pages with a build's index: "
                         "classes, members, arguments and bases that differ")
-    cs.add_argument("--build", help="Live build, e.g. 12.4.16 (default: the default build, see `default-build`)")
+    cs.add_argument("--build", help=BUILD_HELP)
     cs.add_argument("--under", help="only this package or module and what is in it, e.g. ableton.v3")
     cs.add_argument("--json", action="store_true", help="print the answer as JSON")
     cs.set_defaults(func=_cmd_check_structure_void)
@@ -818,7 +822,7 @@ def make_parser() -> argparse.ArgumentParser:
     lk_sub = lk.add_subparsers(dest="kind", required=True)
     lc = lk_sub.add_parser("class", help="a class by short, qualified or re-exported name, with inherited members")
     lc.add_argument("name", help="the class: short (Component), qualified or re-exported name")
-    lc.add_argument("--build", help="Live build, e.g. 12.4.16 (default: the default build, see `default-build`)")
+    lc.add_argument("--build", help=BUILD_HELP)
     lc.add_argument("--own", action="store_true", help="only the class's own members, not inherited ones")
     lc.add_argument("--member", action="append", metavar="NAME",
                     help="only this member (repeatable): whether the class has it, own or inherited")
@@ -832,7 +836,7 @@ def make_parser() -> argparse.ArgumentParser:
     se.add_argument("--limit", type=int, default=20, help="how many results to show (default: %(default)s)")
     se.add_argument("--offset", type=int, default=0, help="skip this many results: the next page")
     se.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
-    se.add_argument("--build", help="Live build, e.g. 12.4.16 (default: the default build, see `default-build`)")
+    se.add_argument("--build", help=BUILD_HELP)
     se.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     se.set_defaults(func=_cmd_search)
 
@@ -849,7 +853,7 @@ def make_parser() -> argparse.ArgumentParser:
 
     ol = sub.add_parser("outline", help="a Remote Script's classes, Specification, component map, mappings and elements")
     ol.add_argument("script", help="the Remote Script's folder name, e.g. APC_mini_mk2")
-    ol.add_argument("--build", help="Live build, e.g. 12.4.16 (default: the default build, see `default-build`)")
+    ol.add_argument("--build", help=BUILD_HELP)
     ol.add_argument("--all-components", action="store_true",
                     help="list every name in the v3 component map, not only those the mappings use")
     ol.add_argument("--section", choices=api.OUTLINE_SECTIONS, help="only this section of the outline")
@@ -860,7 +864,7 @@ def make_parser() -> argparse.ArgumentParser:
 
     va = sub.add_parser("validate", help="check a Remote Script folder against a Live build's API index")
     va.add_argument("folder", help="the Remote Script's folder (its __init__.py defines create_instance)")
-    va.add_argument("--build", help="Live build, e.g. 12.4.16 (default: the default build, see `default-build`)")
+    va.add_argument("--build", help=BUILD_HELP)
     va.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     va.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
     va.set_defaults(func=_cmd_validate)
@@ -870,14 +874,14 @@ def make_parser() -> argparse.ArgumentParser:
     cn.add_argument("folder", nargs="?", help="a Remote Script folder (or give --names)")
     cn.add_argument("--names", nargs="+", metavar="NAME",
                     help="names to check instead of a folder: Class, Class.member or a bare name")
-    cn.add_argument("--build", help="Live build, e.g. 12.4.16 (default: the default build, see `default-build`)")
+    cn.add_argument("--build", help=BUILD_HELP)
     cn.add_argument("--json", action="store_true", help="print the query core's answer as JSON")
     cn.add_argument("--full", action="store_true", help="the whole answer, not capped at about 4,000 tokens")
     cn.set_defaults(func=_cmd_check_names)
 
     bs = sub.add_parser("build-stubs", help="write type stubs (.pyi) of a Live build for your editor's Python "
                         "language server (local only)")
-    bs.add_argument("--build", help="Live build, e.g. 12.4.16 (default: the default build, see `default-build`)")
+    bs.add_argument("--build", help=BUILD_HELP)
     where = bs.add_mutually_exclusive_group()
     where.add_argument("--out", help="the folder to write (default: <index dir>/stubs/<build>); a folder of earlier "
                        "stubs is replaced")
@@ -894,7 +898,7 @@ def make_parser() -> argparse.ArgumentParser:
 
     ins = sub.add_parser("install", help="validate a Remote Script folder, then copy it into the User Library")
     ins.add_argument("folder", help="the Remote Script's folder")
-    ins.add_argument("--build", help="Live build to validate against (default: the default build, see `default-build`)")
+    ins.add_argument("--build", help=f"Live build to validate against {DEFAULT_BUILD}")
     ins.add_argument("--user-library",
                      help="the User Library folder (default: $ABLETON_USER_LIBRARY, else ~/Music/Ableton/User Library)")
     ins.add_argument("--replace", action="store_true", help="overwrite an installed copy of the same script")
@@ -928,7 +932,7 @@ def make_parser() -> argparse.ArgumentParser:
     el = rg_sub.add_parser("elements", help="the controller model of a script folder: each element's name and MIDI "
                            "message, as check files name them")
     el.add_argument("folder", help="the Remote Script's folder")
-    el.add_argument("--build", help="Live build whose index reads the script (default: the default build, see `default-build`)")
+    el.add_argument("--build", help=f"Live build whose index reads the script {DEFAULT_BUILD}")
     el.add_argument("--json", action="store_true", help="print the answer as JSON")
     el.set_defaults(func=_cmd_rig_elements)
     sv = rg_sub.add_parser("serve", help="hold the rig's virtual port open (across Live restarts) for `rig run`")
@@ -955,7 +959,7 @@ def make_parser() -> argparse.ArgumentParser:
     pn = rg_sub.add_parser("panel", help="a web page of the controller on 127.0.0.1, played through `rig serve` "
                            "(a parallel view: the driver is in charge)")
     pn.add_argument("folder", help="the Remote Script's folder (a device.yaml beside it gives the layout)")
-    pn.add_argument("--build", help="Live build whose index reads the script (default: the default build, see `default-build`)")
+    pn.add_argument("--build", help=f"Live build whose index reads the script {DEFAULT_BUILD}")
     pn.add_argument("--profile", help="the device.yaml to use (default: the one in the script folder, if any)")
     pn.add_argument("--port", type=int, default=None, help="the local TCP port of `rig serve` (default: 9878)")
     pn.add_argument("--http", type=int, default=None, help="the panel's local port (default: 9879)")
@@ -1121,7 +1125,8 @@ def _cmd_rig_serve(args: argparse.Namespace) -> int:  # pragma: no cover - needs
 
 
 def _cmd_rig_panel(args: argparse.Namespace) -> int:  # pragma: no cover - serves until Ctrl-C
-    """Exit 2: no `rig serve` (it owns the port, Decision 9); 4: the script or its profile can't be read."""
+    """Exit 2: no `rig serve` (it owns the port, Decision 9); 3: no PyYAML (the rig extra); 4: the
+    script or its profile can't be read."""
     from .rig.panel import DEFAULT_PORT as PANEL_PORT
     from .rig.panel import PanelServer
     from .rig.serve import DEFAULT_PORT, connect
@@ -1129,9 +1134,9 @@ def _cmd_rig_panel(args: argparse.Namespace) -> int:  # pragma: no cover - serve
 
     try:
         session = prepare(Path(args.folder), Path(args.index_dir), args.build, profile=args.profile)
-    except SessionError as e:
+    except (SessionError, ImportError) as e:
         print(e, file=sys.stderr)
-        return 4
+        return 3 if isinstance(e, ImportError) else 4
     ctl, profile = session.controller, session.profile
     port = connect(port=args.port or DEFAULT_PORT)
     if port is None:
@@ -1187,9 +1192,9 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
     try:
         session = prepare(checks.script_folder, Path(args.index_dir), args.build or checks.build, beside=checks.path,
                           names=lambda ctl: check_names(checks, ctl))
-    except SessionError as e:
+    except (SessionError, ImportError) as e:
         print(e, file=sys.stderr)
-        return 4
+        return 3 if isinstance(e, ImportError) else 4
     ctl, profile = session.controller, session.profile
     log_path = Path(args.log) if args.log else find_log(args.build or checks.build)
     if any(s.log_clean for s in checks.steps) and log_path is None:

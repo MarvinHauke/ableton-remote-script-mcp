@@ -144,7 +144,11 @@ def _note(cut: list[dict], max_tokens: int, how: str | None) -> dict:
             if len(names) > DROPPED_LISTED:
                 entry["more"] = len(names) - DROPPED_LISTED
         fields.append(entry)
+    return {"max_tokens": max_tokens, "fields": fields, "how": cut_how(fields, how)}
+
+
+def cut_how(fields: list[dict], how: str | None = None) -> str:
+    """The `cut` note's `how`: `how` (default: ask for the whole answer), and when a field names
+    dropped records, that each can be asked for on its own."""
     hint = how or FULL_HINT
-    if any("dropped" in f for f in fields):
-        hint = f"{hint}; {DROPPED_HINT}"
-    return {"max_tokens": max_tokens, "fields": fields, "how": hint}
+    return f"{hint}; {DROPPED_HINT}" if any("dropped" in f for f in fields) else hint
