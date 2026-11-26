@@ -52,7 +52,9 @@ ran `ableton-remote-script-mcp import-structure-void`, the lookup also shows mem
 Structure Void's pages, marked `documented`: say so when you use one.
 
 `lookup.sh class|search|outline`, `validate.sh` and `install.sh` take `--build <build>`, the index
-to ask (default: the newest indexed build); `log.sh --build` picks which Live build's log to read.
+to ask (default: the build the user set with `ableton-remote-script-mcp default-build`, else the
+newest indexed release); `log.sh --build` picks which Live build's log to read. An answer from a
+beta build says so (`"beta": true`, "(beta)" in the text): keep its facts out of anything published.
 Each script's header lists its options and exit codes. Answers are capped at about 4,000 tokens;
 a line at the end says what was cut and how to get it (`--section`, `--offset`, `--full`).
 
@@ -72,8 +74,8 @@ script, call the tool in its place:
 | `lookup.sh names <folder>` | `check_names(folder=…)` or `check_names(names=[…])`: a whole draft in one call |
 | `validate.sh <folder>` | `validate_script(folder=…)` |
 
-- Always pass `build=` the user's Live build; without it the tools use the newest indexed build,
-  which may be a beta.
+- Always pass `build=` the user's Live build; without it the tools use the default build
+  (`list_builds()` marks it: the user's setting, else the newest indexed release).
 - Give a script folder as an absolute path: the server's working folder may not be yours.
 - A cut answer says so; ask again with `offset`, `section` or `full=True`.
 - `typecheck.sh`, `install.sh`, `log.sh` and `rig.sh` have no tool: run the scripts for those.

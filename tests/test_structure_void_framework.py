@@ -131,7 +131,7 @@ def test_the_check_lists_differences_and_what_is_missing(index_dir):
 def test_not_imported(tmp_path):
     index_dir = write_hand_index(tmp_path / "index")
     assert structure_void_check(index_dir, OLD)["status"] == "not_imported"
-    assert main(["--index-dir", str(index_dir), "check-structure-void", "--build", OLD]) == 2
+    assert main(["--index-dir", str(index_dir), "check-structure-void", "--build", OLD]) == 3
 
 
 def test_lookup_shows_where_the_page_disagrees(index_dir, capsys):

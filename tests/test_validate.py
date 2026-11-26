@@ -270,7 +270,7 @@ def test_star_imports_are_followed(tmp_path, index_dir):
 
 
 def test_folder_and_index_missing(tmp_path, index_dir):
-    assert validate_script(tmp_path / "nope", index_dir, OLD)["status"] == "not_found"
+    assert validate_script(tmp_path / "nope", index_dir, OLD)["status"] == "folder_missing"
     folder = write(tmp_path, CLEAN_V3)
     assert validate_script(folder, index_dir, "11.0.0")["status"] == "index_missing"
 

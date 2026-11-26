@@ -11,10 +11,20 @@ Each answer is a JSON object with:
 
 - `status`:
   - `ok`;
-  - `not_found` (with a `message` that names the build);
+  - `not_found`: no match (with a `message` that names the build);
+  - `folder_missing`: no script folder, project folder or log file at that path;
+  - `refused`: an input the tool won't use (an unknown section or kind, a folder it can't
+    compile, a stubs folder with other files in it);
   - `index_missing` (with the command that builds the index).
-- `answer_version`: the version of the answer's shape, now **2**.
-- `live_build`: the build the facts come from.
+- `answer_version`: the version of the answer's shape, now **3**.
+- `live_build`: the build the facts come from. Without a build named, it is the default
+  build: the one set with `default-build` (stored in the index folder, so never in a repo),
+  else the newest indexed release, else, when only betas are indexed, the newest beta. A
+  default that names a build with no index is refused (`index_missing`), never replaced.
+- `beta`: `true` when that build is a beta (or, for `diff`, one of the two is). Release
+  answers have no such field. Beta facts stay out of anything published. (`build-stubs` and
+  `check-structure-void` print reports, not answers: their text says "(beta)", their JSON has
+  no `beta`.)
 - each fact's `confidence`:
   - `observed`: in that build's index;
   - `documented`: from Structure Void's pages, a secondary source.
@@ -22,14 +32,24 @@ Each answer is a JSON object with:
 ### Size caps
 
 An answer is capped at about 4,000 tokens, estimated as the compact JSON's length divided
-by four. The cap removes nothing from the index. When an answer is larger, the longest lists
-in it keep their first items, and a `cut` note says what was left out and how to get it:
+by four. The cap removes nothing from the index. When an answer is larger, only the
+collections the answer declares get cut: its classes and their member maps, its results, its
+findings, its names, its outline sections, its diff lists. A record's own fields (a class's
+`bases`, `mro`) are never cut. The largest collection keeps its first items, as many as fit; a
+list keeps at least its first record, and the cut then goes inside it (that class's members).
+A `cut` note says what was left out and how to get it:
 
 ```json
 "cut": {"max_tokens": 4000,
-        "fields": [{"field": "results", "kept": 63, "total": 200}],
-        "how": "offset=63 gives the next results (CLI: --offset); full=true gives the whole answer (CLI: --full)"}
+        "fields": [{"field": "classes", "kept": 1, "total": 3,
+                    "dropped": ["pkg.mod1.Thing", "pkg.mod2.Thing"]},
+                   {"field": "classes[0].all_members", "kept": 40, "total": 300}],
+        "how": "…; members=[...] asks for named members only, …; each name in `dropped` can be asked for on its own, by its qualified name"}
 ```
+
+A list of named records (classes, search results, the names of `check_names`, builds) lists
+the names it dropped in `dropped`, at most 50, and counts the rest in `more`. A cut member map
+lists none: ask for the members you need.
 
 Ways to get the rest:
 
@@ -43,6 +63,14 @@ Ways to get the rest:
 - any of them: `full` (CLI `--full`) gives the whole answer.
 
 The text output prints the same note as its last line.
+
+### Exit codes
+
+The CLI's exit code follows the answer's `status`: `ok` exits 0, or 1 when the answer has
+something to act on (findings, unknown names, tracebacks); `not_found` exits 1; `folder_missing`
+and `refused` exit 2; `index_missing` exits 3. A crash exits 5, never 1, so a script can tell a
+bug from findings. The whole table is in the [CLI reference](reference/cli.md#exit-codes), and
+the skill's scripts name the same codes.
 
 ## Checking names
 
@@ -144,3 +172,10 @@ A change to an answer's shape raises `answer_version`, and gets a line here.
 - **2** (2026-11-25, plan 0001 Decision 57): `check_names` of a folder counts the names its v3
   Elements class builds as `own`, and adds `not_read` (a list of reasons) when it couldn't
   read them.
+- **3** (2026-11-26, plan 0001 Decision 61): two new statuses, `folder_missing` (no such
+  folder; `not_found` now always means no match) and `refused`; one exit-code table for the
+  CLI, and a crash exits 5. The cut (Decision 62) cuts only the collections an answer
+  declares, keeps a list's first record, and names dropped records in `dropped` and `more`.
+  The default build (Decision 63) is the setting or the newest release; `beta` marks a beta
+  answer; `list_builds` marks `default` (with `default_from`) and each `beta`, and says in
+  `default_problem` when the setting names a build with no index.

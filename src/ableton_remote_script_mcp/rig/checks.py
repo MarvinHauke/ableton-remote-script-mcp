@@ -4,7 +4,7 @@
 A check file sits beside (or names) the script folder:
 
     script: .            # the script folder, relative to this file (default: the file's folder)
-    build: 12.4.16       # the Live build whose index reads the script (default: newest indexed)
+    build: 12.4.16       # the Live build whose index reads the script (default: the default build)
     settle: 1.5          # seconds without MIDI before the first step (the script's start-up state)
     quiet: 0.15          # seconds without MIDI that end a step (default for every step)
     wait: 0.5            # the least a step listens (Live's value feedback comes late)

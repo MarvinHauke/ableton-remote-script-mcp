@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); one exit-code table built 2026-11-26 (Decision 61); the cut cuts declared collections only, built 2026-11-26 (Decision 62); the default build, the newest release or a setting, built 2026-11-26 (Decision 63); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -1080,6 +1080,72 @@ meant to do, and uses only API names that exist in the Live build they target.
       examples and the v3 scripts of the local Live 12 decompile (12.4.16, 29 folders): the rig's
       controller model, `validate`'s findings and `check_names`' unknown names and `not_read` are
       the same for all. 283 tests.
+61. **One exit-code table, and statuses that say what is missing** (user, 2026-11-25 and
+    2026-11-26, grilling rounds 1–3 on the architecture review's candidates; contracts: the
+    CLI's exit codes and `answer_version`). `not_found` exited 1 for the lookups and 2 for
+    `validate`, `check-names`, `build-stubs` and `install`, and a crash exited 1 like findings.
+    Now:
+    1. **One table**, `cli.EXIT_CODES`, printed in the generated CLI reference: 0 done; 1
+       answered, with something to act on (findings, unknown names, tracebacks, a failed step,
+       no match); 2 an input isn't there or was refused (no such folder or log, Live silent, a
+       usage error); 3 build or install something first (no index, a missing extra, Structure
+       Void's pages not imported, which exited 2 before); 4 a file or value can't be read; 5 the
+       tool failed on its own. The grep and diff convention (0, 1, 2 and up) stays: a renumbering
+       in the sysexits style gains nothing here.
+    2. **The statuses map onto it** (`cli.STATUS_EXIT`): `not_found` always means no match and
+       exits 1. New: `folder_missing` (no script or project folder at the path, exit 2) and
+       `refused` (an input the tool won't use: an unknown outline section or search kind, a
+       folder it can't compile, a stubs folder with other files; exit 2). A missing log file is
+       `folder_missing` too. `answer_version` 3.
+    3. **A crash exits 5:** `main()` prints one line naming the error, then the traceback.
+    4. **The skill's scripts** name only codes of the table, and the ones that run the CLI name
+       5 too (`tests/test_exit_codes.py` checks their headers). `typecheck.sh` keeps its own
+       codes (3 no stubs, 4 no checker, 5 the checker failed), all in the table's range.
+    5. The rig's codes stay as they are (`rig probe --send` stays 4).
+    - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`. 292 tests.
+62. **The cut cuts declared collections only** (user, 2026-11-26, grilling rounds 3 and 5;
+    findings 1, 8; contract: `answer_version` 3). `bounded` cut the largest list or map anywhere
+    in an answer, a record's own fields too (finding 8: a class's `bases`). Now:
+    1. Each answer names the collections that may be cut: `get_class` `classes` and
+       `classes[].all_members` (and `members`); `search` `results`; `validate` `findings` and
+       `not_checked`; `check_names` `names`, `unknown`, `used_only` and the other folder lists;
+       `outline` its sections; `diff` its lists. Nothing else is ever cut.
+    2. A cut list keeps at least its first record, and cuts inside that record when it must.
+    3. The `cut` note names the records it dropped from a list of named records, at most 50
+       (`dropped`, and `more` for the rest), and `how` says to ask for one by its qualified name.
+       A cut member map names nothing: `how` keeps pointing to `members=[…]` and `full=true`.
+    4. The note's own size counts: each cut is sized with the note so far, so the names it
+       lists stay inside the cap.
+    - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`: `bounded(…, collections=)`,
+      the declarations in `api.py` (`LOOKUP_CUTS` and the others), `protect=` gone; a record
+      section (`specification`, `mappings`, a diff's `members`) is cut only in the lists inside
+      it (review). On the local index, a short-name lookup keeps the first class and names the
+      others, and a long `search` names 50 dropped results and counts the rest.
+      `tests/test_cut.py`.
+63. **The default build is the newest release, or a setting** (user, 2026-11-26, grilling
+    rounds 4 and 5; finding 11; contracts: `answer_version` 3 and the tools' defaults). Without
+    `build`, the tools used the newest indexed build, here the Live 13 beta. Now:
+    1. **The order:** a `build` named in the call; else the setting; else the newest indexed
+       release (overall, not per major version); else, when only betas are indexed, the newest
+       beta, and the answer says so.
+    2. **The setting** lives in the index folder (outside every repo, never published):
+       `ableton-remote-script-mcp default-build <build>` sets it, without a build shows it,
+       `--clear` removes it. A setting that names a build that isn't indexed is refused with
+       `index_missing`, saying how to change it; it never falls back quietly.
+    3. **A beta answer says so:** `"beta": true`, worked out from the build name (a `b` in the
+       version) when the answer is made, never stored; release answers have no such field. The
+       text output prints "(beta)" after the build.
+    4. **`list_builds`** marks the default (`"default": true`, `"default_from"`: `setting` or
+       `newest release`) and each beta.
+    5. No detection of the running Live: it is often closed while a script is written, several
+       can be open, and the answer would depend on which one is.
+    - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`: `index_store.default_build`,
+      `read_default_setting` and `write_default_setting` (`settings.json` in the index folder),
+      used by `query._open`; `live_install.is_beta`, the one beta rule; the mark in
+      `answers.stamp` (also for `diff`, when one of its builds is a beta); the CLI command
+      `default-build`; `list_builds`' `default`, `default_from`, `beta` and `default_problem`.
+      Here the default is 12.4.16 now, no longer 13.0b25. `tests/test_default_build.py`.
+      After the review: 304 tests.
 
 ## Open questions
 

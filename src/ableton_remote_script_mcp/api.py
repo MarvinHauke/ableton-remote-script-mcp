@@ -2,7 +2,7 @@
 
 Six functions, `lookup`, `search`, `outline`, `validate`, `check_names` and `list_builds`, plus
 `diff`. They return the same answers as the CLI's `--json` and the MCP tools: plain dicts with
-a `status` ("ok", "not_found", "index_missing"), an `answer_version` and, when the answer was
+a `status` ("ok", "not_found", "folder_missing", "refused", "index_missing"), an `answer_version` and, when the answer was
 larger than about `max_tokens`, a `cut` note saying what was left out and how to get it
 (`answers.py`). `full=True` gives the whole answer.
 
@@ -20,13 +20,30 @@ from __future__ import annotations
 from pathlib import Path
 
 from . import query
-from .answers import DEFAULT_MAX_TOKENS, FULL_HINT, bounded, tokens
+from .answers import DEFAULT_MAX_TOKENS, DROPPED_HINT, FULL_HINT, bounded, tokens
 from .index_store import default_index_dir
 
 __all__ = ["OUTLINE_SECTIONS", "check_names", "diff", "list_builds", "lookup", "outline", "search", "validate"]
 
 OUTLINE_SECTIONS = ("modules", "create_instance", "classes", "specification", "component_map", "mappings",
                     "unknown_components", "elements", "components", "layers")
+
+# What the cap may cut in each answer (plan 0001 Decision 62), with the key that names a list's
+# records (its `cut` entry then lists the dropped names) or None. Nothing else is ever cut.
+_MEMBERS = {"all_members": None, "members": None, "documented": None}
+LOOKUP_CUTS = {"classes": "qualified_name", "documented": "qualified_name",
+               **{f"classes[].{k}": v for k, v in _MEMBERS.items()}}
+SEARCH_CUTS = {"results": "qualified_name"}
+_RECORD_SECTIONS = {"specification": "fields", "mappings": "mappings"}  # a record: cut the list inside it
+OUTLINE_CUTS = {**dict.fromkeys(s for s in OUTLINE_SECTIONS if s not in _RECORD_SECTIONS),
+                **{f"{s}.{inner}": None for s, inner in _RECORD_SECTIONS.items()}, "classes[].members": None}
+VALIDATE_CUTS = {"findings": None, "not_checked": None}
+CHECK_NAMES_CUTS = {"names": "name", "names[].classes": None, "unknown": None, "used_only": None,
+                    "kwargs_unknown": None, "broken": None, "not_read": None}
+LIST_BUILDS_CUTS = {"builds": "live_build", "installed_not_indexed": None}
+_CHANGES = ("added", "removed", "changed")
+DIFF_CUTS = {f"{what}.{change}": None for what in ("packages", "modules", "classes") for change in _CHANGES} | {
+    f"{what}.changed[].members.{change}": None for what in ("modules", "classes") for change in _CHANGES}
 
 
 def _dir(index_dir) -> Path:
@@ -51,19 +68,21 @@ def lookup(name: str, build: str | None = None, *, own: bool = False, members: l
             c["all_members"] = {n: c["all_members"][n] for n in wanted if n in c["all_members"]}
             c["members"] = {n: m for n, m in c["members"].items() if n in wanted}
             c["missing_members"] = [n for n in wanted if n not in c["all_members"]]
-    return bounded(answer, _cap(full, max_tokens),
+    return bounded(answer, _cap(full, max_tokens), collections=LOOKUP_CUTS,
                    how=f"{FULL_HINT}; members=[...] asks for named members only, own=true for the class's own")
 
 
 def search(text: str, build: str | None = None, *, kind: str | None = None, limit: int = 20, offset: int = 0,
            full: bool = False, max_tokens: int | None = DEFAULT_MAX_TOKENS, index_dir=None) -> dict:
     """Classes, modules and members by name or words, best first; `next_offset` is the next page."""
-    answer = bounded(query.search(text, _dir(index_dir), build, kind, limit, offset), _cap(full, max_tokens))
+    answer = bounded(query.search(text, _dir(index_dir), build, kind, limit, offset), _cap(full, max_tokens),
+                     collections=SEARCH_CUTS)
     cut = answer.get("cut")
     if cut and any(f["field"] == "results" for f in cut["fields"]):
         kept = next(f["kept"] for f in cut["fields"] if f["field"] == "results")
         answer["next_offset"] = answer["offset"] + kept
-        cut["how"] = f"offset={answer['next_offset']} gives the next results (CLI: --offset); {FULL_HINT}"
+        dropped = f"; {DROPPED_HINT}" if any("dropped" in f for f in cut["fields"]) else ""
+        cut["how"] = f"offset={answer['next_offset']} gives the next results (CLI: --offset); {FULL_HINT}{dropped}"
     return answer
 
 
@@ -81,7 +100,7 @@ def outline(script: str, build: str | None = None, *, section: str | None = None
     that fit, in order, and names the others in `cut`; `section` asks for one of them, and
     `offset` for its next items when it is a long list."""
     if section is not None and section not in OUTLINE_SECTIONS:
-        return bounded({"status": "not_found", "message": f"no outline section {section!r}; the sections are "
+        return bounded({"status": "refused", "message": f"no outline section {section!r}; the sections are "
                         + ", ".join(OUTLINE_SECTIONS)}, None)
     answer = query.outline_script(script, _dir(index_dir), build)
     if answer["status"] != "ok":
@@ -93,7 +112,7 @@ def outline(script: str, build: str | None = None, *, section: str | None = None
         if isinstance(value, list) and offset:
             value = value[offset:]
         head = {k: v for k, v in answer.items() if k not in OUTLINE_SECTIONS}
-        out = bounded({**head, "section": section, "offset": offset, section: value}, limit, protect=("sections",))
+        out = bounded({**head, "section": section, "offset": offset, section: value}, limit, collections=OUTLINE_CUTS)
         cut = out.get("cut")
         if cut and any(f["field"] == section for f in cut["fields"]) and isinstance(value, list):
             kept = next(f["kept"] for f in cut["fields"] if f["field"] == section)
@@ -101,7 +120,7 @@ def outline(script: str, build: str | None = None, *, section: str | None = None
             cut["how"] = f"section={section!r} offset={out['next_offset']} gives the next items (CLI: --offset)"
         return out
     if limit is None or tokens(answer) <= limit:
-        return bounded(answer, limit)
+        return bounded(answer, limit, collections=OUTLINE_CUTS)
     head = {k: v for k, v in answer.items() if k not in OUTLINE_SECTIONS}
     room = limit - tokens(head) - 60 * len(OUTLINE_SECTIONS)
     out, left_out = dict(head), []
@@ -115,7 +134,7 @@ def outline(script: str, build: str | None = None, *, section: str | None = None
         else:
             out[s] = [] if isinstance(answer[s], list) else None
             left_out.append({"field": s, "kept": 0, "total": answer["sections"][s]})
-    out = bounded(out, limit, protect=("sections",))
+    out = bounded(out, limit, collections=OUTLINE_CUTS)
     cut = out.setdefault("cut", {"max_tokens": limit, "fields": []})
     cut["fields"] = left_out + cut["fields"]
     cut["how"] = (f"section=<name> gives one section, e.g. section={left_out[0]['field']!r} "
@@ -131,7 +150,7 @@ def validate(folder: str | Path, build: str | None = None, *, full: bool = False
     if answer["status"] == "ok":
         answer["counts"] = {"findings": len(answer["findings"]), "not_checked": len(answer["not_checked"]),
                             "errors": sum(f["severity"] == "error" for f in answer["findings"])}
-    return bounded(answer, _cap(full, max_tokens), protect=("counts",))
+    return bounded(answer, _cap(full, max_tokens), collections=VALIDATE_CUTS)
 
 
 def check_names(folder: str | Path | None = None, names: list[str] | None = None, build: str | None = None, *,
@@ -139,16 +158,17 @@ def check_names(folder: str | Path | None = None, names: list[str] | None = None
     """Where each API name is known in one build, for a script folder or a list of names
     (`Class`, `Class.member`, a bare `name`): facts with their confidence, not errors."""
     answer = query.check_names(_dir(index_dir), build, Path(folder) if folder is not None else None, names)
-    return bounded(answer, _cap(full, max_tokens), protect=("attribute_counts", "counts"))
+    return bounded(answer, _cap(full, max_tokens), collections=CHECK_NAMES_CUTS)
 
 
 def list_builds(*, full: bool = False, max_tokens: int | None = DEFAULT_MAX_TOKENS, index_dir=None,
                 installs=None) -> dict:
-    """The indexed Live builds, newest first, and the installed builds with no index."""
+    """The indexed Live builds, newest first, and the installed builds with no index; the
+    default build is marked `default` (with `default_from`), each beta `beta`."""
     if installs is None:
         from .live_install import find_installs
         installs = find_installs()
-    return bounded(query.list_builds(_dir(index_dir), installs), _cap(full, max_tokens))
+    return bounded(query.list_builds(_dir(index_dir), installs), _cap(full, max_tokens), collections=LIST_BUILDS_CUTS)
 
 
 def diff(from_build: str, to_build: str, *, under: str | None = None, full: bool = False,
@@ -158,4 +178,4 @@ def diff(from_build: str, to_build: str, *, under: str | None = None, full: bool
 
     return bounded(diff_builds(from_build, to_build, _dir(index_dir), under), _cap(full, max_tokens),
                    how=f"under=<package or module> narrows the diff (CLI: --under); {FULL_HINT}",
-                   protect=("by_package",))
+                   collections=DIFF_CUTS)

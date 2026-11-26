@@ -1,6 +1,7 @@
 """Query core: the one interface the CLI, the skill scripts and the MCP tools use.
 
-Answers are plain dicts with a `status` of "ok", "index_missing" or "not_found", so every
+Answers are plain dicts with a `status` of "ok", "index_missing", "not_found" (no match),
+"folder_missing" (no such folder) or "refused" (an input it won't use), so every
 adapter can pass them through and no caller has to guess.
 """
 
@@ -16,7 +17,9 @@ from .index_store import (
     PUSH3_HELPER_ROOT,
     SCHEMA_VERSION,
     SCRIPTS_ROOT,
+    SETTINGS_FILE,
     attach_statements,
+    default_build,
     fact_key,
     generation,
     index_path,
@@ -25,7 +28,7 @@ from .index_store import (
     load_statements,
     statements_path,
 )
-from .live_install import LiveInstall
+from .live_install import LiveInstall, is_beta
 from .outline import find_script, outline_package
 from .resolve import Resolver, lineage
 from .structure_void import live_major, load_document
@@ -70,9 +73,13 @@ def _open(index_dir: Path, live_build: str | None,
     """(index, None) or (None, an index_missing answer)."""
     builds = indexed_builds(index_dir)
     if live_build is None:
-        if not builds:
+        live_build, source = default_build(index_dir, builds)
+        if live_build is None:
             return None, _index_missing(index_dir, None)
-        live_build = builds[0]
+        if source == "setting" and live_build not in builds:
+            return None, _index_missing(index_dir, live_build, (
+                f"the default build set in {Path(index_dir) / SETTINGS_FILE} is {live_build}, which has no index; "
+                "name another with `default-build <build>`, or remove the setting with `default-build --clear`"))
     elif live_build not in builds:
         return None, _index_missing(index_dir, live_build)
     try:
@@ -362,6 +369,12 @@ def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> d
         if not entry["usable"]:
             entry["problem"] = f"schema {index.get('schema')}, this tool reads schema {SCHEMA_VERSION}; rebuild it"
         builds.append(entry)
+    chosen, source = default_build(index_dir, [b["live_build"] for b in builds])
+    for b in builds:
+        if is_beta(b["live_build"]):
+            b["beta"] = True
+        if b["live_build"] == chosen:
+            b.update(default=True, default_from=source)
     indexed = {b["live_build"] for b in builds}
     not_indexed = [
         {"live_build": i.live_build, "app": str(i.app), "beta": i.is_beta}
@@ -372,7 +385,11 @@ def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> d
         answer = _index_missing(index_dir, None)
         answer["installed_not_indexed"] = not_indexed
         return answer
-    return {"status": "ok", "builds": builds, "installed_not_indexed": not_indexed}
+    answer = {"status": "ok", "builds": builds, "installed_not_indexed": not_indexed}
+    if source == "setting" and chosen not in indexed:
+        answer["default_problem"] = (f"the default build set in {Path(index_dir) / SETTINGS_FILE} is {chosen}, "
+                                     "which has no index: the tools refuse to answer without a build")
+    return answer
 
 
 def is_script_folder(name: str) -> bool:
@@ -438,7 +455,7 @@ def outline_script(name: str, index_dir: Path, live_build: str | None = None) ->
     if is_script_folder(name):
         answer, why = outline_folder(Path(name), index)
         if answer is None:
-            return {"status": "not_found", "live_build": live_build, "message": why}
+            return {"status": "refused", "live_build": live_build, "message": why}
         return {"status": "ok", "live_build": live_build, "confidence": "observed", **answer}
     key = find_script(index, name)
     if key is None:
@@ -455,7 +472,7 @@ def validate_script(folder: Path, index_dir: Path, live_build: str | None = None
     file, a line, a rule, a severity, a message and a fix. See `validator.py` for the rules."""
     folder = Path(folder).expanduser()
     if not folder.is_dir():
-        return {"status": "not_found", "live_build": live_build, "message": f"no script folder at {folder}"}
+        return {"status": "folder_missing", "live_build": live_build, "message": f"no script folder at {folder}"}
     index, missing = _open(index_dir, live_build, with_statements=True)  # the framework checks read its code
     if missing:
         return missing
@@ -475,7 +492,7 @@ def check_names(index_dir: Path, live_build: str | None = None, folder: Path | N
     if folder is not None:
         folder = Path(folder).expanduser()
         if not folder.is_dir():
-            return {"status": "not_found", "live_build": live_build, "message": f"no script folder at {folder}"}
+            return {"status": "folder_missing", "live_build": live_build, "message": f"no script folder at {folder}"}
     index, missing = _open(index_dir, live_build, with_statements=True)
     if missing:
         return missing
@@ -505,14 +522,14 @@ def build_stubs(index_dir: Path, live_build: str | None = None, out: Path | None
     if project:
         project = Path(project).expanduser().resolve()
         if not project.is_dir():
-            return {"status": "not_found", "live_build": live_build,
+            return {"status": "folder_missing", "live_build": live_build,
                     "message": f"no folder {project}: --project names your script project's folder"}
         out = project / "stubs"
     out = Path(out).expanduser() if out else Path(index_dir) / "stubs" / live_build
     try:
         answer = write_stubs(index, out, load_document(index_dir, live_major(live_build)), observed_only)
     except FileExistsError as e:
-        return {"status": "not_found", "live_build": live_build, "message": str(e)}
+        return {"status": "refused", "live_build": live_build, "message": str(e)}
     if project:
         answer["project"] = set_up_project(project)
     return answer

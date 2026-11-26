@@ -72,7 +72,7 @@ from __future__ import annotations
 import json
 import os
 import platform
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import __version__
@@ -90,6 +90,7 @@ from .live_install import (
     SCRIPTS_SUBPATH,
     LiveInstall,
     build_sort_key,
+    is_beta,
 )
 
 SCHEMA_VERSION = 5
@@ -297,7 +298,7 @@ def build_index(install: LiveInstall) -> dict:
         "live_build": build,
         "source": {"kind": "installed-app", "app": str(install.app), "bundle_version": install.bundle_version},
         "extractor": {"tool_version": __version__, "python": platform.python_version()},
-        "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "created": datetime.now(UTC).isoformat(timespec="seconds"),
         "roots": {root: {"path": str(subpath)} for root, _, subpath in roots},
         "summary": {
             "packages": len(packages),
@@ -355,6 +356,50 @@ def indexed_builds(index_dir: Path) -> list[str]:
     builds = [p.name[len("live-") : -len(".json")] for p in index_dir.glob("live-*.json")
               if not p.name.endswith(STATEMENTS_SUFFIX)]
     return sorted(builds, key=build_sort_key, reverse=True)
+
+
+SETTINGS_FILE = "settings.json"  # in the index folder: this machine's, never in a repo
+
+
+def read_default_setting(index_dir: Path) -> str | None:
+    """The build `default-build` set, or None (no setting, or an unreadable file)."""
+    try:
+        value = json.loads((Path(index_dir) / SETTINGS_FILE).read_text(encoding="utf-8")).get("default_build")
+    except (OSError, ValueError, AttributeError):
+        return None
+    return value if isinstance(value, str) and value else None
+
+
+def write_default_setting(index_dir: Path, live_build: str | None) -> Path:
+    """Set the default build (None removes it); the other settings in the file stay."""
+    path = Path(index_dir) / SETTINGS_FILE
+    try:
+        settings = json.loads(path.read_text(encoding="utf-8"))
+        settings = settings if isinstance(settings, dict) else {}
+    except (OSError, ValueError):
+        settings = {}
+    if live_build is None:
+        settings.pop("default_build", None)
+    else:
+        settings["default_build"] = live_build
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(settings, indent=1) + "\n", encoding="utf-8")
+    return path
+
+
+def default_build(index_dir: Path, builds: list[str] | None = None) -> tuple[str | None, str | None]:
+    """(the build the tools use when none is named, where that comes from), plan 0001 Decision 63:
+    the setting (`"setting"`, also when it names a build with no index: the caller refuses it);
+    else the newest indexed release (`"newest release"`); else the newest beta (`"newest beta"`);
+    (None, None) when nothing is indexed."""
+    builds = indexed_builds(index_dir) if builds is None else builds
+    setting = read_default_setting(index_dir)
+    if setting:
+        return setting, "setting"
+    releases = [b for b in builds if not is_beta(b)]
+    if releases:
+        return releases[0], "newest release"
+    return (builds[0], "newest beta") if builds else (None, None)
 
 
 def load_index(index_dir: Path, live_build: str) -> dict:

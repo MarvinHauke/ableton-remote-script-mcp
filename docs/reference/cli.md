@@ -12,6 +12,19 @@ repository. The global option goes before the command:
 | --- | --- |
 | `--index-dir INDEX_DIR` | Where the per-build JSON index lives (default: $ABLETON_REMOTE_SCRIPT_INDEX, else $XDG_DATA_HOME/ableton-remote-script-mcp/index, else ~/.local/share/ableton-remote-script-mcp/index). |
 
+## Exit codes
+
+Every command exits with one of these (`EXIT_CODES` in `cli.py`).
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Done, nothing to act on. |
+| 1 | Answered, with something to act on: findings, unknown names, tracebacks, a failed step, no match. |
+| 2 | An input isn't there or was refused: no such folder or log, Live silent, a usage error. |
+| 3 | Build or install something first: no index for the build, a missing extra, nothing imported. |
+| 4 | A file or value can't be read: a check file, a device profile, a --send value. |
+| 5 | The tool failed on its own (a bug): one line, then the traceback. |
+
 ## `build-index`
 
 Index an installed Live build (default: newest release).
@@ -42,6 +55,19 @@ ableton-remote-script-mcp list builds [--json] [--full]
 | `--json` | Print the query core's answer as JSON. |
 | `--full` | The whole answer, not capped at about 4,000 tokens. |
 
+## `default-build`
+
+Show, set or remove the build the tools use when none is named (else the newest indexed release).
+
+```text
+ableton-remote-script-mcp default-build [--clear] build
+```
+
+| Argument | What it does |
+| --- | --- |
+| `build` | The build to use by default, e.g. 12.4.16. |
+| `--clear` | Remove the setting: the newest indexed release again. |
+
 ## `import-structure-void`
 
 Fetch Structure Void's reference (the Live module's runtime pages and the framework pages) as a documented source.
@@ -65,7 +91,7 @@ ableton-remote-script-mcp check-structure-void [--build BUILD] [--under UNDER] [
 
 | Argument | What it does |
 | --- | --- |
-| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: the default build, see `default-build`). |
 | `--under UNDER` | Only this package or module and what is in it, e.g. ableton.v3. |
 | `--json` | Print the answer as JSON. |
 
@@ -84,7 +110,7 @@ ableton-remote-script-mcp lookup class [--build BUILD] [--own] [--member NAME] [
 | Argument | What it does |
 | --- | --- |
 | `name` | The class: short (Component), qualified or re-exported name. |
-| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: the default build, see `default-build`). |
 | `--own` | Only the class's own members, not inherited ones. |
 | `--member NAME` | Only this member (repeatable): whether the class has it, own or inherited. |
 | `--full` | The whole answer, not capped at about 4,000 tokens. |
@@ -105,7 +131,7 @@ ableton-remote-script-mcp search [--kind KIND] [--limit LIMIT] [--offset OFFSET]
 | `--limit LIMIT` | How many results to show (default: 20). |
 | `--offset OFFSET` | Skip this many results: the next page. |
 | `--full` | The whole answer, not capped at about 4,000 tokens. |
-| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: the default build, see `default-build`). |
 | `--json` | Print the query core's answer as JSON. |
 
 ## `diff`
@@ -135,7 +161,7 @@ ableton-remote-script-mcp outline [--build BUILD] [--all-components] [--section 
 | Argument | What it does |
 | --- | --- |
 | `script` | The Remote Script's folder name, e.g. APC_mini_mk2. |
-| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: the default build, see `default-build`). |
 | `--all-components` | List every name in the v3 component map, not only those the mappings use. |
 | `--section SECTION` | Only this section of the outline. One of: `modules`, `create_instance`, `classes`, `specification`, `component_map`, `mappings`, `unknown_components`, `elements`, `components`, `layers`. |
 | `--offset OFFSET` | With --section: skip this many items of a long section. |
@@ -153,7 +179,7 @@ ableton-remote-script-mcp validate [--build BUILD] [--json] [--full] folder
 | Argument | What it does |
 | --- | --- |
 | `folder` | The Remote Script's folder (its __init__.py defines create_instance). |
-| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: the default build, see `default-build`). |
 | `--json` | Print the query core's answer as JSON. |
 | `--full` | The whole answer, not capped at about 4,000 tokens. |
 
@@ -169,7 +195,7 @@ ableton-remote-script-mcp check-names [--names NAME] [--build BUILD] [--json] [-
 | --- | --- |
 | `folder` | A Remote Script folder (or give --names). |
 | `--names NAME` | Names to check instead of a folder: Class, Class.member or a bare name. |
-| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: the default build, see `default-build`). |
 | `--json` | Print the query core's answer as JSON. |
 | `--full` | The whole answer, not capped at about 4,000 tokens. |
 
@@ -183,7 +209,7 @@ ableton-remote-script-mcp build-stubs [--build BUILD] [--out OUT] [--project FOL
 
 | Argument | What it does |
 | --- | --- |
-| `--build BUILD` | Live build, e.g. 12.4.16 (default: newest indexed). |
+| `--build BUILD` | Live build, e.g. 12.4.16 (default: the default build, see `default-build`). |
 | `--out OUT` | The folder to write (default: <index dir>/stubs/<build>); a folder of earlier stubs is replaced. |
 | `--project FOLDER` | Your script project: the stubs go to FOLDER/stubs, a pyrightconfig.json is created when it has none, and stubs/ is added to its .gitignore when it is in a git repo. |
 | `--observed-only` | Leave out the documented members (listener methods, Structure Void's Live members). |
@@ -208,7 +234,7 @@ ableton-remote-script-mcp install [--build BUILD] [--user-library USER_LIBRARY] 
 | Argument | What it does |
 | --- | --- |
 | `folder` | The Remote Script's folder. |
-| `--build BUILD` | Live build to validate against (default: newest indexed). |
+| `--build BUILD` | Live build to validate against (default: the default build, see `default-build`). |
 | `--user-library USER_LIBRARY` | The User Library folder (default: $ABLETON_USER_LIBRARY, else ~/Music/Ableton/User Library). |
 | `--replace` | Overwrite an installed copy of the same script. |
 | `--no-validate` | Copy without validating first. |
@@ -270,7 +296,7 @@ ableton-remote-script-mcp rig elements [--build BUILD] [--json] folder
 | Argument | What it does |
 | --- | --- |
 | `folder` | The Remote Script's folder. |
-| `--build BUILD` | Live build whose index reads the script (default: newest indexed). |
+| `--build BUILD` | Live build whose index reads the script (default: the default build, see `default-build`). |
 | `--json` | Print the answer as JSON. |
 
 ### `rig serve`
@@ -298,7 +324,7 @@ ableton-remote-script-mcp rig run [--build BUILD] [--name NAME] [--port PORT] [-
 | Argument | What it does |
 | --- | --- |
 | `checks` | The check file (checks.yaml). |
-| `--build BUILD` | Live build whose index reads the script (default: the check file's, else newest indexed). |
+| `--build BUILD` | Live build whose index reads the script (default: the check file's, else the default build, see `default-build`). |
 | `--name NAME` | Without `rig serve`: the virtual port's name (default: ARS Test Rig). |
 | `--port PORT` | The local TCP port of `rig serve` (default: 9878). |
 | `--wait WAIT` | Without `rig serve`: seconds to wait for Live to connect (default: 120). |
@@ -317,7 +343,7 @@ ableton-remote-script-mcp rig panel [--build BUILD] [--profile PROFILE] [--port 
 | Argument | What it does |
 | --- | --- |
 | `folder` | The Remote Script's folder (a device.yaml beside it gives the layout). |
-| `--build BUILD` | Live build whose index reads the script (default: newest indexed). |
+| `--build BUILD` | Live build whose index reads the script (default: the default build, see `default-build`). |
 | `--profile PROFILE` | The device.yaml to use (default: the one in the script folder, if any). |
 | `--port PORT` | The local TCP port of `rig serve` (default: 9878). |
 | `--http HTTP` | The panel's local port (default: 9879). |

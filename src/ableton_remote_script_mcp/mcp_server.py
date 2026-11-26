@@ -25,8 +25,11 @@ Facts about the API of Ableton Live's MIDI Remote Script framework (ableton.v3, 
 _Framework) and the Live module, from an index of an installed Live build. Every fact names its
 Live build and a confidence: observed (in that build's index) or documented (Structure Void's
 pages, a secondary source). Build code on observed facts. Answers are capped at about 4,000
-tokens; a `cut` note says what was left out and how to get it (full=true, a page, a section).
-If an answer says index_missing, tell the user to run `ableton-remote-script-mcp build-index`.
+tokens; a `cut` note says what was left out and how to get it (full=true, a page, a section,
+a dropped record by its qualified name). Without `build`, the tools use the default build: the
+user's setting, else the newest indexed release. An answer with `beta: true` comes from a beta
+build: keep its facts out of anything published. If an answer says index_missing, tell the
+user to run `ableton-remote-script-mcp build-index`, or `default-build`, as its message says.
 """
 
 READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
@@ -53,7 +56,7 @@ def make_server(index_dir: Path | None = None) -> MCPServer:
         ableton.v3.control_surface.components.session_ring.SessionRingComponent first.
         """
         if kind is not None and kind not in SEARCH_KINDS:
-            return _result({"status": "not_found", "message": f"kind must be one of {', '.join(SEARCH_KINDS)}"})
+            return _result({"status": "refused", "message": f"kind must be one of {', '.join(SEARCH_KINDS)}"})
         return _result(api.search(query, build, kind=kind, limit=limit, offset=offset, full=full, **where))
 
     @server.tool(annotations=READ_ONLY)
@@ -85,7 +88,7 @@ def make_server(index_dir: Path | None = None) -> MCPServer:
         "SessionRingComponent.set_offsets"], build="12.4.16")
         """
         if (names is None) == (folder is None):
-            return _result({"status": "not_found", "message": "give either names or folder"})
+            return _result({"status": "refused", "message": "give either names or folder"})
         return _result(api.check_names(folder, names, build, full=full, **where))
 
     @server.tool(annotations=READ_ONLY)
@@ -126,7 +129,8 @@ def make_server(index_dir: Path | None = None) -> MCPServer:
     @server.tool(annotations=READ_ONLY)
     def list_builds() -> dict[str, Any]:
         """The indexed Live builds, newest first, with their counts, and installed Live builds
-        that have no index yet. Other tools take `build`; without it they use the newest.
+        that have no index yet. Other tools take `build`; without it they use the one marked
+        `default` (`default_from`: the user's setting, or the newest release). Betas are marked.
 
         Example: list_builds()
         """

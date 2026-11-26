@@ -33,7 +33,7 @@ def test_a_capped_answer_says_what_it_left_out():
     answer = {"status": "ok", "small": [1, 2], "big": [{"n": i, "text": "x" * 40} for i in range(200)]}
     whole = bounded(answer, None)
     assert whole["answer_version"] == ANSWER_VERSION and len(whole["big"]) == 200 and "cut" not in whole
-    capped = bounded(answer, 500, how="ask for less")
+    capped = bounded(answer, 500, how="ask for less", collections={"big": None})
     assert tokens(capped) <= 500 and capped["small"] == [1, 2]
     [cut] = capped["cut"]["fields"]
     assert cut["field"] == "big" and cut["total"] == 200 and cut["kept"] == len(capped["big"]) > 0
@@ -67,7 +67,7 @@ def test_outline_by_section(index_dir):
     assert left_out and "section=" in tight["cut"]["how"]
     page = api.outline("Fake_V3", OLD, section="elements", offset=1, index_dir=index_dir)
     assert page["elements"] == whole["elements"][1:]
-    assert api.outline("Fake_V3", OLD, section="nope", index_dir=index_dir)["status"] == "not_found"
+    assert api.outline("Fake_V3", OLD, section="nope", index_dir=index_dir)["status"] == "refused"
 
 
 def test_check_names_of_a_list(index_dir, capsys):
@@ -99,7 +99,7 @@ def test_check_names_of_a_folder(index_dir, tmp_path):
     answer = api.check_names(folder, build=OLD, index_dir=index_dir)
     assert answer["status"] == "ok" and [u["name"] for u in answer["unknown"]] == ["frobnicate"]
     assert answer["attribute_counts"]["index"] == 1  # set_offsets; keywords: tests/test_eval_scripts.py
-    assert api.check_names(tmp_path / "nope", build=OLD, index_dir=index_dir)["status"] == "not_found"
+    assert api.check_names(tmp_path / "nope", build=OLD, index_dir=index_dir)["status"] == "folder_missing"
 
 
 def _call(index_dir, tool, arguments):

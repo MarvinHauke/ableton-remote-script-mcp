@@ -163,12 +163,13 @@ def test_not_found_names_the_build(index_dir, capsys):
     assert f"not found in Live {OLD}" in capsys.readouterr().out
 
 
-def test_the_newest_build_is_the_default_and_builds_differ(index_dir):
+def test_the_newest_release_is_the_default_and_builds_differ(index_dir):
+    """NEW is a beta (13.0b90): without a build the tools use the release (Decision 63)."""
     c = one(get_class("Component", index_dir))
-    assert c["live_build"] == NEW
-    assert c["all_members"]["is_enabled"]["params"][1]["default"] == "True"
-    old = one(get_class("Component", index_dir, OLD))
-    assert old["all_members"]["is_enabled"]["params"][1]["default"] == "False"
+    assert c["live_build"] == OLD
+    assert c["all_members"]["is_enabled"]["params"][1]["default"] == "False"
+    new = one(get_class("Component", index_dir, NEW))
+    assert new["all_members"]["is_enabled"]["params"][1]["default"] == "True"
 
 
 def test_index_missing(tmp_path, capsys):
