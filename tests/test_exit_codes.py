@@ -105,3 +105,23 @@ def test_a_default_setting_without_an_index_exits_3(index_dir, capsys):
     assert main(["--index-dir", index_dir, "default-build"]) == 3
     assert "9.9.9, which has no index" in capsys.readouterr().out
     assert main(["--index-dir", index_dir, "list", "builds"]) == 0  # the builds are there; it names the problem
+
+
+ANSWERS_PAGE = Path(__file__).resolve().parent.parent / "docs" / "answers.md"
+
+
+def _section(text: str, heading: str, until: str = "\n#") -> str:
+    start = text.index(heading)
+    end = text.find(until, start + len(heading))
+    return text[start:end if end >= 0 else None]
+
+
+def test_the_answers_page_names_every_status_and_code():
+    """The page drifted from the tables once (the code review of Decision 61: `not_imported`
+    and exit 4 were missing). Every status and every code of the table is on it (Decision 66)."""
+    page = ANSWERS_PAGE.read_text()
+    statuses = _section(page, "- `status`:", until="\n- `answer_version`")
+    codes = _section(page, "### Exit codes")
+    assert [s for s in STATUS_EXIT if f"`{s}`" not in statuses] == []
+    assert [s for s in STATUS_EXIT if f"`{s}`" not in codes] == []
+    assert [c for c in EXIT_CODES if not re.search(rf"\b{c}\b", codes)] == []

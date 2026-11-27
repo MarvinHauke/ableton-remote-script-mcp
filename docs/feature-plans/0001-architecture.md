@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); one exit-code table built 2026-11-26 (Decision 61); the cut cuts declared collections only, built 2026-11-26 (Decision 62); the default build, the newest release or a setting, built 2026-11-26 (Decision 63); a guardrail, CI and a pre-commit hook, built 2026-11-26 (Decision 64); `unknown` a list in both `check_names` answers, `answer_version` 4, built 2026-11-27 (Decision 65); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); one exit-code table built 2026-11-26 (Decision 61); the cut cuts declared collections only, built 2026-11-26 (Decision 62); the default build, the newest release or a setting, built 2026-11-26 (Decision 63); a guardrail, CI and a pre-commit hook, built 2026-11-26 (Decision 64); `unknown` a list in both `check_names` answers, `answer_version` 4, built 2026-11-27 (Decision 65); bad inputs and the answers page tested, built 2026-11-27 (Decision 66); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -1182,6 +1182,19 @@ meant to do, and uses only API names that exist in the Live build they target.
     Now a list answer's `unknown` lists the names that are `unknown` or `not_a_member`; `counts`
     keeps counting each kind.
     - **Built 2026-11-27** (architect, solo) on `feat/answer-v3`. 316 tests.
+66. **Bad inputs and the answers page are tested, review fixes are reviewed** (user, 2026-11-27,
+    the retro of the session that built Decisions 64–65, points 1–3). The code review found two
+    contract bugs (`outline` of a missing path, the API's `search` with an unknown kind) and a
+    page that had drifted from the tables. Now:
+    1. `tests/test_bad_inputs.py` calls every entry point in `api.__all__` with its bad inputs
+       (a missing folder, an unknown section or kind, a build with no index) and checks the
+       status; a new entry point fails until it is listed with its own.
+    2. `tests/test_exit_codes.py` checks that `docs/answers.md` names every status of
+       `STATUS_EXIT` and every code of `EXIT_CODES`.
+    3. A code review's fixes get an arsm-reviewer pass before their commit
+       (`docs/guides/skills-workflow.md` step 6).
+    - **Built 2026-11-27** (architect, solo) on `feat/answer-v3`: both tests fail on the code
+      and page as they were before the review's fixes. 325 tests.
 
 ## Open questions
 

@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-27 (0001 Decision 65 built, `unknown` a list, `answer_version` 4; the code review's fixes; 0001 Decision 64 built on `feat/answer-v3`: CI tests, a pre-commit hook, ruff as a gate, the cut paths tested; 0001 Decisions 61–63 grilled, Decisions 61–63 built on `feat/answer-v3`: one exit-code table, the cut of declared collections, the default build; the rig wish in Small items; 0001 Decisions 58–60 built, one class-name ranking, a rig session module and the Elements reader's smells, on `refactor/class-ranking`; 0001 Decision 57 built and merged, one Elements reader; where to continue: four choices; 0003 step 6 merged; 0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-27 (0001 Decision 66 built, the retro's points 1–3; 0001 Decision 65 built, `unknown` a list, `answer_version` 4; the code review's fixes; 0001 Decision 64 built on `feat/answer-v3`: CI tests, a pre-commit hook, ruff as a gate, the cut paths tested; 0001 Decisions 61–63 grilled, Decisions 61–63 built on `feat/answer-v3`: one exit-code table, the cut of declared collections, the default build; the rig wish in Small items; 0001 Decisions 58–60 built, one class-name ranking, a rig session module and the Elements reader's smells, on `refactor/class-ranking`; 0001 Decision 57 built and merged, one Elements reader; where to continue: four choices; 0003 step 6 merged; 0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -410,7 +410,13 @@ _Last updated: 2026-11-27 (0001 Decision 65 built, `unknown` a list, `answer_ver
      of `main..feat/answer-v3` ran 2026-11-27; its fixes are in (dated lines under Decisions
      61–63; 316 tests). From the review, `unknown` is now a list in both `check_names` answers
      (0001 Decision 65, `answer_version` 4). Left as Small items: the review's smaller smells.
-     Next: `retro`, then the merge when the user asks.
+     The retro ran 2026-11-27; its points 1–3 are built as 0001 Decision 66 (bad-input and
+     answers-page tests, review fixes reviewed). Next: arsm-reviewer on `eef46dd..HEAD`, then
+     the merge when the user asks, in a fresh session; check the first `tests.yml` run.
+     Open from the retro: the hook in peer mode (another agent's file blocks a commit), the
+     reviewer's read-only way to see another version and its no-op line, a **Next** block at
+     the top of STATUS, the six cut paths the hand index doesn't reach, a session-digest
+     script for retros, `.agents/` and `skills-lock.json` in `.gitignore`.
   3. Reopen plan 0001 Decision 23, the runtime probe of the `Live` module (user's ChatGPT
      chat, 2026-11-25, on Structure Void's `dump_runtime_api.py`). Decision 23's condition
      ("when Claude gets LOM calls wrong") has shown twice: a float into an int property and a
@@ -436,6 +442,10 @@ _Last updated: 2026-11-27 (0001 Decision 65 built, `unknown` a list, `answer_ver
 
 ## Small items
 
+- [check] A flaky test (architect, 2026-11-27): one full `pytest` run failed and a later one
+  hung (more than 200 s), both while building 0001 Decision 66; the failing test's name wasn't
+  captured, and 8 runs after that passed. Suspect the rig's socket tests (`test_rig_panel.py`,
+  `rig serve`). Next time: `pytest -v -rf` to a file, to name it.
 - [later] Smells from the code review of `feat/answer-v3` (2026-11-27), none blocking:
   `ElementCall.role` as strings (`"element" | "matrix" | "submatrix"`, a `Literal` would name
   them); `names.check_list` takes `find`, a closure over its own `resolver`;
