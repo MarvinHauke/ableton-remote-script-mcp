@@ -9,6 +9,8 @@
 #   lookup.sh names <folder>             where each API name a script uses is known (observed, documented, unknown)
 #   lookup.sh names --names <A.b> ...    the same for a list: Class, Class.member or a bare name
 # Every form takes --build <build> and --json. Answers are capped at about 4,000 tokens; --full gives all.
+# Exit 0: answered; 1: no match, or an unknown name; 2: no such folder, or a refused option;
+# 3: no index for the build; 5: the tool failed.
 . "$(dirname "$0")/_cli.sh"
 what="${1:-}"
 [ $# -gt 0 ] && shift

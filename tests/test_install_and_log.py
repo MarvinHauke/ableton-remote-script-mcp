@@ -212,7 +212,7 @@ def test_install_refuses_findings_and_strangers(tmp_path, index_dir, library, ca
 def run_skill_script(name, *args, env):
     cli = f"{sys.executable} -m ableton_remote_script_mcp.cli"
     return subprocess.run([str(SKILL / "scripts" / name), *map(str, args)], capture_output=True, text=True, check=False,
-                          env={**os.environ, "ABLETON_REMOTE_SCRIPT_MCP": cli, **env})
+                          env={**os.environ, "ABLETON_REMOTE_SCRIPT_MCP": cli, **env}, timeout=60)
 
 
 def test_skill_scripts_call_the_command(tmp_path, index_dir, library, log):
@@ -235,7 +235,7 @@ def test_skill_scripts_call_the_command(tmp_path, index_dir, library, log):
 def test_skill_scripts_say_when_the_command_is_missing(tmp_path):
     env = {"PATH": "/usr/bin:/bin", "HOME": str(tmp_path)}
     r = subprocess.run([str(SKILL / "scripts" / "validate.sh"), str(tmp_path)], capture_output=True, text=True, check=False,
-                       env=env)
+                       env=env, timeout=60)
     assert r.returncode == 127 and "uv tool install" in r.stderr
 
 

@@ -143,6 +143,20 @@ For a member a class has, the class along its MRO that defines it: the class its
 it inherits the member from. A member that hides one of the same name further along the MRO
 overrides it.
 
+**Answer**:
+What a lookup returns, the same through the CLI's `--json`, the Python API and the MCP tools:
+a `status` (`ok`, `not_found` for no match, `folder_missing` for no folder or file at a path,
+`refused`, `index_missing`, `not_imported`), an
+`answer_version`, the build and the facts.
+
+**Cut**:
+What the cap of about 4,000 tokens leaves out of an answer: only the collections the answer
+declares, never a record's own fields; the `cut` note says what was left out and how to get it.
+
+**Default build**:
+The build the tools use when none is named: the user's `default-build` setting, else the
+newest indexed release, else the newest beta.
+
 ### The test rig (plan 0002)
 
 **Test rig**:

@@ -87,16 +87,19 @@ back. Fixed in step 1 unless a STATUS item is named.
    line in the skill's v3 reference with step 6).
 8. **`lookup class DrumGroupComponent` (the short name) prints only the cut note**: the name
    matches 16 classes, and the cap keeps none of them ("kept classes 0 of 16"). The full name
-   works. Open: a STATUS item, with finding 10 (a list of the matching names when none fits).
+   works. Fixed 2026-11-26 (0001 Decision 62): a cut list keeps its first class and cuts
+   inside it, and the note names the classes it left out.
 9. **`outline_reference_script("Launchkey_MK4")` shows no specification, component map or
    mappings** (known since the spec): its Specification is built by a function. The mappings were
    found in the statements file by hand. Open: a STATUS item.
 10. **`get_class("Clip")` returns skin and notification classes named `Clip`** and cuts
-   `Live.Clip.Clip` (known since the spec). Open: a STATUS item.
+   `Live.Clip.Clip` (known since the spec). Fixed 2026-11-25 (0001 Decision 58): one ranking, Live's
+   `Clip` first, nested classes after those at module level.
 11. **`get_class` and `outline_reference_script` answer from the newest index, the Live 13 beta,
    when no build is named** (step 2: a lookup of a v3 class came back with the beta's build). Beta facts must stay out of what
    is published (`CLAUDE.md`), so a script author on a release is easily served beta facts.
-   Asked again with `build: 12.4.16`. Open: a STATUS item (the newest release as the default).
+   Asked again with `build: 12.4.16`. Fixed 2026-11-26 (0001 Decision 63): the default is the
+   newest indexed release or the user's `default-build` setting, and a beta answer says so.
 12. **`validate` can't see a wrong argument type into Live's C++ objects:** a tuple for
    `playhead_channels` passed, and the script failed to load (`ArgumentError`). Not a validator
    rule; for the skill: Live's objects take lists where they take a sequence. In the skill's
@@ -104,7 +107,8 @@ back. Fixed in step 1 unless a STATUS item is named.
 13. **`check_names NoteEditorComponent.…` resolves the bare name to
    `bar_based_sequence.NoteEditorComponent` first**, and reports `_page_time`, `_clip`,
    `_clip_notes` as not members, though `__init__` sets them (finding 5 again). The statements of
-   `__init__` showed them. Open: with finding 5's STATUS item.
+   `__init__` showed them. The ranking is fixed 2026-11-25 (0001 Decision 58: the class v3
+   re-exports first); the attributes `__init__` sets stay open with finding 5's STATUS item.
 14. **A method whose body is one `return` expression has no statements** (`_button_position`):
    whether v3's loop buttons count bars or pages came from `_update_matrix`'s statements.
    Open: a STATUS item (statements for a returned expression).

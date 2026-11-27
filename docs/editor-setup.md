@@ -31,8 +31,8 @@ Run both commands in your clone of this repository; `uv run` finds the tool ther
     uv run ableton-remote-script-mcp build-stubs --build 12.4.16 --project path/to/My_Project
     ```
 
-    Pass the build of the Live you use. Without `--build`, the newest indexed build is used, which
-    may not be the one you run.
+    Pass the build of the Live you use. Without `--build`, the default build is used (the one
+    set with `default-build`, else the newest indexed release), which may not be the one you run.
 
 What `--project` does:
 

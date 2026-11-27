@@ -1,6 +1,7 @@
 """Query core: the one interface the CLI, the skill scripts and the MCP tools use.
 
-Answers are plain dicts with a `status` of "ok", "index_missing" or "not_found", so every
+Answers are plain dicts with a `status` of "ok", "index_missing", "not_found" (no match),
+"folder_missing" (no such folder) or "refused" (an input it won't use), so every
 adapter can pass them through and no caller has to guess.
 """
 
@@ -16,7 +17,9 @@ from .index_store import (
     PUSH3_HELPER_ROOT,
     SCHEMA_VERSION,
     SCRIPTS_ROOT,
+    SETTINGS_FILE,
     attach_statements,
+    default_build,
     fact_key,
     generation,
     index_path,
@@ -25,7 +28,7 @@ from .index_store import (
     load_statements,
     statements_path,
 )
-from .live_install import LiveInstall
+from .live_install import LiveInstall, is_beta
 from .outline import find_script, outline_package
 from .resolve import Resolver, lineage
 from .structure_void import live_major, load_document
@@ -65,14 +68,23 @@ def _load(index_dir: Path, live_build: str, with_statements: bool = False) -> tu
     return index, statements
 
 
+def default_without_index(index_dir: Path, live_build: str) -> str:
+    """The one message for a default-build setting that names a build with no index (Decision 63)."""
+    return (f"the default build set in {Path(index_dir) / SETTINGS_FILE} is {live_build}, which has no index, "
+            "so the tools refuse to answer without a build: name another with `default-build <build>`, "
+            "or remove the setting with `default-build --clear`")
+
+
 def _open(index_dir: Path, live_build: str | None,
           with_statements: bool = False) -> tuple[dict | None, dict | None]:
     """(index, None) or (None, an index_missing answer)."""
     builds = indexed_builds(index_dir)
     if live_build is None:
-        if not builds:
+        live_build, source = default_build(index_dir, builds)
+        if live_build is None:
             return None, _index_missing(index_dir, None)
-        live_build = builds[0]
+        if source == "setting" and live_build not in builds:
+            return None, _index_missing(index_dir, live_build, default_without_index(index_dir, live_build))
     elif live_build not in builds:
         return None, _index_missing(index_dir, live_build)
     try:
@@ -152,7 +164,7 @@ def get_class(name: str, index_dir: Path, live_build: str | None = None) -> dict
 
 
 def find_class_keys(index: dict, resolver: Resolver, name: str) -> tuple[list[str], dict | None]:
-    """The class keys a class name stands for, the Remote Scripts' first, and the re-export it
+    """The class keys a class name stands for, best first (`class_rank`), and the re-export it
     was found through (`get_class`'s name forms)."""
     classes = index["classes"]
     resolved_from = None
@@ -167,8 +179,23 @@ def find_class_keys(index: dict, resolver: Resolver, name: str) -> tuple[list[st
         found = resolver.resolve(bare, root)
         if found.status == "class":
             keys, resolved_from = [found.key], {"name": name, "via": list(found.via)}
-    keys.sort(key=lambda k: (classes[k]["root"] != SCRIPTS_ROOT, k))
+    keys.sort(key=lambda k: class_rank(index, resolver, k))
     return keys, resolved_from
+
+
+def class_rank(index: dict, resolver: Resolver, key: str) -> tuple:
+    """Where a class goes among classes of the same name, best first: the one ranking of
+    `get_class`, `check_names` and a member's holders (plan 0001 Decision 58).
+
+    A class at module level before a nested one (`Notifications.Clip`); then by package as
+    `search` ranks, a model of a `Live` class (`Live.Clip.Clip`) with the newest framework;
+    then the one its package re-exports (v3's `components.NoteEditorComponent` is
+    `note_editor`'s, not `bar_based_sequence`'s); then the shorter key."""
+    c = index["classes"][key]
+    rank = 0 if c.get("proxy_of") else _package_rank(index, c["root"], c["module"])
+    parent = c["module"].rpartition(".")[0]
+    exported = bool(parent) and resolver.resolve(f"{parent}.{c['qualname']}", c["root"]).key == key
+    return ("." in c["qualname"], rank, not exported, len(key), key)
 
 
 def _framework_page(framework: dict, c: dict, index: dict) -> dict | None:
@@ -272,6 +299,8 @@ def search(query: str, index_dir: Path, live_build: str | None = None, kind: str
     `kind` narrows to one of SEARCH_KINDS ("member" = any class member). `offset` skips that
     many results: the answer's `next_offset` is the next page, when there is one.
     """
+    if kind is not None and kind not in SEARCH_KINDS:
+        return {"status": "refused", "message": f"kind must be one of {', '.join(SEARCH_KINDS)}"}
     index, missing = _open(index_dir, live_build)
     if missing:
         return missing
@@ -347,6 +376,12 @@ def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> d
         if not entry["usable"]:
             entry["problem"] = f"schema {index.get('schema')}, this tool reads schema {SCHEMA_VERSION}; rebuild it"
         builds.append(entry)
+    chosen, source = default_build(index_dir, [b["live_build"] for b in builds])
+    for b in builds:
+        if is_beta(b["live_build"]):
+            b["beta"] = True
+        if b["live_build"] == chosen:
+            b.update(default=True, default_from=source)
     indexed = {b["live_build"] for b in builds}
     not_indexed = [
         {"live_build": i.live_build, "app": str(i.app), "beta": i.is_beta}
@@ -357,12 +392,20 @@ def list_builds(index_dir: Path, installs: list[LiveInstall] | None = None) -> d
         answer = _index_missing(index_dir, None)
         answer["installed_not_indexed"] = not_indexed
         return answer
-    return {"status": "ok", "builds": builds, "installed_not_indexed": not_indexed}
+    answer = {"status": "ok", "builds": builds, "installed_not_indexed": not_indexed}
+    if source == "setting" and chosen not in indexed:
+        answer["default_problem"] = default_without_index(index_dir, chosen)
+    return answer
 
 
 def is_script_folder(name: str) -> bool:
     """`outline`'s argument names a folder on disk (a path), not a script in Live's install."""
-    return ("/" in name or name.startswith(".")) and Path(name).expanduser().is_dir()
+    return _is_path(name) and Path(name).expanduser().is_dir()
+
+
+def _is_path(name: str) -> bool:
+    """A path (`./my_script`, `examples/X`, `~/x`), never a script's name: those have no `/`."""
+    return "/" in name or name.startswith((".", "~"))
 
 
 def outline_folder(folder: Path, index: dict) -> tuple[dict | None, str]:
@@ -423,8 +466,11 @@ def outline_script(name: str, index_dir: Path, live_build: str | None = None) ->
     if is_script_folder(name):
         answer, why = outline_folder(Path(name), index)
         if answer is None:
-            return {"status": "not_found", "live_build": live_build, "message": why}
+            return {"status": "refused", "live_build": live_build, "message": why}
         return {"status": "ok", "live_build": live_build, "confidence": "observed", **answer}
+    if _is_path(name):
+        return {"status": "folder_missing", "live_build": live_build,
+                "message": f"no script folder at {Path(name).expanduser()}"}
     key = find_script(index, name)
     if key is None:
         return _not_found(live_build, f"Remote Script {name!r}")
@@ -440,7 +486,7 @@ def validate_script(folder: Path, index_dir: Path, live_build: str | None = None
     file, a line, a rule, a severity, a message and a fix. See `validator.py` for the rules."""
     folder = Path(folder).expanduser()
     if not folder.is_dir():
-        return {"status": "not_found", "live_build": live_build, "message": f"no script folder at {folder}"}
+        return {"status": "folder_missing", "live_build": live_build, "message": f"no script folder at {folder}"}
     index, missing = _open(index_dir, live_build, with_statements=True)  # the framework checks read its code
     if missing:
         return missing
@@ -460,7 +506,7 @@ def check_names(index_dir: Path, live_build: str | None = None, folder: Path | N
     if folder is not None:
         folder = Path(folder).expanduser()
         if not folder.is_dir():
-            return {"status": "not_found", "live_build": live_build, "message": f"no script folder at {folder}"}
+            return {"status": "folder_missing", "live_build": live_build, "message": f"no script folder at {folder}"}
     index, missing = _open(index_dir, live_build, with_statements=True)
     if missing:
         return missing
@@ -470,7 +516,7 @@ def check_names(index_dir: Path, live_build: str | None = None, folder: Path | N
     if folder is not None:
         return {"status": "ok", "confidence": "observed", **check(folder.resolve(), index, statements, doc)}
     resolver = Resolver(index)
-    return {"status": "ok", **check_list(names, index, statements, doc,
+    return {"status": "ok", **check_list(names, index, statements, doc, resolver,
                                           lambda n: find_class_keys(index, resolver, n))}
 
 
@@ -490,14 +536,14 @@ def build_stubs(index_dir: Path, live_build: str | None = None, out: Path | None
     if project:
         project = Path(project).expanduser().resolve()
         if not project.is_dir():
-            return {"status": "not_found", "live_build": live_build,
+            return {"status": "folder_missing", "live_build": live_build,
                     "message": f"no folder {project}: --project names your script project's folder"}
         out = project / "stubs"
     out = Path(out).expanduser() if out else Path(index_dir) / "stubs" / live_build
     try:
         answer = write_stubs(index, out, load_document(index_dir, live_major(live_build)), observed_only)
     except FileExistsError as e:
-        return {"status": "not_found", "live_build": live_build, "message": str(e)}
+        return {"status": "refused", "live_build": live_build, "message": str(e)}
     if project:
         answer["project"] = set_up_project(project)
     return answer

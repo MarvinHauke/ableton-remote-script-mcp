@@ -183,6 +183,13 @@ def old_build() -> Index:
     ix.cls("ableton.v3.control_surface.display.notifications", "Notifications.Device", ["object"], line=6,
            members={"bank": attr(7, "'Bank'")})
     ix.cls("ableton.v3.control_surface.display.notifications", "DefaultNotifications", ["Notifications"], line=20)
+    # two v3 classes of one name; the package re-exports the one with the longer key (0001 Decision 58)
+    for module in ("note_editor_component", "sequence"):
+        ix.module(f"ableton.v3.control_surface.components.{module}",
+                  imports={"Component": "ableton.v3.control_surface.Component"})
+        ix.cls(f"ableton.v3.control_surface.components.{module}", "NoteEditorComponent", ["Component"], line=9,
+               members={"set_steps": method(10, p("steps")),
+                        **({"set_pitches": method(11, p("pitches"))} if module == "sequence" else {})})
 
     ix.package("_Framework", "framework")
     ix.module("_Framework.ControlSurfaceComponent")
@@ -216,6 +223,9 @@ def old_build() -> Index:
     ix.module("live_model.Live.Song", root="push3-helper")
     ix.cls("live_model.Live.Song", "Song", [], line=177, root="push3-helper", proxy_model=True,
            proxy_of="Live.Song.Song", members={"tempo": prop(180, setter=True)})
+    ix.module("live_model.Live.Device", root="push3-helper")
+    ix.cls("live_model.Live.Device", "Device", [], line=12, root="push3-helper", proxy_model=True,
+           proxy_of="Live.Device.Device", members={"parameters": prop(14)})
     return ix
 
 
@@ -244,7 +254,8 @@ def outline_scripts(ix: Index) -> None:
         "component_map": attr(6, "{}"),
         "create_mappings_function": method(7, kind="function"),
     })
-    ix.module(f"{V3}.components", imports={"Component": f"{V3}.Component"})
+    ix.module(f"{V3}.components", imports={"Component": f"{V3}.Component",
+                                           "NoteEditorComponent": f"{V3}.components.note_editor_component.NoteEditorComponent"})
     controls = {  # what the framework checks look keys up in (step 8)
         "MixerComponent": {"set_volume_controls": method(11, p("controls")),
                            "__getattr__": method(12, p("name"), statements=[call(13, "name.startswith", "'set_send'")])},

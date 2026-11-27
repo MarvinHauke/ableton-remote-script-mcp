@@ -93,11 +93,14 @@ def _section(path: list[str], help_text: str, parser: argparse.ArgumentParser, l
 
 def render() -> str:
     sys.path.insert(0, str(ROOT / "src"))
-    from ableton_remote_script_mcp.cli import make_parser
+    from ableton_remote_script_mcp.cli import EXIT_CODES, make_parser
 
     parser = make_parser()
     lines = [HEADER, "## Global options", "", "| Option | What it does |", "| --- | --- |"]
     lines += _option_rows(parser) + [""]
+    lines += ["## Exit codes", "", "Every command exits with one of these (`EXIT_CODES` in `cli.py`).", "",
+              "| Code | Meaning |", "| --- | --- |"]
+    lines += [f"| {code} | {_sentence(text)} |" for code, text in EXIT_CODES.items()] + [""]
     for name, help_text, sub in _subcommands(parser):
         lines += _section([name], help_text, sub, 2)
     return "\n".join(lines).rstrip() + "\n"

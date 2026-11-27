@@ -3,7 +3,7 @@
 The working state: what is in work, what needs a check, small items. Decisions live in the plans;
 finished work is in the git history.
 
-_Last updated: 2026-11-25 (0001 Decision 57 built and merged, one Elements reader; where to continue: four choices; 0003 step 6 merged; 0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
+_Last updated: 2026-11-27 (0001 Decision 66 built, the retro's points 1–3; 0001 Decision 65 built, `unknown` a list, `answer_version` 4; the code review's fixes; 0001 Decision 64 built on `feat/answer-v3`: CI tests, a pre-commit hook, ruff as a gate, the cut paths tested; 0001 Decisions 61–63 grilled, Decisions 61–63 built on `feat/answer-v3`: one exit-code table, the cut of declared collections, the default build; the rig wish in Small items; 0001 Decisions 58–60 built, one class-name ranking, a rig session module and the Elements reader's smells, on `refactor/class-ranking`; 0001 Decision 57 built and merged, one Elements reader; where to continue: four choices; 0003 step 6 merged; 0003 step 6 built, Decision 37: the skill's step sequencer section, the rig and the type check in the skill; 0001 Decision 56 done, task 3 built, the Editor setup page; task 2 built, `build-stubs --project`; task 1 built, the stubs fix; 0003 Decision 36 built: the sequencer in its own repo and script `APC_mini_mk1_Plus`, a submodule here; 0003 step 6 next; 0003 Decisions 33-34 built, nested Drum Rack and follow again; 0003 Decision 32 built, the steps edit the selected slot; 0002 Decision 30 built, held buttons and help on the panel; 0003 Decision 31 built, the page follows the playhead; the user's panel run, 9 of 9; 0003 Decision 30 built, the resolution pads; 0003 Decision 29 built, scene choice and the resolution on two buttons; 0003 step 5's first task built, the rig's selection, 0002 Decision 29; 0003 step 4 done, 0003 Decision 28, 0002 Decision 28; 0003 step 3 done, Decisions 26–27; 0003 step 2 done, Decisions 24–25; 0003 step 1 built and loaded in Live, Decisions 22–23; 0003 steps approved, Decision 21; 0002 step 6b done and run in Live, a clip's notes in check files, Decision 27; 0002 step 6a built, the panel's LED colours; plan 0003 spec and steps, Decisions 17–20, 0002 step 6 split; plan 0003 grilled, Decisions 1–16; 0002 Decision 26; plan 0003 drafted, 0001 Decision 55; agent team, Decision 54; distribution stays last)._
 
 ## Now
 
@@ -390,15 +390,33 @@ _Last updated: 2026-11-25 (0001 Decision 57 built and merged, one Elements reade
      fixed; `check_names` says in `not_read` when it can't read the Elements class,
      `answer_version` 2; 277 tests). Merged into `main` 2026-11-25 (user). The other candidates,
      weaker:
-     - the cut cuts only declared collections, never a record (`answers.py` `bounded`;
-       findings 1, 8; touches the answer core: user);
-     - one class-name ranking (`query.find_class_keys`, `names.check_list`, `names.py:265`;
-       findings 10, 13);
-     - every CLI command through the answer core, one exit-code table (`not_found` exits 1 or
-       2 by command; exit codes are a contract: user);
-     - a rig session module (`_cmd_rig_run`, `_cmd_rig_panel` repeat the set-up);
-     - the default build: newest release, and the answer says which (`query._open`,
-       finding 11; a default of the tools: user).
+     - ~~the cut cuts only declared collections~~ (findings 1, 8): built 2026-11-26 as 0001
+       Decision 62 on `feat/answer-v3` (dropped records named; 296 tests), not merged yet;
+     - ~~one class-name ranking~~ (findings 10, 13): built 2026-11-25 as 0001 Decision 58 on
+       `refactor/class-ranking` (`query.class_rank`; 278 tests), not merged yet;
+     - ~~one exit-code table~~: built 2026-11-26 as 0001 Decision 61 on `feat/answer-v3`
+       (`cli.EXIT_CODES`, `folder_missing`, `refused`, a crash exits 5; `answer_version` 3;
+       292 tests), not merged yet;
+     - ~~a rig session module~~: built 2026-11-25 as 0001 Decision 59 on
+       `refactor/class-ranking` (`rig/session.py`; 283 tests), not merged yet;
+     - ~~the code review's eight smells in the Elements reader~~: fixed 2026-11-25 as 0001
+       Decision 60 on `refactor/class-ranking`, not merged yet;
+     - ~~the default build~~ (finding 11): built 2026-11-26 as 0001 Decision 63 on
+       `feat/answer-v3` (the newest release or `default-build`'s setting, beta answers marked;
+       304 tests), not merged yet.
+     After these: a code review of `refactor/class-ranking` and `feat/answer-v3` (user,
+     2026-11-25), then point 3. Before the review, the retro's guardrail (user, 2026-11-26):
+     built as 0001 Decision 64 on `feat/answer-v3` (312 tests). The mattpocock `code-review`
+     of `main..feat/answer-v3` ran 2026-11-27; its fixes are in (dated lines under Decisions
+     61–63; 316 tests). From the review, `unknown` is now a list in both `check_names` answers
+     (0001 Decision 65, `answer_version` 4). Left as Small items: the review's smaller smells.
+     The retro ran 2026-11-27; its points 1–3 are built as 0001 Decision 66 (bad-input and
+     answers-page tests, review fixes reviewed). Next: arsm-reviewer on `eef46dd..HEAD`, then
+     the merge when the user asks, in a fresh session; check the first `tests.yml` run.
+     Open from the retro: the hook in peer mode (another agent's file blocks a commit), the
+     reviewer's read-only way to see another version and its no-op line, a **Next** block at
+     the top of STATUS, the six cut paths the hand index doesn't reach, a session-digest
+     script for retros, `.agents/` and `skills-lock.json` in `.gitignore`.
   3. Reopen plan 0001 Decision 23, the runtime probe of the `Live` module (user's ChatGPT
      chat, 2026-11-25, on Structure Void's `dump_runtime_api.py`). Decision 23's condition
      ("when Claude gets LOM calls wrong") has shown twice: a float into an int property and a
@@ -423,6 +441,22 @@ _Last updated: 2026-11-25 (0001 Decision 57 built and merged, one Elements reade
   with/without benchmark for the README, was added last by the user, 0001 decision 39).
 
 ## Small items
+
+- [check] A flaky test (architect, 2026-11-27): one full `pytest` run failed and a later one
+  hung (more than 200 s), both while building 0001 Decision 66; the failing test's name wasn't
+  captured, and 8 runs after that passed. Suspect the rig's socket tests (`test_rig_panel.py`,
+  `rig serve`). Since 2026-11-27 `faulthandler_timeout = 60` dumps every thread's stack when a
+  test runs over 60 s, and the tests' subprocesses have a `timeout=` (the reviewer's view: the
+  hang was likely a subprocess, `node -e` or a skill script; the failure a socket deadline in
+  `test_rig_panel.py` under load).
+- [later] Smells from the code review of `feat/answer-v3` (2026-11-27), none blocking:
+  `ElementCall.role` as strings (`"element" | "matrix" | "submatrix"`, a `Literal` would name
+  them); `names.check_list` takes `find`, a closure over its own `resolver`;
+  `validator.element_names_of_folder` sits there only to break an import cycle.
+- [idea, rig] (user, 2026-11-25, grilling round 1): more rigs, e.g. one for the UC4 editor's
+  layout. The default rig stays as it is: an 8x8 matrix, a few encoders, pots and extra buttons
+  for testing. Later, its layout could follow where a controller's buttons usually are; for
+  simple tests it is fine now.
 
 - **Done (0001 Decision 56), merged 2026-11-20:** stubs for writing scripts by hand, three tasks in order, branch
   `feat/0001-stubs-hand-dev` (from `chore/submodule-guards`, both unmerged): (1) the stubs'
@@ -457,7 +491,8 @@ _Last updated: 2026-11-25 (0001 Decision 57 built and merged, one Elements reade
 - [idea, validate/install] (user's run, 2026-11-19): `install examples/APC_mini_mk1_Plus` (the
   repo root) gave `create-instance` "no __init__.py". When the folder has none but exactly one
   subfolder that has one, say "did you mean `<folder>/<sub>`?". Also: without `--build` the
-  newest indexed build (13.0b25) was used, while Live 12.4.16 is the one in use.
+  newest indexed build (13.0b25) was used, while Live 12.4.16 is the one in use (fixed
+  2026-11-26, 0001 Decision 63).
 - [finding, build-stubs] (architect, 2026-11-19, on `APC_mini_mk1_Plus` with the 12.4.16
   stubs): the imports resolve, but pyright and basedpyright report 13 false errors.
   - A property with a setter (`listenable_property`, e.g. `StepResolutionComponent.index`) comes
@@ -498,8 +533,8 @@ _Last updated: 2026-11-25 (0001 Decision 57 built and merged, one Elements reade
   injects and that `_get_additional_dependencies()` takes functions (a validator rule?);
   `lookup class <short name>` with many matches prints nothing but the cut note; `outline` of
   `Launchkey_MK4` shows no Specification or mappings; `get_class("Clip")` buries `Live.Clip.Clip`.
-- [needs-triage] Tool findings from 0003 steps 2–3 (results page, 11, 13–15): `get_class` and
-  `outline` default to the newest index, the Live 13 beta (the newest release instead?);
+- [needs-triage] Tool findings from 0003 steps 2–3 (results page, 11, 13–15): ~~`get_class` and
+  `outline` default to the newest index, the Live 13 beta~~ (0001 Decision 63);
   `check_names` resolves bare `NoteEditorComponent` to `bar_based_sequence` first; a one-`return`
   method has no statements; nothing says where a `__getattr__` forwards control names to.
 - [needs-triage] Tool findings from 0003 step 4 (results page, 19; 16, an attribute

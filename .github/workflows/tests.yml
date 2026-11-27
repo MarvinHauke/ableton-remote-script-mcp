@@ -1,0 +1,26 @@
+name: tests
+
+# The guardrail (plan 0001 Decision 64): ruff and the tests on every push to main and every pull
+# request. Tests that need an installed Live (`local_live`) or the rig's extra skip themselves.
+# scripts/hooks/pre-commit runs the same checks locally.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.3.3  # no moving major tag for setup-uv
+
+      - run: uv sync --locked
+      - run: uv run ruff check
+      - run: uv run pytest -q

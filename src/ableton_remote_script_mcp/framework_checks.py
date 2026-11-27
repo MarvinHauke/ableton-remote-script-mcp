@@ -40,7 +40,7 @@ import re
 import sys
 import warnings
 
-from .elements import read_elements
+from .elements import Elements, read_elements
 from .extractor import read_code
 from .index_store import SCRIPTS_ROOT, add_module_facts, package_facts
 from .outline import Outliner, callee_text, literal_str, parse_expression
@@ -180,7 +180,7 @@ class _Checker:
         self.o = Outliner(self.overlay, script)
         self.has_statements = any("statements" in m for c in index["classes"].values()
                                   if c["module"].startswith("ableton.v3.") for m in c["members"].values())
-        self._elements: tuple | None = None
+        self._elements: Elements | None = None
 
     # --- helpers --------------------------------------------------------------------------
 
@@ -430,23 +430,18 @@ class _Checker:
             if k not in LAYER_OPTIONS and _is_str(v):
                 self.element(k, v, where)
 
-    def element_names(self) -> tuple[set[str] | None, bool, str]:
-        """(names, some names are computed, why there are none), from the Elements reader."""
-        if self._elements is None:
-            read = read_elements(self.o, self.sources)
-            self._elements = (read.names, read.computed, read.why)
-        return self._elements
-
     def element(self, key: str, value_text: str, where) -> None:
         file, line, section = where
         value = literal_str(value_text)
-        names, computed, why = self.element_names()
+        if self._elements is None:  # the Elements reader, once per script
+            self._elements = read_elements(self.o, self.sources)
+        names = self._elements.names
         match = _LIST_ACCESS.match(value)
         base = match[1] if match else value
         if names is None:
-            self.skip("element-name", file, line, f"{key}={value_text}", why)
+            self.skip("element-name", file, line, f"{key}={value_text}", self._elements.why)
         elif base not in names:
-            if computed:
+            if self._elements.computed:
                 self.skip("element-name", file, line, f"{key}={value_text}",
                           "the Elements class builds some names in a loop or by computation")
             else:

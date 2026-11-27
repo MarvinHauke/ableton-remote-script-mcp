@@ -1,6 +1,6 @@
 # 0001 — Architecture: API index, skill, MCP server
 
-_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
+_Stage: in work — steps 1–3, 5, 5a, 7 and 9 built 2026-11-15, 9a (baseline round) and 8 2026-11-16. Frontier: Milestone 1 complete 2026-11-18 (step 10's 9a round run); steps 4 and 6 built 2026-11-18; the MCP design ideas grilled (Decision 49); step 11 built 2026-11-18 (Decision 52); `build-stubs` built 2026-11-19 (Decision 53); stubs for writing by hand built (Decision 56, tasks 1–3 2026-11-20); one Elements reader built 2026-11-25 (Decision 57); one class-name ranking built 2026-11-25 (Decision 58); a rig session module built 2026-11-25 (Decision 59); the Elements reader's smells fixed 2026-11-25 (Decision 60); one exit-code table built 2026-11-26 (Decision 61); the cut cuts declared collections only, built 2026-11-26 (Decision 62); the default build, the newest release or a setting, built 2026-11-26 (Decision 63); a guardrail, CI and a pre-commit hook, built 2026-11-26 (Decision 64); `unknown` a list in both `check_names` answers, `answer_version` 4, built 2026-11-27 (Decision 65); bad inputs and the answers page tested, built 2026-11-27 (Decision 66); work runs as an agent team from 2026-11-19 (Decision 54); next step 12, which the user puts near the end: improve first, distribute last._
 _Depends on: none. Input: [research/2026-11-14-sources-investigation.md](research/2026-11-14-sources-investigation.md)_
 
 ## Problem Statement
@@ -1024,6 +1024,182 @@ meant to do, and uses only API names that exist in the Live build they target.
     - **The rig reads the global channel only where it is needed** (architect, 2026-11-25, from
       the code review): an unreadable `global_channel` marks only the elements without their own
       `channel=` unresolved, not every element. No check file or test changes.
+58. **One class-name ranking** (user, 2026-11-25, "lets now continue with the points from 2",
+    the architecture review's candidates in STATUS; findings 10 and 13). `get_class` sorted the
+    classes of a name with the Remote Scripts' first and then alphabetically, `check_names`
+    re-sorted them by package, and a member's holders sorted once more: three orders, and
+    `get_class("Clip")` put skin and notification classes before Live's own `Clip`, which the
+    cut then dropped. Now one key, `query.class_rank`, for all three, best first:
+    1. a class at module level before a nested one (`Notifications.Clip`, `Colors.Clip`);
+    2. by package as `search` ranks (the framework, newest generation first; libraries;
+       Remote Scripts; the Push 3 helper's copies last), with a model of a `Live` class
+       (`Live.Clip.Clip`) as high as the newest framework;
+    3. the class its package re-exports before one it doesn't (v3's
+       `components.NoteEditorComponent` is `note_editor`'s, not `bar_based_sequence`'s);
+    4. the shorter key, then the key.
+    No contract change: the same answers in another order. Finding 13's other half (attributes
+    `__init__` sets, `_clip`) is finding 5's and stays open.
+    - **Built 2026-11-25** (architect, solo). Against the local 12.4.16 index, the first class
+      `check_names` picks changed for a few dozen of the names that have more than one class,
+      all by the rules above (Live's `Clip`, `Track`, `Device`, `Quantization` before skin and
+      notification classes; v3's re-exported `NoteEditorComponent` and `LoopSelectorComponent`
+      first). 278 tests.
+59. **A rig session module** (user, 2026-11-25, the same message; the architecture review's
+    candidate in STATUS). `rig run` and `rig panel` each read the script's controller model,
+    its `device.yaml` and checked the profile's element names, in two copies of the same code.
+    Now `rig/session.py` `prepare(folder, index dir, build, profile=, beside=, names=)` does it
+    once and returns the controller and the profile, or raises `SessionError` with the reason.
+    `rig run` passes the check file's names (`names=`) and looks for `device.yaml` beside the
+    check file (`beside=`); `rig panel` passes `--profile` or finds it beside the script. No
+    contract change: the same messages, the same exit code 4. The ports stay in the commands:
+    `rig run` opens its own when no `rig serve` runs, `rig panel` needs `rig serve`.
+    - **Built 2026-11-25** (architect, solo). `tests/test_rig_session.py` (5 tests). 283 tests.
+60. **The Elements reader's smells** (user, 2026-11-25, the same message; the eight smells the
+    standards axis of the code review of Decision 57 named). Changes Decision 57 point 1's names;
+    no behaviour changes but one (point 1):
+    1. **One switch:** `ElementCall.role` (element, matrix, submatrix, or none: a call the
+       reader only names), set from the method when the record is made (`ROLES`). The reader
+       and the rig's `build_controller` read the role, not the method. The one change: a matrix
+       call with no identifiers is an empty matrix in the rig now, where it was one element
+       with no channel and no number.
+    2. **One way to a name:** `ElementCall.attr`; a modified control's name goes through
+       `attribute_name` too.
+    3. **Names:** `Built` is `ElementCall`, `Item` is `MatrixItem`, `_given` is `_argument_text`.
+    4. **No middle man:** the validator keeps the reader's `Elements` record, not a tuple of it.
+    5. **On the data it reads:** the parameters of a framework method are
+       `Outliner.method_params`. `_entries` stays in `elements.py`: where the calls are is the
+       reader's rule, not the outline's.
+    6. **No refused bequest:** a comprehension's variable is `Constants.with_local`, not a
+       subclass that skips its parent's `__init__`.
+    7. **No hidden import cycle:** `element_names_of_folder` is in `validator.py`, beside
+       `read_sources`, which already imports the framework checks and the reader; `LIVE_PYTHON`
+       is defined once, in `framework_checks.py` (the validator had its own copy).
+    8. **Kept:** `ElementCall` still holds the fields of all three roles, and `kind`, `msg_type`
+       and `map_mode` stay strings (the framework's names); `role` says which fields hold.
+    - **Built 2026-11-25** (architect, solo). Checked against Decision 59's commit on the four
+      examples and the v3 scripts of the local Live 12 decompile (12.4.16, 29 folders): the rig's
+      controller model, `validate`'s findings and `check_names`' unknown names and `not_read` are
+      the same for all. 283 tests.
+61. **One exit-code table, and statuses that say what is missing** (user, 2026-11-25 and
+    2026-11-26, grilling rounds 1–3 on the architecture review's candidates; contracts: the
+    CLI's exit codes and `answer_version`). `not_found` exited 1 for the lookups and 2 for
+    `validate`, `check-names`, `build-stubs` and `install`, and a crash exited 1 like findings.
+    Now:
+    1. **One table**, `cli.EXIT_CODES`, printed in the generated CLI reference: 0 done; 1
+       answered, with something to act on (findings, unknown names, tracebacks, a failed step,
+       no match); 2 an input isn't there or was refused (no such folder or log, Live silent, a
+       usage error); 3 build or install something first (no index, a missing extra, Structure
+       Void's pages not imported, which exited 2 before); 4 a file or value can't be read; 5 the
+       tool failed on its own. The grep and diff convention (0, 1, 2 and up) stays: a renumbering
+       in the sysexits style gains nothing here.
+    2. **The statuses map onto it** (`cli.STATUS_EXIT`): `not_found` always means no match and
+       exits 1. New: `folder_missing` (no script or project folder at the path, exit 2) and
+       `refused` (an input the tool won't use: an unknown outline section or search kind, a
+       folder it can't compile, a stubs folder with other files; exit 2). A missing log file is
+       `folder_missing` too. `answer_version` 3.
+    3. **A crash exits 5:** `main()` prints one line naming the error, then the traceback.
+    4. **The skill's scripts** name only codes of the table, and the ones that run the CLI name
+       5 too (`tests/test_exit_codes.py` checks their headers). `typecheck.sh` keeps its own
+       codes (3 no stubs, 4 no checker, 5 the checker failed), all in the table's range.
+    5. The rig's codes stay as they are (`rig probe --send` stays 4).
+    - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`. 292 tests.
+    - **Code review 2026-11-27** (architect, the user's "yes do the fixes"): `outline` of a path
+      that isn't there answers `folder_missing` (it fell through to the search by name,
+      `not_found`); the Python API's `search` refuses an unknown kind, not only the MCP tool;
+      `rig panel` exits 3 without PyYAML, as `rig run` does; `log`, `list builds` and
+      `default-build` take their codes from `STATUS_EXIT`. A folder outline under another
+      Python than Live's stays `refused` (exit 2): the tool won't compile it there.
+    - **The reviewer's pass on those fixes, 2026-11-27** (Decision 66, point 3): the rig caught
+      every `ImportError` around `prepare`, so an import bug exited 3, not 5. Now only a missing
+      PyYAML is the rig extra (`rig.ports.RigExtraMissing`, from `load_yaml`, with the install
+      hint); `rig serve`'s profile exits 3 on it too. Exit 4 also names a script the rig can't
+      read.
+62. **The cut cuts declared collections only** (user, 2026-11-26, grilling rounds 3 and 5;
+    findings 1, 8; contract: `answer_version` 3). `bounded` cut the largest list or map anywhere
+    in an answer, a record's own fields too (finding 8: a class's `bases`). Now:
+    1. Each answer names the collections that may be cut: `get_class` `classes` and
+       `classes[].all_members` (and `members`); `search` `results`; `validate` `findings` and
+       `not_checked`; `check_names` `names`, `unknown`, `used_only` and the other folder lists;
+       `outline` its sections; `diff` its lists. Nothing else is ever cut.
+    2. A cut list keeps at least its first record, and cuts inside that record when it must.
+    3. The `cut` note names the records it dropped from a list of named records, at most 50
+       (`dropped`, and `more` for the rest), and `how` says to ask for one by its qualified name.
+       A cut member map names nothing: `how` keeps pointing to `members=[…]` and `full=true`.
+    4. The note's own size counts: each cut is sized with the note so far, so the names it
+       lists stay inside the cap.
+    - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`: `bounded(…, collections=)`,
+      the declarations in `api.py` (`LOOKUP_CUTS` and the others), `protect=` gone; a record
+      section (`specification`, `mappings`, a diff's `members`) is cut only in the lists inside
+      it (review). On the local index, a short-name lookup keeps the first class and names the
+      others, and a long `search` names 50 dropped results and counts the rest.
+      `tests/test_cut.py`.
+    - **Code review 2026-11-27** (architect): point 1 also covers what was built: `get_class`
+      declares its `documented` lists (Structure Void's records), and `list_builds` its `builds`
+      and `installed_not_indexed`. `tests/test_cut_paths.py` (Decision 64) checks every
+      declaration.
+63. **The default build is the newest release, or a setting** (user, 2026-11-26, grilling
+    rounds 4 and 5; finding 11; contracts: `answer_version` 3 and the tools' defaults). Without
+    `build`, the tools used the newest indexed build, here the Live 13 beta. Now:
+    1. **The order:** a `build` named in the call; else the setting; else the newest indexed
+       release (overall, not per major version); else, when only betas are indexed, the newest
+       beta, and the answer says so.
+    2. **The setting** lives in the index folder (outside every repo, never published):
+       `ableton-remote-script-mcp default-build <build>` sets it, without a build shows it,
+       `--clear` removes it. A setting that names a build that isn't indexed is refused with
+       `index_missing`, saying how to change it; it never falls back quietly.
+    3. **A beta answer says so:** `"beta": true`, worked out from the build name (a `b` in the
+       version) when the answer is made, never stored; release answers have no such field. The
+       text output prints "(beta)" after the build.
+    4. **`list_builds`** marks the default (`"default": true`, `"default_from"`: `setting` or
+       `newest release`) and each beta.
+    5. No detection of the running Live: it is often closed while a script is written, several
+       can be open, and the answer would depend on which one is.
+    - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`: `index_store.default_build`,
+      `read_default_setting` and `write_default_setting` (`settings.json` in the index folder),
+      used by `query._open`; `live_install.is_beta`, the one beta rule; the mark in
+      `answers.stamp` (also for `diff`, when one of its builds is a beta); the CLI command
+      `default-build`; `list_builds`' `default`, `default_from`, `beta` and `default_problem`.
+      Here the default is 12.4.16 now, no longer 13.0b25. `tests/test_default_build.py`.
+      After the review: 304 tests.
+    - **Code review 2026-11-27** (architect): the message for a setting without an index is one
+      function, `query.default_without_index`, for `_open`, `list_builds` and `default-build`; the
+      `--build` help is one constant, `cli.BUILD_HELP`.
+64. **A guardrail runs the checks** (user, 2026-11-26, the retro of Decisions 57–63: of the
+    reviewer's 13 must-fix items, two were a cut declared on a record, and ruff's noise hid a
+    bug). Before this, only `docs.yml` ran in CI and nothing ran before a commit. Now:
+    1. **CI:** `.github/workflows/tests.yml` runs `uv run ruff check` and `uv run pytest -q` on
+       every push to `main` and every pull request.
+    2. **Before a commit:** `scripts/hooks/pre-commit` runs ruff, `gen_cli_reference.py --check`
+       and the tests over the working tree; a clone turns it on with
+       `git config core.hooksPath scripts/hooks` (`CLAUDE.md`).
+    3. **Ruff is a gate:** pinned in the dev group (`ruff==0.17.5`), its default rules, with
+       `tests/fixtures`, `examples` and the eval cases' script files excluded (they copy
+       Ableton's style or are wrong on purpose). The four errors left in our code are fixed.
+    4. **The cut's declarations are tested:** `tests/test_cut_paths.py` walks every declared
+       path over the hand index's answers; a path that reaches a record (not a list or a
+       member map) fails. The paths the hand index can't reach are listed in the test.
+    5. A page check for real index output was weighed and left to the reviewer: the pages name
+       12.4.16 in commands on purpose, so a check by build number would mostly raise false alarms.
+    - **Built 2026-11-26** (architect, solo) on `feat/answer-v3`. 312 tests.
+65. **`unknown` is a list in both `check_names` answers** (user, 2026-11-27, "do the recommended
+    change"; found by `tests/test_cut_paths.py`, Decision 64; contract: `answer_version` 4). A
+    folder answer's `unknown` listed the unknown attributes, a list answer's was their count.
+    Now a list answer's `unknown` lists the names that are `unknown` or `not_a_member`; `counts`
+    keeps counting each kind.
+    - **Built 2026-11-27** (architect, solo) on `feat/answer-v3`. 316 tests.
+66. **Bad inputs and the answers page are tested, review fixes are reviewed** (user, 2026-11-27,
+    the retro of the session that built Decisions 64–65, points 1–3). The code review found two
+    contract bugs (`outline` of a missing path, the API's `search` with an unknown kind) and a
+    page that had drifted from the tables. Now:
+    1. `tests/test_bad_inputs.py` calls every entry point in `api.__all__` with its bad inputs
+       (a missing folder, an unknown section or kind, a build with no index) and checks the
+       status; a new entry point fails until it is listed with its own.
+    2. `tests/test_exit_codes.py` checks that `docs/answers.md` names every status of
+       `STATUS_EXIT` and every code of `EXIT_CODES`.
+    3. A code review's fixes get an arsm-reviewer pass before their commit
+       (`docs/guides/skills-workflow.md` step 6).
+    - **Built 2026-11-27** (architect, solo) on `feat/answer-v3`: both tests fail on the code
+      and page as they were before the review's fixes. 325 tests.
 
 ## Open questions
 

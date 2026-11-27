@@ -51,8 +51,8 @@ import re
 import sys
 from pathlib import Path
 
-from .elements import element_names_of_folder
 from .resolve import Resolver, lineage
+from .validator import element_names_of_folder
 
 # Not int, range or slice: they bring `start`, `stop`, `real`, names a script may invent on Live objects.
 CONTAINER_TYPES = (str, bytes, list, tuple, dict, set, frozenset)
@@ -266,40 +266,33 @@ def bucket(name: str, defined: set[str], used: set[str], documented: set[str]) -
 _CONFIDENCE = {"index": "observed", "used": "observed", "documented": "documented"}
 
 
-def _holders(index: dict, name: str, limit: int = 5) -> list[str]:
-    from .query import _package_rank  # the framework first, as `search` ranks
+def _holders(index: dict, resolver: Resolver, name: str, limit: int = 5) -> list[str]:
+    from .query import class_rank  # one ranking with `get_class`
 
-    classes = index["classes"]
-    found = [k for k, c in classes.items() if name in c["members"]]
-    found.sort(key=lambda k: (_package_rank(index, classes[k]["root"], classes[k]["module"]), len(k), k))
+    found = [k for k, c in index["classes"].items() if name in c["members"]]
+    found.sort(key=lambda k: class_rank(index, resolver, k))
     return found[:limit]
 
 
-def check_list(names: list[str], index: dict, statements: dict | None, doc: dict | None, find) -> dict:
+def check_list(names: list[str], index: dict, statements: dict | None, doc: dict | None, resolver: Resolver,
+               find) -> dict:
     """Each name of `names` with where it is known (see the module's docstring). `find(name)`
-    gives the index's class keys for a class name, best first, and the re-export path if any."""
-    from .query import _package_rank
-
-    def ranked(name: str) -> tuple[list[str], dict | None]:  # the framework first, newest generation first
-        keys, via = find(name)
-        c = index["classes"]
-        return sorted(keys, key=lambda k: (_package_rank(index, c[k]["root"], c[k]["module"]), k)), via
-
+    gives the index's class keys for a class name, best first (`query.class_rank`), and the
+    re-export path if any."""
     defined, used = known_names(index, statements)
     documented = documented_names(doc)
-    resolver = Resolver(index)
     results = []
     for raw in names:
         name = raw.strip()
         if not name:
             continue
-        keys, _ = ranked(name)
+        keys, _ = find(name)
         if keys:
             results.append({"name": name, "kind": "class", "known": "index", "confidence": "observed",
                             "classes": keys[:5]})
             continue
         owner, _, member = name.rpartition(".")
-        keys, _ = ranked(owner) if owner else ([], None)
+        keys, _ = find(owner) if owner else ([], None)
         if keys:  # the first class of that name that has the member (`Component`: v2, v3, …)
             lineages = {k: lineage(resolver, k).members for k in keys}
             key = next((k for k in keys if member in lineages[k]), keys[0])
@@ -327,13 +320,13 @@ def check_list(names: list[str], index: dict, statements: dict | None, doc: dict
         b = bucket(bare, defined, used, documented)
         entry = {"name": name, "kind": "name", "known": b, "confidence": _CONFIDENCE.get(b)}
         if b == "index":
-            entry["in"] = _holders(index, bare)
+            entry["in"] = _holders(index, resolver, bare)
         results.append(entry)
     counts: dict[str, int] = {}
     for r in results:
         counts[r["known"]] = counts.get(r["known"], 0) + 1
     return {"live_build": index["live_build"], "names": results, "counts": counts,
-            "unknown": sum(r["known"] in ("unknown", "not_a_member") for r in results)}
+            "unknown": [r["name"] for r in results if r["known"] in ("unknown", "not_a_member")]}
 
 
 def _documented_member(doc: dict, cls: dict, member: str) -> bool:

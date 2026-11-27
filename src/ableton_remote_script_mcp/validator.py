@@ -34,10 +34,16 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .framework_checks import check_framework
+from .elements import read_elements
+from .framework_checks import (
+    LIVE_PYTHON,
+    check_framework,
+    compile_sources,
+    overlay_index,
+)
 from .index_store import SCRIPTS_ROOT
+from .outline import Outliner
 
-LIVE_PYTHON = (3, 11)
 SKIP_DIRS = {"__pycache__"}
 LIVE_MODULES = ("Live", "MidiRemoteScript")  # provided by Live's C++ code, not files
 _IMPORT_ERRORS = {"ImportError", "ModuleNotFoundError", "Exception", "BaseException"}
@@ -317,6 +323,29 @@ def read_sources(folder: Path, findings: list[dict]) -> tuple[dict[str, Source],
             continue
         _top_level_binds(src.tree.body, src)
     return sources, paths
+
+
+def element_names_of_folder(folder: Path, index: dict) -> tuple[set[str], str]:
+    """(the element names a script folder's Elements class builds, against an index with
+    statements; why they couldn't be read, or ""). A script without an Elements class has none,
+    and that needs no reason."""
+    if sys.version_info[:2] != LIVE_PYTHON:
+        return set(), (f"the Elements class's names (they need Live's Python {LIVE_PYTHON[0]}.{LIVE_PYTHON[1]}; "
+                       f"this is {sys.version_info[0]}.{sys.version_info[1]})")
+    folder = Path(folder)
+    findings: list[dict] = []
+    not_checked: list[dict] = []
+    sources, _ = read_sources(folder, findings)
+    codes = compile_sources(sources, findings, not_checked)
+    if not codes:
+        return set(), "the Elements class's names (no source of the script compiles)"
+    overlay = overlay_index(index, folder.name, sources, codes, not_checked)
+    if folder.name not in overlay["packages"]:
+        return set(), "the Elements class's names (the folder has no __init__.py: it is not a Remote Script)"
+    read = read_elements(Outliner(overlay, folder.name), sources)
+    why = ("some of the Elements class's names (it builds them from values that can't be read without "
+           "running the script)") if read.computed else ""
+    return read.names or set(), why
 
 
 def validate_folder(folder: Path, index: dict) -> dict:

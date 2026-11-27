@@ -33,7 +33,10 @@ draft ─▶ grill ─▶ spec ─▶ steps ─▶ build ─▶ review ─▶ te
    blockers.
 5. **Build:** the builder that owns the area takes one step (a task from the architect): `tdd` at the agreed seams, `diagnosing-bugs`
    for hard failures, `codebase-design` for interfaces.
-6. **Review:** arsm-reviewer, or `code-review`. Standards = `CLAUDE.md` and the plan's decisions; Spec = the step.
+6. **Review:** arsm-reviewer before each commit. When a feature is finished, `code-review` since
+   its branch point (user, 2026-11-26): Standards = `CLAUDE.md` and the plan's decisions; Spec =
+   the step. Its fixes get an arsm-reviewer pass before their commit, like any commit (user,
+   2026-11-27). After they are committed, `retro` on the session.
 7. **Test:** what can run here runs here. Anything in Live goes to you as a short list, while the
    agent reads `Log.txt`.
 8. **Ship:** when you ask, the PR body is written with `pr`.

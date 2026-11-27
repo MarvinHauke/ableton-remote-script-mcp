@@ -90,7 +90,7 @@ def read_log(path: Path, script: str | None = None) -> dict:
     as a combo) or from another one. `others` counts the tracebacks left out.
     """
     if not path.is_file():
-        return {"status": "not_found", "message": f"no Live log at {path}"}
+        return {"status": "folder_missing", "message": f"no Live log at {path}"}
     lines = path.read_text(errors="replace").splitlines()
     start, live_build = 0, None
     for i, line in enumerate(lines):

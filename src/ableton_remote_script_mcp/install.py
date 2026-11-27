@@ -41,7 +41,7 @@ def install_script(folder: Path, user_library: Path, replace: bool = False) -> d
     """
     folder = folder.resolve()
     if not folder.is_dir():
-        return {"status": "not_found", "message": f"no folder {folder}"}
+        return {"status": "folder_missing", "message": f"no folder {folder}"}
     if not folder.name.isidentifier():
         return {"status": "bad_name", "message": f"the folder name {folder.name!r} is not a Python name; "
                 "Live imports the script by it (validate suggests a name)"}

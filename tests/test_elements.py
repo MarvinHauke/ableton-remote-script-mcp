@@ -6,7 +6,7 @@ import sys
 import pytest
 from hand_index import OLD, write_hand_index
 
-from ableton_remote_script_mcp import api, framework_checks, names
+from ableton_remote_script_mcp import api, names, validator
 from ableton_remote_script_mcp.cli import format_names
 from ableton_remote_script_mcp.elements import read_elements
 from ableton_remote_script_mcp.framework_checks import compile_sources, overlay_index
@@ -98,7 +98,7 @@ def test_check_names_counts_the_attributes_the_elements_class_builds_as_own(tmp_
 
 def test_check_names_says_when_it_cant_read_the_elements_class(tmp_path, index_dir, monkeypatch):
     """Off Live's Python the reader can't compile the script: `not_read` says so, never silence."""
-    monkeypatch.setattr(framework_checks, "LIVE_PYTHON", (3, 99))
+    monkeypatch.setattr(validator, "LIVE_PYTHON", (3, 99))
     answer = api.check_names(_script(tmp_path), build=OLD, index_dir=index_dir)
     assert answer["status"] == "ok" and "scene_buttons" in [u["name"] for u in answer["unknown"]]
     assert len(answer["not_read"]) == 1 and "Python 3.99" in answer["not_read"][0]

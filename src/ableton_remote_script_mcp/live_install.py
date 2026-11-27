@@ -39,7 +39,7 @@ class LiveInstall:
 
     @property
     def is_beta(self) -> bool:
-        return bool(re.search(r"[ab]\d+$", self.live_build))
+        return is_beta(self.live_build)
 
 
 def read_install(app: Path) -> LiveInstall:
@@ -87,3 +87,9 @@ def default_install(installs: list[LiveInstall]) -> LiveInstall | None:
 
 def build_sort_key(live_build: str) -> tuple:
     return _build_key(live_build)
+
+
+def is_beta(live_build: str) -> bool:
+    """A beta (or alpha) build: its version ends in `b<n>` (`13.0b25`). Worked out from the name,
+    never stored (plan 0001 Decision 63)."""
+    return bool(re.search(r"[ab]\d+$", live_build))

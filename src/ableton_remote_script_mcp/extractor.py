@@ -235,7 +235,7 @@ class _Func(_Value):
 
 @dataclass
 class _ClassVal(_Value):
-    fact: "ClassFact"
+    fact: ClassFact
 
     def text(self) -> str:
         return self.fact.name
@@ -340,7 +340,7 @@ class ClassFact:
     decorators: list[str] = field(default_factory=list)
     docstring: str | None = None
     members: dict[str, Member] = field(default_factory=dict)
-    nested: list["ClassFact"] = field(default_factory=list)
+    nested: list[ClassFact] = field(default_factory=list)
 
 
 @dataclass
