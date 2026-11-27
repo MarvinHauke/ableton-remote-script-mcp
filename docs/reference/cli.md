@@ -22,7 +22,7 @@ Every command exits with one of these (`EXIT_CODES` in `cli.py`).
 | 1 | Answered, with something to act on: findings, unknown names, tracebacks, a failed step, no match. |
 | 2 | An input isn't there or was refused: no such folder or log, Live silent, a usage error. |
 | 3 | Build or install something first: no index for the build, a missing extra, nothing imported. |
-| 4 | A file or value can't be read: a check file, a device profile, a --send value. |
+| 4 | A file or value can't be read: a check file, a device profile, a script the rig can't read, a --send value. |
 | 5 | The tool failed on its own (a bug): one line, then the traceback. |
 
 ## `build-index`

@@ -21,6 +21,22 @@ class RigUnavailable(RuntimeError):
     pass
 
 
+class RigExtraMissing(ImportError):
+    """PyYAML, which the rig's check files and device profiles need, isn't installed: the CLI
+    exits 3 (plan 0001 Decision 61). Any other import error is a bug and exits 5."""
+
+
+def load_yaml():
+    """The `yaml` module, or `RigExtraMissing` with the install hint."""
+    try:
+        import yaml
+    except ModuleNotFoundError as e:
+        if e.name != "yaml":
+            raise
+        raise RigExtraMissing(f"PyYAML is missing: {INSTALL_HINT}") from e
+    return yaml
+
+
 def _rtmidi2():
     try:
         import rtmidi2

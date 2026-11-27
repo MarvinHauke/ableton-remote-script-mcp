@@ -140,7 +140,7 @@ def test_a_tool_and_the_skill_script_give_the_same_answer(index_dir):
         (["outline", "Fake_V3", "--build", OLD], "outline_reference_script", {"script": "Fake_V3", "build": OLD}),
     ]:
         run = subprocess.run([str(SKILL / "scripts" / "lookup.sh"), *script_args, "--json"], capture_output=True,
-                             text=True, check=False, env=env)
+                             text=True, check=False, env=env, timeout=60)
         _, result = _call(index_dir, tool, arguments)
         assert json.loads(run.stdout) == result.structured_content, script_args
 

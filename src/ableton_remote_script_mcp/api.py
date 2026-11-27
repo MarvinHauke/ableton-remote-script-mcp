@@ -1,8 +1,8 @@
 """The stable Python API (plan 0001 step 11, Decision 49 Q4 and Q10).
 
-Six functions, `lookup`, `search`, `outline`, `validate`, `check_names` and `list_builds`, plus
+Seven functions: `lookup`, `search`, `outline`, `validate`, `check_names`, `list_builds` and
 `diff`. They return the same answers as the CLI's `--json` and the MCP tools: plain dicts with
-a `status` ("ok", "not_found", "folder_missing", "refused", "index_missing"), an `answer_version` and, when the answer was
+a `status` (the keys of `cli.STATUS_EXIT`, listed in docs/answers.md), an `answer_version` and, when the answer was
 larger than about `max_tokens`, a `cut` note saying what was left out and how to get it
 (`answers.py`). `full=True` gives the whole answer.
 

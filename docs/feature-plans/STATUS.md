@@ -445,7 +445,10 @@ _Last updated: 2026-11-27 (0001 Decision 66 built, the retro's points 1–3; 000
 - [check] A flaky test (architect, 2026-11-27): one full `pytest` run failed and a later one
   hung (more than 200 s), both while building 0001 Decision 66; the failing test's name wasn't
   captured, and 8 runs after that passed. Suspect the rig's socket tests (`test_rig_panel.py`,
-  `rig serve`). Next time: `pytest -v -rf` to a file, to name it.
+  `rig serve`). Since 2026-11-27 `faulthandler_timeout = 60` dumps every thread's stack when a
+  test runs over 60 s, and the tests' subprocesses have a `timeout=` (the reviewer's view: the
+  hang was likely a subprocess, `node -e` or a skill script; the failure a socket deadline in
+  `test_rig_panel.py` under load).
 - [later] Smells from the code review of `feat/answer-v3` (2026-11-27), none blocking:
   `ElementCall.role` as strings (`"element" | "matrix" | "submatrix"`, a `Literal` would name
   them); `names.check_list` takes `find`, a closure over its own `resolver`;

@@ -32,7 +32,7 @@ EXIT_CODES = {
     1: "answered, with something to act on: findings, unknown names, tracebacks, a failed step, no match",
     2: "an input isn't there or was refused: no such folder or log, Live silent, a usage error",
     3: "build or install something first: no index for the build, a missing extra, nothing imported",
-    4: "a file or value can't be read: a check file, a device profile, a --send value",
+    4: "a file or value can't be read: a check file, a device profile, a script the rig can't read, a --send value",
     5: "the tool failed on its own (a bug): one line, then the traceback",
 }
 """Every command's exit codes (plan 0001 Decision 61): one table for all of them, printed in the
@@ -1103,15 +1103,16 @@ def _cmd_rig_restart_live(args: argparse.Namespace) -> int:  # pragma: no cover 
 
 
 def _cmd_rig_serve(args: argparse.Namespace) -> int:  # pragma: no cover - needs MIDI
-    from .rig.ports import DEFAULT_NAME, RigUnavailable
+    """Exit 3: no PyYAML (the rig extra); 4: the device profile can't be read."""
+    from .rig.ports import DEFAULT_NAME, RigExtraMissing, RigUnavailable
     from .rig.profile import ProfileError, load_profile
     from .rig.serve import DEFAULT_PORT, serve
 
     try:
         profile = load_profile(Path(args.profile)) if args.profile else None
-    except (ProfileError, ImportError) as e:
+    except (ProfileError, RigExtraMissing) as e:
         print(e, file=sys.stderr)
-        return 4
+        return 3 if isinstance(e, RigExtraMissing) else 4
     try:
         serve(args.name or DEFAULT_NAME, ("127.0.0.1", args.port or DEFAULT_PORT), log=lambda t: print(t, flush=True),
               profile=profile)
@@ -1129,14 +1130,15 @@ def _cmd_rig_panel(args: argparse.Namespace) -> int:  # pragma: no cover - serve
     script or its profile can't be read."""
     from .rig.panel import DEFAULT_PORT as PANEL_PORT
     from .rig.panel import PanelServer
+    from .rig.ports import RigExtraMissing
     from .rig.serve import DEFAULT_PORT, connect
     from .rig.session import SessionError, prepare
 
     try:
         session = prepare(Path(args.folder), Path(args.index_dir), args.build, profile=args.profile)
-    except (SessionError, ImportError) as e:
+    except (SessionError, RigExtraMissing) as e:
         print(e, file=sys.stderr)
-        return 3 if isinstance(e, ImportError) else 4
+        return 3 if isinstance(e, RigExtraMissing) else 4
     ctl, profile = session.controller, session.profile
     port = connect(port=args.port or DEFAULT_PORT)
     if port is None:
@@ -1178,7 +1180,7 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
         load_check_file,
         run_checks,
     )
-    from .rig.ports import DEFAULT_NAME, RigUnavailable, wait_for
+    from .rig.ports import DEFAULT_NAME, RigExtraMissing, RigUnavailable, wait_for
     from .rig.report import format_report, write_result
     from .rig.serve import DEFAULT_PORT, connect
     from .rig.session import SessionError, prepare
@@ -1186,15 +1188,15 @@ def _cmd_rig_run(args: argparse.Namespace) -> int:
     say = (lambda *_: None) if args.json else (lambda text: print(text, flush=True))
     try:
         checks = load_check_file(Path(args.checks))
-    except (CheckFileError, ImportError) as e:
+    except (CheckFileError, RigExtraMissing) as e:
         print(e, file=sys.stderr)
-        return 3 if isinstance(e, ImportError) else 4
+        return 3 if isinstance(e, RigExtraMissing) else 4
     try:
         session = prepare(checks.script_folder, Path(args.index_dir), args.build or checks.build, beside=checks.path,
                           names=lambda ctl: check_names(checks, ctl))
-    except (SessionError, ImportError) as e:
+    except (SessionError, RigExtraMissing) as e:
         print(e, file=sys.stderr)
-        return 3 if isinstance(e, ImportError) else 4
+        return 3 if isinstance(e, RigExtraMissing) else 4
     ctl, profile = session.controller, session.profile
     log_path = Path(args.log) if args.log else find_log(args.build or checks.build)
     if any(s.log_clean for s in checks.steps) and log_path is None:

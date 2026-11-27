@@ -1109,6 +1109,11 @@ meant to do, and uses only API names that exist in the Live build they target.
       `rig panel` exits 3 without PyYAML, as `rig run` does; `log`, `list builds` and
       `default-build` take their codes from `STATUS_EXIT`. A folder outline under another
       Python than Live's stays `refused` (exit 2): the tool won't compile it there.
+    - **The reviewer's pass on those fixes, 2026-11-27** (Decision 66, point 3): the rig caught
+      every `ImportError` around `prepare`, so an import bug exited 3, not 5. Now only a missing
+      PyYAML is the rig extra (`rig.ports.RigExtraMissing`, from `load_yaml`, with the install
+      hint); `rig serve`'s profile exits 3 on it too. Exit 4 also names a script the rig can't
+      read.
 62. **The cut cuts declared collections only** (user, 2026-11-26, grilling rounds 3 and 5;
     findings 1, 8; contract: `answer_version` 3). `bounded` cut the largest list or map anywhere
     in an answer, a record's own fields too (finding 8: a class's `bases`). Now:

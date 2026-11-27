@@ -44,7 +44,7 @@ from pathlib import Path
 
 from .abletonmcp import TESTED
 from .controller import Controller, Element
-from .ports import describe, parse_message, wait_quiet
+from .ports import describe, load_yaml, parse_message, wait_quiet
 from .state import (
     StateError,
     check_events,
@@ -101,7 +101,7 @@ class CheckFile:
 
 
 def load_check_file(path: Path) -> CheckFile:
-    import yaml
+    yaml = load_yaml()
 
     path = Path(path)
     try:

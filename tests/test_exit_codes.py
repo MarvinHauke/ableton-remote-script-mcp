@@ -88,14 +88,40 @@ def test_an_unknown_search_kind_is_refused_in_the_api(index_dir):
     assert answer["status"] == "refused" and "kind must be one of" in answer["message"]
 
 
-def test_the_rig_exits_3_without_pyyaml(index_dir, monkeypatch, tmp_path):
-    """The rig extra is missing: 3 for `rig panel` too, as for `rig run` (Decision 61, the table)."""
-    from ableton_remote_script_mcp.rig import session
+def test_a_missing_pyyaml_is_the_rig_extra(monkeypatch):
+    import sys
 
-    def no_yaml(*a, **k):
-        raise ImportError("PyYAML is missing: uv sync --extra rig")
-    monkeypatch.setattr(session, "prepare", no_yaml)
-    assert main(["--index-dir", index_dir, "rig", "panel", str(tmp_path), "--build", OLD]) == 3
+    from ableton_remote_script_mcp.rig.ports import (
+        INSTALL_HINT,
+        RigExtraMissing,
+        load_yaml,
+    )
+
+    monkeypatch.setitem(sys.modules, "yaml", None)  # `import yaml` raises ModuleNotFoundError
+    with pytest.raises(RigExtraMissing, match="PyYAML is missing") as e:
+        load_yaml()
+    assert INSTALL_HINT in str(e.value)
+
+
+def test_the_rig_exits_3_without_pyyaml_and_5_on_another_import_error(index_dir, monkeypatch, tmp_path):
+    """The rig extra is missing: 3 for `rig panel` and `rig run` (Decision 61, the table). Any
+    other import error is a bug: 5, never 3 (the review of the review's fixes)."""
+    import sys
+
+    from ableton_remote_script_mcp.rig import session
+    from ableton_remote_script_mcp.rig.ports import RigExtraMissing
+
+    checks = tmp_path / "checks.yaml"
+    checks.write_text("script: .\nchecks: []\n")
+    with monkeypatch.context() as m:
+        m.setitem(sys.modules, "yaml", None)
+        assert main(["--index-dir", index_dir, "rig", "run", str(checks), "--build", OLD]) == 3
+    for error in (RigExtraMissing("PyYAML is missing"), ImportError("cannot import name 'x'")):
+        def fail(*a, error=error, **k):
+            raise error
+        monkeypatch.setattr(session, "prepare", fail)
+        code = 3 if isinstance(error, RigExtraMissing) else 5
+        assert main(["--index-dir", index_dir, "rig", "panel", str(tmp_path), "--build", OLD]) == code
 
 
 def test_a_default_setting_without_an_index_exits_3(index_dir, capsys):

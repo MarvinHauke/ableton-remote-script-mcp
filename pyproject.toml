@@ -35,6 +35,8 @@ packages = ["src/ableton_remote_script_mcp"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["local_live: needs an installed Ableton Live build; skipped when it is absent"]
+# A test that runs over 60 s dumps every thread's stack, so a hang names itself (STATUS, the flaky test).
+faulthandler_timeout = 60
 
 [tool.ruff]
 # The fake scripts, the example script and the eval cases' broken scripts copy the style of

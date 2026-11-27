@@ -71,7 +71,7 @@ The CLI's exit code follows the answer's `status`: `ok` exits 0, or 1 when the a
 something to act on (findings, unknown names, tracebacks); `not_found` exits 1; `folder_missing`
 and `refused` exit 2; `index_missing` and `not_imported` exit 3, as does a missing extra (the
 rig without PyYAML). Exit 4 is for a file or value that can't be read: a check file, a device
-profile, a `--send` value. A crash exits 5, never 1, so a script can tell a
+profile, a script the rig can't read, a `--send` value. A crash exits 5, never 1, so a script can tell a
 bug from findings. The whole table is in the [CLI reference](reference/cli.md#exit-codes), and
 the skill's scripts name the same codes.
 

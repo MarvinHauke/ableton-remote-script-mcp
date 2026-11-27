@@ -36,7 +36,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .ports import parse_message
+from .ports import load_yaml, parse_message
 
 IDENTITY_REQUEST = [0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7]  # midi.SYSEX_IDENTITY_REQUEST_MESSAGE, 12.4.16
 # The rig's own identity (Decision 11): manufacturer 7D (MIDI's non-commercial ID, never a real
@@ -77,7 +77,7 @@ class Led:
 
 
 def load_profile(path: Path) -> Profile:
-    import yaml
+    yaml = load_yaml()
 
     path = Path(path)
     try:

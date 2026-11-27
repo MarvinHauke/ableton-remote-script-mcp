@@ -298,7 +298,7 @@ def _latch_run(script: str) -> list:
 const sent = [], marks = [];
 const l = makeLatches((n, v) => sent.push([n, v]), (n, how) => marks.push([n, how]));
 """ + script + "\nconsole.log(JSON.stringify({sent, marks}));"
-    out = subprocess.run([node, "-e", program], capture_output=True, text=True, check=True).stdout
+    out = subprocess.run([node, "-e", program], capture_output=True, text=True, check=True, timeout=60).stdout
     return json.loads(out)
 
 
